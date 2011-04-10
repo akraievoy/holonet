@@ -6,7 +6,7 @@
     elementFormDefault="qualified"
     attributeFormDefault="unqualified" >
 
-  <xs:element name="ConfigIndex">
+  <xs:element name="Experiment">
     <xs:complexType>
       <xs:sequence minOccurs="1" maxOccurs="unbounded">
         <xs:element name="Config" type="Config"/>
