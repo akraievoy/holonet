@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns="https://github.com/akraievoy/holonet/runner"
+    targetNamespace="https://github.com/akraievoy/holonet/runner"
+    elementFormDefault="qualified"
+    attributeFormDefault="unqualified" >
+
+  <xs:element name="ConfigIndex">
+    <xs:complexType>
+      <xs:sequence minOccurs="1" maxOccurs="unbounded">
+        <xs:element name="Config" type="Config"/>
+      </xs:sequence>
+      <xs:attribute name="id" type="xs:string" use="required"/>
+      <xs:attribute name="depends" type="xs:string" use="required"/>
+      <xs:attribute name="description" type="xs:string" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:complexType name="Config">
+    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="Param" type="Param"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="description" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="Param">
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="value" type="xs:string" use="required"/>
+    <xs:attribute name="internal" type="xs:boolean" default="false"/>
+    <xs:attribute name="description" type="xs:string" use="optional"/>
+  </xs:complexType>
+</xs:schema>
