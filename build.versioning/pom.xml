@@ -32,7 +32,8 @@
             </goals>
             <configuration>
               <source>
-                String buildNumber= System.getenv()['BUILD_NUMBER']; // is set by TeamCity
+                //  String buildNumber= System.getenv()['BUILD_NUMBER']; // is set by TeamCity
+                String buildNumber = null;
                 if (buildNumber==null) {
                   boolean fallback = true;
                   if (new File(".svn").isDirectory()) {
