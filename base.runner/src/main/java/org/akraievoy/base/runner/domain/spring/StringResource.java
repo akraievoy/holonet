@@ -18,14 +18,14 @@
 
 package org.akraievoy.base.runner.domain.spring;
 
+import com.google.common.base.Charsets;
 import org.springframework.core.io.AbstractResource;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * LATER add javadocs for a class created by ak
+ * Simple wrapper over in-memory String-based resource.
  */
 class StringResource extends AbstractResource {
   final String value;
@@ -38,7 +38,7 @@ class StringResource extends AbstractResource {
     return "in-memory resource";
   }
 
-  public InputStream getInputStream() throws IOException {
-    return new ByteArrayInputStream(value.getBytes("UTF-8"));
+  public InputStream getInputStream() {
+    return new ByteArrayInputStream(value.getBytes(Charsets.UTF_8));
   }
 }
