@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2011 Anton Kraievoy akraievoy@gmail.com
+  This file is part of Holonet.
+
+  Holonet is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  Holonet is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:hn="https://github.com/akraievoy/holonet/runner"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+           https://github.com/akraievoy/holonet/runner
+           https://github.com/akraievoy/holonet/raw/master/ext/holonet.runner.xsd"
+       default-init-method="start"
+       default-destroy-method="stop">
+  <hn:Experiment
+      id="physModel-2-numExport" depends=""
+      description="Physical network model [stage2] Numeric Export">
+    <hn:Config name="default" description="default">
+    </hn:Config>
+  </hn:Experiment>
+
+  <bean class="org.akraievoy.cnet.export.domain.export.ExportNumeric" id="main">
+    <property name="systemParameters"
+              value="main.systemParameters,main.skippedParameters,main.axisParameters,main.keys,main.targetFile,main.targetDir,main.hiddenParameters"/>
+    <!-- DYNAMIC -->
+    <property name="hiddenParameters" value=""/>
+    <!-- DYNAMIC -->
+    <property name="skippedParameters" value=""/>
+    <!-- DYNAMIC -->
+    <property name="axisParameters" value=""/>
+    <!-- DYNAMIC -->
+    <property name="keys" value=""/>
+    <!-- DYNAMIC -->
+    <property name="targetFile" value="unnamed.txt"/>
+  </bean>
+</beans>

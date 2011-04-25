@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2011 Anton Kraievoy akraievoy@gmail.com
+  This file is part of Holonet.
+
+  Holonet is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  Holonet is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<!--JSON_META
+{
+	"name": ""
+}
+JSON_META-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:hn="https://github.com/akraievoy/holonet/runner"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+           https://github.com/akraievoy/holonet/runner
+           https://github.com/akraievoy/holonet/raw/master/ext/holonet.runner.xsd"
+       default-init-method="start"
+       default-destroy-method="stop">
+  <hn:Experiment id="eigenGap-1-structure" depends="" description="EigenGap [stage1] Structure">
+    <hn:Config name="default" description="1013 Nodes">
+      <hn:Param name="netFactory.netNodeNum" value="1013"/>
+    </hn:Config>
+  </hn:Experiment>
+
+  <bean class="org.akraievoy.cnet.net.ref.RefEdgeData" id="ref_default_vdata_structure">
+    <property name="path" value="default.structure"/>
+  </bean>
+
+  <bean class="org.akraievoy.base.runner.api.RefDouble" id="ref_eigenGap_pre">
+    <property name="path" value="eigenGap.pre"/>
+  </bean>
+
+  <bean class="org.akraievoy.cnet.gen.domain.MetricEDataGenStructural" id="netFactory">
+    <property name="type" value="paley"/>
+    <property name="target" ref="ref_default_vdata_structure"/>
+
+    <!-- DYNAMIC -->
+    <property name="netNodeNum" value="1013"/>
+  </bean>
+
+  <bean class="org.akraievoy.cnet.metrics.domain.MetricScalarEigenGap" id="eigenGapMetricPre">
+    <property name="source" ref="ref_default_vdata_structure"/>
+    <property name="target" ref="ref_eigenGap_pre"/>
+  </bean>
+
+  <bean class="org.akraievoy.base.runner.domain.RunnableComposite" id="main">
+    <property name="group">
+      <list>
+        <ref bean="netFactory"/>
+        <ref bean="eigenGapMetricPre"/>
+      </list>
+    </property>
+  </bean>
+</beans>

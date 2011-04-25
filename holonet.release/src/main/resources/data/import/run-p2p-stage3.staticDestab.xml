@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2011 Anton Kraievoy akraievoy@gmail.com
+  This file is part of Holonet.
+
+  Holonet is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  Holonet is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:hn="https://github.com/akraievoy/holonet/runner"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+           https://github.com/akraievoy/holonet/runner
+           https://github.com/akraievoy/holonet/raw/master/ext/holonet.runner.xsd"
+       default-init-method="start"
+       default-destroy-method="stop">
+  <hn:Experiment
+      id="p2p-stage3-staticDestab" depends=""
+      description="P2P [stage3] Destabilize while running">
+    <!--
+      Start with ideal network and then proceed with destabilizing benchmark scenario.
+    -->
+    <hn:Config name="default" description="default">
+    </hn:Config>
+  </hn:Experiment>
+
+  <bean id="tbInitSeed" class="org.akraievoy.base.runner.api.RefLong">
+    <property name="path" value="tbInitSeed"/>
+  </bean>
+  <bean id="tbRunSeed" class="org.akraievoy.base.runner.api.RefLong">
+    <property name="path" value="tbRunSeed"/>
+  </bean>
+
+  <bean id="tbProtoClass" class="org.akraievoy.base.runner.api.RefString">
+    <property name="path" value="tbProtoClass"/>
+  </bean>
+
+  <bean id="tbNodes" class="org.akraievoy.base.runner.api.RefLong">
+    <property name="path" value="tbNodes"/>
+  </bean>
+  <bean id="tbElems" class="org.akraievoy.base.runner.api.RefLong">
+    <property name="path" value="tbElems"/>
+  </bean>
+  <bean id="tbLoop" class="org.akraievoy.base.runner.api.RefLong">
+    <property name="path" value="tbLoop"/>
+  </bean>
+
+  <bean id="tbFailProb" class="org.akraievoy.base.runner.api.RefDouble">
+    <property name="path" value="tbFailProb"/>
+  </bean>
+  <bean id="tbJoinProb" class="org.akraievoy.base.runner.api.RefDouble">
+    <property name="path" value="tbJoinProb"/>
+  </bean>
+  <bean id="tbStabProb" class="org.akraievoy.base.runner.api.RefDouble">
+    <property name="path" value="tbStabProb"/>
+  </bean>
+  <bean id="tbAttackProb" class="org.akraievoy.base.runner.api.RefDouble">
+    <property name="path" value="tbAttackProb"/>
+  </bean>
+
+  <!-- network model injection -->
+  <bean class="org.akraievoy.cnet.net.ref.RefVertexData" id="ref_overlay_vdata_density">
+    <property name="path" value="overlay.density"/>
+  </bean>
+  <bean class="org.akraievoy.cnet.net.ref.RefVertexData" id="ref_overlay_vdata_location_x">
+    <property name="path" value="overlay.location.x"/>
+  </bean>
+  <bean class="org.akraievoy.cnet.net.ref.RefVertexData" id="ref_overlay_vdata_location_y">
+    <property name="path" value="overlay.location.y"/>
+  </bean>
+  <bean class="org.akraievoy.cnet.net.ref.RefEdgeData" id="ref_overlay_edata_distance">
+    <property name="path" value="overlay.distance"/>
+  </bean>
+  <bean class="org.akraievoy.cnet.net.ref.RefEdgeData" id="ref_overlay_edata_requests">
+    <property name="path" value="overlay.requests"/>
+  </bean>
+
+  <bean class="algores.holonet.testbench.Testbench" id="main">
+    <property name="initSeedRef" ref="tbInitSeed"/>
+    <property name="runSeedRef" ref="tbInitSeed"/>
+
+    <property name="network">
+      <bean class="algores.holonet.core.Network">
+        <property name="env">
+          <bean class="algores.holonet.core.EnvCNet" init-method="init">
+            <property name="density" ref="ref_overlay_vdata_density"/>
+            <property name="locX" ref="ref_overlay_vdata_location_x"/>
+            <property name="locY" ref="ref_overlay_vdata_location_y"/>
+            <property name="dist" ref="ref_overlay_edata_distance"/>
+            <property name="req" ref="ref_overlay_edata_requests"/>
+          </bean>
+        </property>
+      </bean>
+    </property>
+
+    <property name="initialEvent">
+      <bean class="algores.holonet.core.events.EventCompositeSequence">
+        <constructor-arg>
+          <list>
+            <bean class="algores.holonet.core.events.EventNodeJoin">
+              <property name="countRef" ref="tbNodes"/>
+            </bean>
+            <bean class="algores.holonet.core.events.EventCompositeLoop">
+              <constructor-arg>
+                <bean class="algores.holonet.core.events.EventNetPutEntry">
+                  <property name="countRef" ref="tbElems"/>
+                </bean>
+              </constructor-arg>
+              <property name="countRef" ref="tbNodes"/>
+            </bean>
+            <bean class="algores.holonet.core.events.EventNetStabilize"/>
+          </list>
+        </constructor-arg>
+      </bean>
+    </property>
+
+    <property name="runtimeEvent">
+      <bean class="algores.holonet.core.events.EventCompositeLoop">
+        <property name="countRef" ref="tbLoop"/>
+
+        <constructor-arg>
+          <bean class="algores.holonet.core.events.EventCompositeSequence">
+            <constructor-arg>
+              <list>
+                <bean class="algores.holonet.core.events.EventCompositeSequence">
+                  <constructor-arg>
+                    <list>
+                      <bean class="algores.holonet.core.events.EventNodeJoin">
+                        <property name="failOnError" value="true"/>
+                      </bean>
+                      <bean class="algores.holonet.core.events.EventNodeFail"/>
+                    </list>
+                  </constructor-arg>
+                  <property name="probabilityRef" ref="tbFailProb"/>
+                </bean>
+
+                <bean class="algores.holonet.core.events.EventCompositeSequence">
+                  <constructor-arg>
+                    <list>
+                      <bean class="algores.holonet.core.events.EventNodeJoin">
+                        <property name="failOnError" value="true"/>
+                      </bean>
+                      <bean class="algores.holonet.core.events.EventNodeLeave"/>
+                    </list>
+                  </constructor-arg>
+                  <property name="probabilityRef" ref="tbJoinProb"/>
+                </bean>
+
+                <bean class="algores.holonet.core.events.EventNetStabilize">
+                  <property name="probabilityRef" ref="tbStabProb"/>
+                </bean>
+
+                <bean class="algores.holonet.core.events.EventCompositeLoop">
+                  <constructor-arg>
+                    <bean class="algores.holonet.core.events.EventNetLookup"/>
+                  </constructor-arg>
+                  <property name="countRef" ref="tbNodes"/>
+                </bean>
+              </list>
+            </constructor-arg>
+          </bean>
+        </constructor-arg>
+      </bean>
+
+    </property>
+  </bean>
+</beans>

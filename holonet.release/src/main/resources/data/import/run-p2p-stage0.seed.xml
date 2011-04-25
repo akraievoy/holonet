@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2011 Anton Kraievoy akraievoy@gmail.com
+  This file is part of Holonet.
+
+  Holonet is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  Holonet is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:hn="https://github.com/akraievoy/holonet/runner"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+           https://github.com/akraievoy/holonet/runner
+           https://github.com/akraievoy/holonet/raw/master/ext/holonet.runner.xsd"
+       default-init-method="start"
+       default-destroy-method="stop">
+  <hn:Experiment
+      id="p2p-stage0-seed" depends=""
+      description="P2P [stage0] Choose your seeds">
+    <hn:Config name="default" description="single seeds">
+      <hn:Param name="tbInitSeed.value" value="1234567"/>
+      <hn:Param name="tbRunSeed.value" value="7654321"/>
+    </hn:Config>
+  </hn:Experiment>
+
+  <bean id="tbInitSeed" class="org.akraievoy.base.runner.api.RefLong">
+    <property name="path" value="tbInitSeed"/>
+    <property name="value" value="13579"/>
+  </bean>
+
+  <bean id="tbRunSeed" class="org.akraievoy.base.runner.api.RefLong">
+    <property name="path" value="tbRunSeed"/>
+    <property name="value" value="24680"/>
+  </bean>
+
+  <bean class="org.akraievoy.base.runner.domain.RunnableComposite" id="main">
+    <property name="group">
+      <list/>
+    </property>
+  </bean>
+</beans>

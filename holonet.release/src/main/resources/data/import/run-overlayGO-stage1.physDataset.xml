@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2011 Anton Kraievoy akraievoy@gmail.com
+  This file is part of Holonet.
+
+  Holonet is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  Holonet is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:hn="https://github.com/akraievoy/holonet/runner"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+           https://github.com/akraievoy/holonet/runner
+           https://github.com/akraievoy/holonet/raw/master/ext/holonet.runner.xsd"
+       default-init-method="start"
+       default-destroy-method="stop">
+  <hn:Experiment
+      id="overlayGO-1-physDataset" depends=""
+      description="Overlay GO [stage1] Physical Dataset">
+    <hn:Config name="default" description="Default (24 nodes, 1 seed)">
+      <hn:Param name="entropySourceLocGen.seed" value="234453"/>
+      <hn:Param name="entropySourceLocation.seed" value="634567"/>
+      <hn:Param name="entropySource.seed" value="967436"/>
+      <hn:Param name="locationMetric.nodes" value="24"/>
+      <hn:Param name="connPreference.alpha" value="1.5"/>
+      <hn:Param name="connPreference.beta" value="2.75"/>
+    </hn:Config>
+    <hn:Config name="med" description="Medium (128 nodes, 1 seed)">
+      <hn:Param name="locationMetric.nodes" value="128"/>
+    </hn:Config>
+    <hn:Config name="big" description="Medium (240 nodes, 1 seed)">
+      <hn:Param name="locationMetric.nodes" value="240"/>
+    </hn:Config>
+    <hn:Config name="1k" description="Medium (1k nodes, 1 seed)">
+      <hn:Param name="locationMetric.nodes" value="1024"/>
+    </hn:Config>
+    <hn:Config name="2k" description="Medium (2k nodes, 1 seed)">
+      <hn:Param name="locationMetric.nodes" value="2048"/>
+    </hn:Config>
+    <hn:Config name="4k" description="Medium (4k nodes, 1 seed)">
+      <hn:Param name="locationMetric.nodes" value="4096"/>
+    </hn:Config>
+  </hn:Experiment>
+
+  <bean class="org.akraievoy.cnet.gen.vo.EntropySourceRandom" id="entropySourceLocGen">
+    <property name="seed" value="13031"/>
+  </bean>
+
+  <bean class="org.akraievoy.cnet.gen.domain.LocationGeneratorRecursive" id="locationGenerator">
+    <constructor-arg ref="entropySourceLocGen"/>
+
+    <property name="gridSize" value="1024"/>
+
+    <!-- DYNAMIC -->
+    <property name="dimensionRatio" value="1.5"/>
+  </bean>
+
+  <bean class="org.akraievoy.cnet.net.ref.RefEdgeData" id="ref_default_edata_structure">
+    <property name="path" value="default.structure"/>
+  </bean>
+  <bean class="org.akraievoy.cnet.net.ref.RefEdgeData" id="ref_default_edata_distance">
+    <property name="path" value="default.distance"/>
+  </bean>
+  <bean class="org.akraievoy.cnet.net.ref.RefEdgeData" id="ref_default_edata_routeLen">
+    <property name="path" value="default.routeLen"/>
+  </bean>
+  <bean class="org.akraievoy.cnet.net.ref.RefVertexData" id="ref_default_vdata_location_x">
+    <property name="path" value="default.location.x"/>
+  </bean>
+  <bean class="org.akraievoy.cnet.net.ref.RefVertexData" id="ref_default_vdata_location_y">
+    <property name="path" value="default.location.y"/>
+  </bean>
+  <bean class="org.akraievoy.cnet.net.ref.RefVertexData" id="ref_default_vdata_density">
+    <property name="path" value="default.density"/>
+  </bean>
+  <bean class="org.akraievoy.base.runner.api.RefDouble" id="ref_eigenGap">
+    <property name="path" value="eigenGap.physical"/>
+  </bean>
+
+  <bean class="org.akraievoy.cnet.gen.domain.MetricEDataGenStructural" id="netFactory">
+    <property name="target" ref="ref_default_edata_structure"/>
+    <property name="type" value="path"/>
+    <property name="netNodeNum" value="3"/>
+  </bean>
+
+  <bean class="org.akraievoy.cnet.gen.vo.EntropySourceRandom" id="entropySourceLocation"/>
+
+  <bean class="org.akraievoy.cnet.metrics.domain.MetricVDataLocation" id="locationMetric">
+    <constructor-arg ref="locationGenerator"/>
+    <constructor-arg ref="entropySourceLocation"/>
+
+    <property name="targetX" ref="ref_default_vdata_location_x"/>
+    <property name="targetY" ref="ref_default_vdata_location_y"/>
+
+    <!-- DYNAMIC -->
+    <property name="nodes" value="120"/>
+  </bean>
+
+  <bean class="org.akraievoy.cnet.metrics.domain.MetricEDataDistance" id="distMetric">
+    <constructor-arg>
+      <bean class="org.akraievoy.cnet.gen.vo.MetricEuclidean">
+      </bean>
+    </constructor-arg>
+
+    <property name="sourceX" ref="ref_default_vdata_location_x"/>
+    <property name="sourceY" ref="ref_default_vdata_location_y"/>
+
+    <property name="target" ref="ref_default_edata_distance"/>
+  </bean>
+
+  <bean class="org.akraievoy.cnet.gen.vo.EntropySourceRandom" id="entropySource"/>
+
+  <bean id="connPreference" class="org.akraievoy.cnet.gen.vo.ConnPreferenceYookJeongBarabasi">
+    <!-- DYNAMIC -->
+    <property name="alpha" value="1"/>
+    <!-- DYNAMIC -->
+    <property name="beta" value="1"/>
+  </bean>
+
+  <bean id="structure" class="org.akraievoy.cnet.metrics.domain.MetricEDataStructure">
+    <constructor-arg ref="connPreference"/>
+
+    <constructor-arg ref="entropySource"/>
+
+    <property name="distSource" ref="ref_default_edata_distance"/>
+    <property name="structureSource" ref="ref_default_edata_structure"/>
+
+    <property name="target" ref="ref_default_edata_structure"/>
+  </bean>
+
+  <bean class="org.akraievoy.cnet.metrics.domain.MetricVDataDensity" id="densityMetric">
+    <constructor-arg ref="locationGenerator"/>
+
+    <property name="sourceX" ref="ref_default_vdata_location_x"/>
+    <property name="sourceY" ref="ref_default_vdata_location_y"/>
+
+    <property name="target" ref="ref_default_vdata_density"/>
+  </bean>
+
+  <bean class="org.akraievoy.cnet.metrics.domain.MetricEDataRouteLen" id="routeLenMetric">
+    <constructor-arg>
+      <bean class="org.akraievoy.cnet.metrics.domain.MetricRoutesJohnson">
+        <property name="source" ref="ref_default_edata_structure"/>
+        <property name="distSource" ref="ref_default_edata_distance"/>
+      </bean>
+    </constructor-arg>
+
+    <property name="target" ref="ref_default_edata_routeLen"/>
+  </bean>
+
+  <bean class="org.akraievoy.cnet.metrics.domain.MetricScalarEigenGap" id="eigenGapMetric">
+    <property name="source" ref="ref_default_edata_structure"/>
+    <property name="target" ref="ref_eigenGap"/>
+  </bean>
+
+  <bean class="org.akraievoy.base.runner.domain.RunnableComposite" id="main">
+    <property name="group">
+      <list>
+        <ref bean="locationGenerator"/>
+        <ref bean="netFactory"/>
+        <ref bean="locationMetric"/>
+        <ref bean="distMetric"/>
+        <ref bean="structure"/>
+        <ref bean="densityMetric"/>
+        <ref bean="routeLenMetric"/>
+        <ref bean="eigenGapMetric"/>
+      </list>
+    </property>
+  </bean>
+</beans>

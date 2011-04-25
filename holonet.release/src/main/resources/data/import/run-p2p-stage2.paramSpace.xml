@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2011 Anton Kraievoy akraievoy@gmail.com
+  This file is part of Holonet.
+
+  Holonet is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  Holonet is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:hn="https://github.com/akraievoy/holonet/runner"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+           https://github.com/akraievoy/holonet/runner
+           https://github.com/akraievoy/holonet/raw/master/ext/holonet.runner.xsd"
+       default-init-method="start"
+       default-destroy-method="stop">
+  <hn:Experiment
+      id="p2p-stage2-paramSpace" depends=""
+      description="P2P [stage1] Choose param space">
+    <hn:Config name="default" description="16 nodes with 4 elements (each)">
+      <hn:Param name="tbNodes.value" value="16"/>
+      <hn:Param name="tbElems.value" value="4"/>
+      <hn:Param name="tbLoop.value" value="8"/>
+
+      <hn:Param name="tbFailProb.value" value="0.005"/>
+      <hn:Param name="tbJoinProb.value" value="0.01"/>
+      <hn:Param name="tbStabProb.value" value="0.01"/>
+      <hn:Param name="tbAttackProb.value" value="0.01"/>
+    </hn:Config>
+    <hn:Config name="stabProf" description="stabilize profiling">
+      <hn:Param name="tbStabProb.value" value="0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64"/>
+    </hn:Config>
+    <hn:Config name="nodesProf" description="nodes profiling">
+      <hn:Param name="tbNodes.value" value="002;004;008;016;032;064;128;256;512"/>
+    </hn:Config>
+    <hn:Config name="elemsProf" description="elements profiling">
+      <hn:Param name="tbElems.value" value="002;004;008;016;032;064;128;256"/>
+    </hn:Config>
+    <hn:Config name="loopProf" description="loop profiling">
+      <hn:Param name="tbLoop.value" value="8;16;32;64;128"/>
+    </hn:Config>
+    <hn:Config name="joinProf" description="joins profiling">
+      <hn:Param name="tbJoinProb.value" value="0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64"/>
+    </hn:Config>
+    <hn:Config name="failProf" description="failures profiling">
+      <hn:Param name="tbFailProb.value" value="0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64"/>
+    </hn:Config>
+    <hn:Config name="attackProf" description="attacks profiling">
+      <hn:Param name="tbAttackProb.value" value="0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64"/>
+    </hn:Config>
+  </hn:Experiment>
+
+  <bean id="tbNodes" class="org.akraievoy.base.runner.api.RefLong">
+    <property name="path" value="tbNodes"/>
+    <property name="value" value="16"/>
+  </bean>
+  <bean id="tbElems" class="org.akraievoy.base.runner.api.RefLong">
+    <property name="path" value="tbElems"/>
+    <property name="value" value="4"/>
+  </bean>
+  <bean id="tbLoop" class="org.akraievoy.base.runner.api.RefLong">
+    <property name="path" value="tbLoop"/>
+    <property name="value" value="8"/>
+  </bean>
+
+  <bean id="tbFailProb" class="org.akraievoy.base.runner.api.RefDouble">
+    <property name="path" value="tbFailProb"/>
+    <property name="value" value="0.005"/>
+  </bean>
+  <bean id="tbJoinProb" class="org.akraievoy.base.runner.api.RefDouble">
+    <property name="path" value="tbJoinProb"/>
+    <property name="value" value="0.01"/>
+  </bean>
+  <bean id="tbStabProb" class="org.akraievoy.base.runner.api.RefDouble">
+    <property name="path" value="tbStabProb"/>
+    <property name="value" value="0.01"/>
+  </bean>
+  <bean id="tbAttackProb" class="org.akraievoy.base.runner.api.RefDouble">
+    <property name="path" value="tbAttackProb"/>
+    <property name="value" value="0.01"/>
+  </bean>
+
+  <bean class="org.akraievoy.base.runner.domain.RunnableComposite" id="main">
+    <property name="group">
+      <list/>
+    </property>
+  </bean>
+</beans>

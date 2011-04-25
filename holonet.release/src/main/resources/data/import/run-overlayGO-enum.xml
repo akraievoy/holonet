@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2011 Anton Kraievoy akraievoy@gmail.com
+  This file is part of Holonet.
+
+  Holonet is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  Holonet is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:hn="https://github.com/akraievoy/holonet/runner"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+           https://github.com/akraievoy/holonet/runner
+           https://github.com/akraievoy/holonet/raw/master/ext/holonet.runner.xsd"
+       default-init-method="start"
+       default-destroy-method="stop">
+  <hn:Experiment id="overlayGO-1-enum" depends="" description="Overlay GO [Stage 1] Enumerate feasible solutions">
+    <hn:Config name="default" description="Up to 10 nodes">
+      <hn:Param name="size.value" value="7;8;9;10"/>
+      <hn:Param name="theta.value" value="1"/>
+      <hn:Param name="thetaTilde.value" value="0.75"/>
+      <hn:Param name="lambda.value" value="0.25;0.5;0.75;0.875;0.9325;0.96875"/>
+    </hn:Config>
+  </hn:Experiment>
+
+  <bean id="size" class="org.akraievoy.base.runner.api.RefLong">
+    <property name="path" value="size"/>
+    <property name="value" value="7"/>
+  </bean>
+
+  <bean id="theta" class="org.akraievoy.base.runner.api.RefDouble">
+    <property name="path" value="theta"/>
+    <property name="value" value="1.5"/>
+  </bean>
+  <bean id="thetaTilde" class="org.akraievoy.base.runner.api.RefDouble">
+    <property name="path" value="thetaTilde"/>
+    <property name="value" value="1"/>
+  </bean>
+  <bean id="lambda" class="org.akraievoy.base.runner.api.RefDouble">
+    <property name="path" value="lambda"/>
+    <property name="value" value="0.2"/>
+  </bean>
+
+  <bean class="org.akraievoy.cnet.soo.domain.EnumExperiment" id="main">
+    <property name="lambdaParamName" value="lambda.value"/>
+    <property name="sizeRef" ref="size"/>
+    <property name="thetaRef" ref="theta"/>
+    <property name="thetaTildeRef" ref="thetaTilde"/>
+  </bean>
+</beans>
