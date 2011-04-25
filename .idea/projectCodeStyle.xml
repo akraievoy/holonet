@@ -15,6 +15,7 @@
             <option name="LABEL_INDENT_ABSOLUTE" value="false" />
           </value>
         </option>
+        <option name="KEEP_SIMPLE_METHODS_IN_ONE_LINE" value="true" />
         <ADDITIONAL_INDENT_OPTIONS fileType="java">
           <option name="INDENT_SIZE" value="4" />
           <option name="CONTINUATION_INDENT_SIZE" value="8" />
