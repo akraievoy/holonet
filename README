@@ -1,3 +1,6 @@
+Package: holonet
+Copyright/Maintenance 2011 Anton Kraievoy akraievoy@gmail.com
+
 Features of this project:
  - an API for complex networks, aiming to be performant, but not yet profiled/compared with competition;
  - several metrics implemented over the former API, most notable are EigenGap/EigenVector metrics;
@@ -11,3 +14,31 @@ Features of this project:
  - DHT API layering coherent with Common API description;
  - several versions of Chord protocol, P-Grid protocol still on the way;
  - a simple framework to run Genetic Optimization over a network with metric-based constraints;
+ 
+Let me know if:
+ * you want to use the code (I'll gladly add javadocs to unclear sites, revise your feature requests or whatsoever);
+ * you think I've missed you or someone else in the copyright notices;
+ * you want to re-license this code under any other terms. 
+
+Sample of license header.
+/*
+	This file is part of holonet.
+ 
+	holonet is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	holonet is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with holonet. If not, see <http://www.gnu.org/licenses/>.
+*/
+
+Sample of copyright header.
+/*
+	Copyright ${year} ${author} ${email}
+*/

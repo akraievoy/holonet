@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.akraievoy</groupId>
+  <artifactId>build.versioning</artifactId>
+  <version>1.3</version>
+
+  <packaging>jar</packaging>
+
+  <name>org.akraievoy :: build.versioning</name>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>${project.build.directory}/generated-resources</directory>
+      </resource>
+    </resources>
+
+    <plugins>
+      <!-- Create build number and write it to a file -->
+      <plugin>
+        <groupId>org.codehaus.groovy.maven</groupId>
+        <artifactId>gmaven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <source>
+                String buildNumber= System.getenv()['BUILD_NUMBER']; // is set by TeamCity
+                if (buildNumber==null) {
+                  boolean fallback = true;
+                  if (new File(".svn").isDirectory()) {
+                    // If not set, get from SVN
+                    try {
+                      Process process= Runtime.runtime.exec("svnversion -n -c " + project.basedir + "/..");
+                      buildNumber= process.inputStream.text
+                        .replaceFirst("^[0-9]*:", "")
+                        .replaceFirst("(P)+\$","")
+                        .replaceFirst("(M|S)+\$", ".01");
+                      process.waitFor();
+                      fallback = false;
+                    } catch (IOException ex) {
+                      println "svnversion integration failed: " + ex.getMessage()
+                    }
+                  } else if (new File(".git").isDirectory() || new File("..", ".git").isDirectory()) {
+                    // If not set, get from Git
+                    try {
+                      Process process= Runtime.runtime.exec("git rev-list --graph akraievoy_build_root..HEAD");
+
+                      //  475 is an upped number of revisions in my previous SVN repo (just to keep numbering fine)
+                      buildNumber= process.inputStream.text.split("\r?\n").length + 475;
+
+                      process.waitFor();
+                    } catch (IOException ex) {
+                      println "git integration failed: " + ex.getMessage()
+                    }
+                  }
+
+                  // if the commands are not present or fail, set from time
+                  if (fallback) {
+                    buildNumber= new Date().format("yyMMdd.hhmm")
+                  }
+                }
+
+                println 'Building version ['+ project.properties['milestone'] + '.' + buildNumber + ']'
+
+                // Write to properties, to be picked by Build.class
+                File propFile= new File(project.build.directory+ "/generated-resources/org/akraievoy/build.properties");
+                propFile.parentFile.mkdirs();
+                propFile.write(
+                  "org.akraievoy.build="+project.properties['milestone'] + '.' + buildNumber+"\n" +
+                  "org.akraievoy.timestamp="+new Date().format("yyMMddHHmmssSSSZ")
+                );
+              </source>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  <properties>
+    <milestone>1.3</milestone>
+  </properties>
+  <repositories>
+  </repositories>
+</project>

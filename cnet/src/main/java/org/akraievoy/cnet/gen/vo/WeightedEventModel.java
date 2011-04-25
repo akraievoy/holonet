@@ -1,0 +1,120 @@
+/*
+ Copyright 2011 Anton Kraievoy akraievoy@gmail.com
+ This file is part of Holonet.
+
+ Holonet is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ Holonet is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with Holonet. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package org.akraievoy.cnet.gen.vo;
+
+import gnu.trove.TDoubleArrayList;
+import gnu.trove.TIntArrayList;
+import org.akraievoy.base.Die;
+
+public abstract class WeightedEventModel {
+  public static final double MIN_WEIGHT_DEFAULT = 0.05;
+  protected final TIntArrayList events = new TIntArrayList();
+  protected final TDoubleArrayList weights = new TDoubleArrayList();
+  //	if this is not null then weights've been renormalized and the object is now in the generation phase
+  protected TDoubleArrayList sums = null;
+
+  public int generate(EntropySource eSource, final boolean remove, int[] indexRef) {
+    Die.ifTrue("please initialize events", events.isEmpty());
+
+    if (sums == null) {
+      initSums();
+    }
+
+    final double eventValue = eSource.nextDouble() * getSum();
+    final int searchIndex = sums.binarySearch(eventValue);
+
+    final int eventIndex = searchIndex < 0 ? -(searchIndex + 1) : searchIndex;
+    Die.ifTrue("eventIndex >= events.size()", eventIndex >= events.size());
+
+    final int result = events.get(eventIndex);
+
+    if (remove) {
+      removeByIndex(eventIndex);
+    }
+    if (indexRef != null && indexRef.length > 0) {
+      indexRef[0] = eventIndex;
+    }
+
+    return result;
+  }
+
+  public void clear() {
+    events.clear();
+    weights.clear();
+
+    if (sums != null) {
+      sums.clear();  //	assist GC a bit
+    }
+    sums = null;
+  }
+
+  public int getSize() {
+    final int size = events.size();
+
+    return size;
+  }
+
+  public void add(int e, double weight) {
+    extendSums(weight);
+
+    events.add(e);
+    weights.add(weight);
+  }
+
+  protected abstract void extendSums(double weight);
+
+  public void remove(int val) {
+    final int searchIndex = sums.binarySearch(val);
+
+    final int eventIndex = searchIndex < 0 ? -(searchIndex + 1) : searchIndex;
+    Die.ifTrue("eventIndex >= events.size()", eventIndex >= events.size());
+
+    removeByIndex(eventIndex);
+  }
+
+  public void removeByIndex(int index) {
+    Die.ifNull("sums", sums);
+    increment(index, -weights.get(index));
+
+    events.remove(index);
+    weights.remove(index);
+    sums.remove(index);
+  }
+
+  protected void increment(int index, double diff) {
+    final double oldWeight = weights.get(index);
+    final double newWeight = oldWeight + diff;
+    if (newWeight < 0) {
+      throw new IllegalStateException("weight must be non-negative, but is: " + newWeight);
+    }
+
+    weights.set(index, newWeight);
+    for (int i = index; i < sums.size(); i++) {
+      sums.set(index, sums.get(index) + diff);
+    }
+  }
+
+  protected double getSum() {
+    final double sum = sums.isEmpty() ? 0 : sums.get(sums.size() - 1);
+
+    return sum;
+  }
+
+  protected abstract void initSums();
+}

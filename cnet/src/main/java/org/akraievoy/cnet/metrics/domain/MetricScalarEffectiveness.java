@@ -1,0 +1,89 @@
+/*
+ Copyright 2011 Anton Kraievoy akraievoy@gmail.com
+ This file is part of Holonet.
+
+ Holonet is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ Holonet is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with Holonet. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package org.akraievoy.cnet.metrics.domain;
+
+import org.akraievoy.base.ref.RefRO;
+import org.akraievoy.cnet.metrics.api.MetricScalar;
+import org.akraievoy.cnet.net.ref.RefEdgeData;
+import org.akraievoy.cnet.net.vo.EdgeData;
+import org.akraievoy.cnet.net.vo.RefKeys;
+
+public class MetricScalarEffectiveness extends MetricScalar {
+  protected double minThresh = 1e-9;
+  protected boolean includeReflexive = false;
+
+  protected double pow = -1;
+
+  protected RefRO<EdgeData> weightSource = new RefEdgeData();
+  protected RefRO<EdgeData> source = RefEdgeData.forPath(RefKeys.LAYER_STRUCTURE);
+
+  public String getName() {
+    return "Effectiveness";
+  }
+
+  public void setMinThresh(double minThresh) {
+    this.minThresh = minThresh;
+  }
+
+  public void setIncludeReflexive(boolean includeReflexive) {
+    this.includeReflexive = includeReflexive;
+  }
+
+  public void setPow(double pow) {
+    this.pow = pow;
+  }
+
+  public void setWeightSource(RefRO<EdgeData> weightSource) {
+    this.weightSource = weightSource;
+  }
+
+  public void setSource(RefRO<EdgeData> source) {
+    this.source = source;
+  }
+
+  public void run() {
+    final EdgeData net = source.getValue();
+    final EdgeData weights = weightSource.getValue();
+
+    final int size = Math.max(net.getSize(), weights != null ? weights.getSize() : 0);
+
+    double effSum = 0;
+    double weightSum = 0;
+    for (int from = 0; from < size; from++) {
+      for (int into = 0; into < size; into++) {
+        if (!includeReflexive && from == into) {
+          continue;
+        }
+
+        final double e = net.weight(from, into);
+        if (e < minThresh) {
+          continue;
+        }
+
+        final double w = weights == null ? 1 : weights.weight(from, into);
+
+        effSum += w * Math.pow(e, pow);
+        weightSum += w;
+      }
+    }
+
+    final double result = weightSum == 0 ? 0 : effSum / weightSum;
+    target.setValue(result);
+  }
+}
