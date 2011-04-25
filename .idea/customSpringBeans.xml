@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CustomBeanRegistry">
+    <option name="map">
+      <map>
+        <entry key="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#10;&lt;hn:Experiment xmlns:hn=&quot;https://github.com/akraievoy/holonet/runner&quot; id=&quot;overlayGO-3-genetics&quot; depends=&quot;&quot; description=&quot;Overlay GO [stage3] Overlay Genetics&quot;&gt;&#10;  &lt;hn:Config name=&quot;default&quot; description=&quot;Default (101 generations / 91 specimens)&quot;&gt;&#10;    &lt;hn:Param name=&quot;ovlGenOpt.generation&quot; value=&quot;0-100&quot; internal=&quot;true&quot; /&gt;&#10;    &lt;hn:Param name=&quot;ovlGenOpt.specimenIndex&quot; value=&quot;0-90&quot; internal=&quot;true&quot; /&gt;&#10;    &lt;hn:Param name=&quot;geneticState.maxCrossover&quot; value=&quot;0.25&quot; /&gt;&#10;    &lt;hn:Param name=&quot;geneticState.maxElemFitPow&quot; value=&quot;3&quot; /&gt;&#10;    &lt;hn:Param name=&quot;geneticState.maxMutation&quot; value=&quot;0.05&quot; /&gt;&#10;    &lt;hn:Param name=&quot;geneticStrategy.theta&quot; value=&quot;1.75&quot; /&gt;&#10;    &lt;hn:Param name=&quot;geneticStrategy.steps&quot; value=&quot;1&quot; /&gt;&#10;    &lt;hn:Param name=&quot;geneticStrategy.lambda&quot; value=&quot;0.6&quot; /&gt;&#10;    &lt;hn:Param name=&quot;geneticStrategy.startLambda&quot; value=&quot;0.48&quot; /&gt;&#10;    &lt;hn:Param name=&quot;geneticStrategy.lambdaTargetGeneration&quot; value=&quot;30&quot; /&gt;&#10;  &lt;/hn:Config&gt;&#10;  &lt;hn:Config name=&quot;thetaProf&quot; description=&quot;Varying Density (Theta)&quot;&gt;&#10;    &lt;hn:Param name=&quot;geneticStrategy.theta&quot; value=&quot;1;1.25;1.5;1.75&quot; /&gt;&#10;  &lt;/hn:Config&gt;&#10;  &lt;hn:Config name=&quot;stepsProf&quot; description=&quot;Varying Steps&quot;&gt;&#10;    &lt;hn:Param name=&quot;geneticStrategy.steps&quot; value=&quot;1;3;5&quot; /&gt;&#10;  &lt;/hn:Config&gt;&#10;&lt;/hn:Experiment&gt;&#10;&#10;">
+          <value>
+            <list>
+              <CustomBeanInfo>
+                <option name="beanName" value="overlayGO-3-genetics" />
+                <option name="beanClassName" value="java.lang.Object" />
+                <option name="idAttribute" value="id" />
+              </CustomBeanInfo>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="policies">
+      <map>
+        <entry>
+          <key>
+            <MyQName>
+              <option name="namespace" value="https://github.com/akraievoy/holonet/runner" />
+              <option name="localName" value="Experiment" />
+            </MyQName>
+          </key>
+          <value>
+            <CustomBeanInfo>
+              <option name="beanClassName" value="java.lang.Object" />
+              <option name="idAttribute" value="id" />
+            </CustomBeanInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
+
