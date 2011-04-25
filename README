@@ -1,6 +1,9 @@
 Package: holonet
 Copyright/Maintenance 2011 Anton Kraievoy akraievoy@gmail.com
 
+Project issues are tracked in Pivotal Tracker:
+  https://www.pivotaltracker.com/projects/279361
+
 Features of this project:
  - an API for complex networks, aiming to be performant, but not yet profiled/compared with competition;
  - several metrics implemented over the former API, most notable are EigenGap/EigenVector metrics;
