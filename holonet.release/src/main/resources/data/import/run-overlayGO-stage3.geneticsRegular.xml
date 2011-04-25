@@ -23,7 +23,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
            https://github.com/akraievoy/holonet/runner
-           https://github.com/akraievoy/holonet/raw/master/ext/holonet.runner.xsd"
+           https://github.com/akraievoy/holonet/raw/master/ext/holonet.runner-1.3.1.xsd"
        default-init-method="start"
        default-destroy-method="stop">
   <hn:Experiment
