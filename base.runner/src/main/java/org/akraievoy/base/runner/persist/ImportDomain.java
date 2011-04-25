@@ -33,33 +33,16 @@ public class ImportDomain {
     private String desc;
     private final SortedMap<String, Config> configs = new TreeMap<String, Config>();
 
-    public String getDepends() {
-      return depends;
-    }
+    public String getDepends() { return depends; }
+    public void setDepends(String depends) { this.depends = depends; }
 
-    public void setDepends(String depends) {
-      this.depends = depends;
-    }
+    public String getDesc() { return desc; }
+    public void setDesc(String desc) { this.desc = desc; }
 
-    public String getDesc() {
-      return desc;
-    }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
-    public void setDesc(String desc) {
-      this.desc = desc;
-    }
-
-    public String getId() {
-      return id;
-    }
-
-    public void setId(String id) {
-      this.id = id;
-    }
-
-    public SortedMap<String, Config> getConfigs() {
-      return configs;
-    }
+    public SortedMap<String, Config> getConfigs() { return configs; }
   }
 
   public static class Config {
@@ -67,25 +50,13 @@ public class ImportDomain {
     private String desc;
     private final SortedMap<String, ParamSpec> paramSpecs = new TreeMap<String, ParamSpec>();
 
-    public String getDesc() {
-      return desc;
-    }
+    public String getDesc() { return desc; }
+    public void setDesc(String desc) { this.desc = desc; }
 
-    public void setDesc(String desc) {
-      this.desc = desc;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public String getName() {
-      return name;
-    }
-
-    public void setName(String name) {
-      this.name = name;
-    }
-
-    public SortedMap<String, ParamSpec> getParamSpecs() {
-      return paramSpecs;
-    }
+    public SortedMap<String, ParamSpec> getParamSpecs() { return paramSpecs; }
   }
 
   public static class ParamSpec {
@@ -94,36 +65,16 @@ public class ImportDomain {
     private String valueSpec;
     private boolean internal = false;
 
-    public boolean isInternal() {
-      return internal;
-    }
+    public boolean isInternal() { return internal; }
+    public void setInternal(boolean internal) { this.internal = internal; }
 
-    public void setInternal(boolean internal) {
-      this.internal = internal;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public String getName() {
-      return name;
-    }
+    public String getDesc() { return desc; }
+    public void setDesc(String desc) { this.desc = desc; }
 
-    public void setName(String name) {
-      this.name = name;
-    }
-
-    public String getDesc() {
-      return desc;
-    }
-
-    public void setDesc(String desc) {
-      this.desc = desc;
-    }
-
-    public String getValueSpec() {
-      return valueSpec;
-    }
-
-    public void setValueSpec(String valueSpec) {
-      this.valueSpec = valueSpec;
-    }
+    public String getValueSpec() { return valueSpec; }
+    public void setValueSpec(String valueSpec) { this.valueSpec = valueSpec; }
   }
 }
