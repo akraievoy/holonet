@@ -51,12 +51,13 @@
                   } else if (new File(".git").isDirectory() || new File("..", ".git").isDirectory()) {
                     // If not set, get from Git
                     try {
-                      Process process= Runtime.runtime.exec("git rev-list --graph akraievoy_build_root..HEAD");
+                      Process process= Runtime.runtime.exec("git rev-list --graph --oneline akraievoy_build_root..HEAD");
 
                       //  475 is an upped number of revisions in my previous SVN repo (just to keep numbering fine)
                       buildNumber= process.inputStream.text.split("\r?\n").length + 475;
 
                       process.waitFor();
+                      fallback = false;
                     } catch (IOException ex) {
                       println "git integration failed: " + ex.getMessage()
                     }
