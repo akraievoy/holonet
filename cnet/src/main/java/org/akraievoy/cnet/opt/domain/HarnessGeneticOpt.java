@@ -25,7 +25,7 @@ import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.ref.RefSimple;
 import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.base.runner.api.ContextInjectable;
-import org.akraievoy.base.runner.api.StandaloneIterator;
+import org.akraievoy.base.runner.api.SkipTrigger;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.EntropySourceRandom;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelRenorm;
@@ -39,7 +39,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class HarnessGeneticOpt implements StandaloneIterator, Runnable, ContextInjectable {
+public class HarnessGeneticOpt implements Runnable, ContextInjectable {
   private static final Logger log = LoggerFactory.getLogger(HarnessGeneticOpt.class);
 
   protected Context ctx;
@@ -154,6 +154,11 @@ public class HarnessGeneticOpt implements StandaloneIterator, Runnable, ContextI
     }
 
     loadGen(ctx, gen);
+
+    if (gen.isEmpty()) {
+      log.info("Generation #{} empty: specimens died-out", generation);
+      return;
+    }
 
     state.setCompleteness((generation + 1.0) / ctx.getCount(generationParamName));
     state.setFitnessDeviation(fitnessDeviation(fitnesses));
@@ -306,17 +311,6 @@ public class HarnessGeneticOpt implements StandaloneIterator, Runnable, ContextI
     }
 
     return true;
-  }
-
-  public List<String> getIteratedParamNames() {
-    final List<String> iteratedParamNames = new ArrayList<String>();
-
-    if (terminate) {
-      iteratedParamNames.add(generationParamName);
-    }
-    iteratedParamNames.add(specimenIndexParamName);
-
-    return iteratedParamNames;
   }
 
   protected void loadGen(Context ctx, final List<Specimen> gen) {

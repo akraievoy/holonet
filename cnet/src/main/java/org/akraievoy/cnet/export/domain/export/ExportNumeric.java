@@ -23,8 +23,8 @@ import com.google.common.io.Closeables;
 import org.akraievoy.base.Die;
 import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.base.runner.api.ContextInjectable;
-import org.akraievoy.base.runner.api.ParamSetEnumerator;
-import org.akraievoy.base.runner.api.StandaloneIterator;
+import org.akraievoy.base.runner.api.SkipTrigger;
+import org.akraievoy.base.runner.domain.ParamSetEnumerator;
 import org.akraievoy.base.runner.vo.Parameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class ExportNumeric implements Runnable, ContextInjectable, StandaloneIterator {
+public class ExportNumeric implements Runnable, ContextInjectable {
   private static final Logger log = LoggerFactory.getLogger(ExportNumeric.class);
 
   protected Context ctx;
@@ -56,7 +56,7 @@ public class ExportNumeric implements Runnable, ContextInjectable, StandaloneIte
 
   protected String separator = "\t";
 
-  public List<String> getIteratedParamNames() {
+  public List<String> getSkippedParams() {
     final List<String> iterated = new ArrayList<String>();
 
     iterated.addAll(axisParameters);

@@ -22,6 +22,7 @@ import org.akraievoy.base.Format;
 import org.akraievoy.base.ObjArrays;
 import org.akraievoy.base.Parse;
 import org.akraievoy.base.runner.api.*;
+import org.akraievoy.base.runner.domain.ParamSetEnumerator;
 import org.akraievoy.base.runner.vo.Parameter;
 import org.akraievoy.cnet.metrics.domain.MetricScalarEigenGap;
 import org.akraievoy.cnet.net.ref.RefEdgeData;
@@ -34,10 +35,8 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Collections;
-import java.util.List;
 
-public class EnumExperiment implements Runnable, ContextInjectable, StandaloneIterator {
+public class EnumExperiment implements Runnable, ContextInjectable {
   private static final Logger log = LoggerFactory.getLogger(EnumExperiment.class);
 
   protected Context ctx;
@@ -70,10 +69,6 @@ public class EnumExperiment implements Runnable, ContextInjectable, StandaloneIt
 
   public void setLambdaParamName(String lambdaParamName) {
     this.lambdaParamName = lambdaParamName;
-  }
-
-  public List<String> getIteratedParamNames() {
-    return lambdaParamName != null ? Collections.singletonList(lambdaParamName) : Collections.<String>emptyList();
   }
 
   public void run() {

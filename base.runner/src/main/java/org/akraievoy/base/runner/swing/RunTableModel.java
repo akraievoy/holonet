@@ -89,7 +89,7 @@ public class RunTableModel extends AbstractTableModel {
 
     final String colName = getColumnName(columnIndex);
     if (COL_CHAIN.equals(colName)) {
-      return run.getChain();
+      return Format.format(run.getChain(), " ");
     }
     if (COL_ID.equals(colName)) {
       return run.getUid();

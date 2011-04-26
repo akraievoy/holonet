@@ -19,18 +19,18 @@
 package org.akraievoy.base.runner.domain;
 
 import com.google.common.base.Throwables;
-import org.akraievoy.base.runner.api.ParamSetEnumerator;
 import org.akraievoy.base.runner.persist.RunRegistry;
 import org.akraievoy.base.runner.vo.RunInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
+import java.util.SortedMap;
 
 public class ContextLogging extends ContextBase {
   private static final Logger log = LoggerFactory.getLogger(ContextLogging.class);
 
-  public ContextLogging(long runId, RunRegistry dao, ParamSetEnumerator enumerator, RunInfo[] runChain) {
+  public ContextLogging(long runId, RunRegistry dao, ParamSetEnumerator enumerator, SortedMap<Long, RunInfo> runChain) {
     super(enumerator, dao, runId, runChain);
   }
 

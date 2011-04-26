@@ -40,12 +40,13 @@ drop index if exists "hn_conf_query_index_name";
 create index "hn_conf_query_index_name" on "hn_conf"("name");
 
 create table "hn_par" (
-    "uid"         bigint auto_increment(107,17) primary key,
-    "conf_uid"    bigint not null,
-    "name"        varchar(256) not null,
-    "value"       varchar(512) not null,
-    "desc"        varchar(512) not null default "",
-    "internal"    boolean not null default false
+    "uid"               bigint auto_increment(107,17) primary key,
+    "conf_uid"          bigint not null,
+    "name"              varchar(256) not null,
+    "value"             varchar(512) not null,
+    "desc"              varchar(512) not null default '',
+    "strategy"          varchar(32) not null default 'iterate',
+    "chainStrategy"     varchar(32) not null default 'iterate'
 );
 
 alter table "hn_par" add constraint "par_references_conf"

@@ -23,18 +23,16 @@ import algores.holonet.core.events.Event;
 import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.base.runner.api.ContextInjectable;
 import org.akraievoy.base.runner.api.RefLong;
-import org.akraievoy.base.runner.api.StandaloneIterator;
 import org.akraievoy.cnet.gen.vo.EntropySourceRandom;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
  * Runs collection of <code>Events</code> on a given <code>Network</code>,
  * providing data for gathering different metrics data.
  */
-public class Testbench implements Runnable, ContextInjectable, StandaloneIterator {
+public class Testbench implements Runnable, ContextInjectable {
   private Network network = new Network();
 
   private Event initialEvent;
@@ -51,8 +49,6 @@ public class Testbench implements Runnable, ContextInjectable, StandaloneIterato
 
   private EntropySourceRandom initEntropySource = new EntropySourceRandom();
   private EntropySourceRandom runEntropySource = new EntropySourceRandom();
-
-  private List<String> iteratedParamNames = new ArrayList<String>();
 
   public Testbench() {
   }
@@ -99,11 +95,8 @@ public class Testbench implements Runnable, ContextInjectable, StandaloneIterato
   }
 
   public void run() {
-    if (hasInternalIterations()) {
-/*
-  
-			ctx.get()
-*/
+    if (false) {
+      //  FIXME how do we detect previous experiments with pre-generatied networks?
     }
 
     this.initEntropySource.setSeed(initSeedRef.getValue());
@@ -129,27 +122,6 @@ public class Testbench implements Runnable, ContextInjectable, StandaloneIterato
 
   public void setCtx(Context ctx) {
     this.ctx = ctx;
-  }
-
-  public List<String> getIteratedParamNames() {
-    if (!hasInternalIterations()) {
-      return Collections.emptyList();
-    }
-
-    return iteratedParamNames;
-  }
-
-  protected boolean hasInternalIterations() {
-    return ctx.getEnumerator().containsParams(iteratedParamNames);
-  }
-
-  /**
-   * Indicate here which parameters were internal dimensions to overlay genetics.
-   *
-   * @param iteratedParamNames may not be null
-   */
-  public void setIteratedParamNames(List<String> iteratedParamNames) {
-    this.iteratedParamNames = iteratedParamNames;
   }
 }
 

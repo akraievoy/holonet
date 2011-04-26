@@ -18,11 +18,7 @@
 
 package org.akraievoy.base.runner.vo;
 
-import com.google.common.primitives.Longs;
-import org.akraievoy.base.runner.api.ParamSetEnumerator;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.akraievoy.base.runner.domain.ParamSetEnumerator;
 
 public class RunInfo {
   protected final Run run;
@@ -39,19 +35,5 @@ public class RunInfo {
 
   public ParamSetEnumerator getEnumerator() {
     return enumerator;
-  }
-
-  public static long[] getRunIds(RunInfo[] chainedRuns) {
-    final List<Long> chainedRunIds = new ArrayList<Long>(chainedRuns.length);
-
-    for (int i = 0, chainedRunsLength = chainedRuns.length; i < chainedRunsLength; i++) {
-      final long id = chainedRuns[i].getRun().getUid();
-
-      if (!chainedRunIds.contains(id)) {
-        chainedRunIds.add(id);
-      }
-    }
-
-    return Longs.toArray(chainedRunIds);
   }
 }

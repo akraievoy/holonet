@@ -20,7 +20,6 @@ package org.akraievoy.base.runner.domain;
 
 import com.google.common.base.Throwables;
 import org.akraievoy.base.Format;
-import org.akraievoy.base.runner.api.ParamSetEnumerator;
 import org.akraievoy.base.runner.persist.ExperimentRegistry;
 import org.akraievoy.base.runner.persist.RunnerDao;
 import org.akraievoy.base.runner.vo.Experiment;
@@ -29,6 +28,7 @@ import org.akraievoy.base.runner.vo.RunInfo;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.SortedMap;
 
 //	LATER this looks like a listener, not a subclass
 public class ExperimentRunnerLogging extends ExperimentRunnerImpl {
@@ -38,7 +38,11 @@ public class ExperimentRunnerLogging extends ExperimentRunnerImpl {
     super(dao, expDao);
   }
 
-  protected void runIterative(long runId, Experiment exp, ParamSetEnumerator paramSetEnumerator, ParamSetEnumerator widened, RunInfo[] runChain) {
+  protected void runIterative(
+      long runId, Experiment exp,
+      ParamSetEnumerator paramSetEnumerator, ParamSetEnumerator widened,
+      SortedMap<Long, RunInfo> runChain
+  ) {
     log.info("Starting {} with runId = {}", exp.getDesc(), runId);
     startMillis = System.currentTimeMillis();
 
@@ -52,17 +56,16 @@ public class ExperimentRunnerLogging extends ExperimentRunnerImpl {
     }
   }
 
-  protected List<String> runForPoses(long runId, Experiment exp, ParamSetEnumerator widenedPse, ParamSetEnumerator pse, final ContextLogging ctx) {
+  protected void runForPoses(long runId, Experiment exp, ParamSetEnumerator widenedPse, ParamSetEnumerator pse, final ContextLogging ctx) {
     final long paramSetCount = widenedPse.getCount();
     final Runtime runtime = Runtime.getRuntime();
 
-    final List<String> iterated = super.runForPoses(runId, exp, widenedPse, pse, ctx);
-    final long iteratedCount = widenedPse.getCount(iterated);
+    super.runForPoses(runId, exp, widenedPse, pse, ctx);
 
     final long totalMem = runtime.totalMemory();
     final long freeMem = runtime.freeMemory();
     if (paramSetCount > 0) {
-      final long index = widenedPse.getIndex(iterated);
+      final long index = widenedPse.getIndex();
       log.info("Parameter set {} / {}, mem used {} / {}, ETA: {} ",
           new Object[]{
               index, paramSetCount,
@@ -72,8 +75,6 @@ public class ExperimentRunnerLogging extends ExperimentRunnerImpl {
     } else {
       log.info("Mem used {} / {} ", Format.formatMem(totalMem - freeMem), Format.formatMem(totalMem));
     }
-
-    return iterated;
   }
 
   protected void reportUpdateCompleteFailed(SQLException e) {

@@ -23,11 +23,10 @@ import org.akraievoy.base.Format;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 
-public class TimingHarness implements Runnable, ContextInjectable, StandaloneIterator {
+//  LATER rename this and other Harness incantations
+public class TimingHarness implements Runnable, ContextInjectable {
   private static final Logger log = LoggerFactory.getLogger(TimingHarness.class);
 
   protected final int durationReportThresh = 10000;
@@ -77,13 +76,5 @@ public class TimingHarness implements Runnable, ContextInjectable, StandaloneIte
     }
 
     this.ctx = ctx;
-  }
-
-  public List<String> getIteratedParamNames() {
-    if (wrapped instanceof StandaloneIterator) {
-      return ((StandaloneIterator) wrapped).getIteratedParamNames();
-    }
-
-    return Collections.emptyList();
   }
 }

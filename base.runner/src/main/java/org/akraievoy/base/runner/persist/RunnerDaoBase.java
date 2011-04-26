@@ -27,7 +27,7 @@ import com.google.common.io.InputSupplier;
 import org.akraievoy.base.Die;
 import org.akraievoy.base.Format;
 import org.akraievoy.base.Parse;
-import org.akraievoy.base.runner.domain.ParamSetEnumeratorBase;
+import org.akraievoy.base.runner.domain.ParamSetEnumerator;
 import org.akraievoy.base.runner.vo.*;
 import org.akraievoy.db.QueryRegistry;
 import org.akraievoy.db.tx.TransactionContext;
@@ -45,9 +45,7 @@ import java.nio.charset.Charset;
 import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class RunnerDaoBase implements RunnerDao {
   private static final Logger log = LoggerFactory.getLogger(RunnerDaoBase.class);
@@ -367,66 +365,66 @@ public class RunnerDaoBase implements RunnerDao {
   }
 
   public int insertParam(
-      long confUid, String name, String value, boolean internal, String desc
+      long confUid, String name, String value,
+      Parameter.Strategy strategy, Parameter.Strategy chainedStrategy, String desc
   ) throws SQLException {
     final int updateCount = getCtx().getQueryRunner().update(
         getCtx().getConn(),
         q.getQuery("par.insertNew"),
         new Object[]{
-            confUid, name, value, internal, desc
+            confUid, name, value, strategy.toString(), chainedStrategy.toString(), desc
         }
     );
 
     return updateCount;
   }
 
-  public RunInfo[] loadChainedRuns(final List<Long> chainedRunIds) {
-    final List<Long> pending = new ArrayList<Long>(chainedRunIds);
-    final List<Long> loaded = new ArrayList<Long>();
-    final List<RunInfo> result = new ArrayList<RunInfo>();
+  public SortedMap<Long, RunInfo> loadChainedRuns(final List<Long> chainedRunIds) {
+    final TreeSet<Long> pending = new TreeSet<Long>(chainedRunIds);
+    final TreeSet<Long> loaded = new TreeSet<Long>();
+    final SortedMap<Long, RunInfo> result = new TreeMap<Long, RunInfo>();
 
     while (!pending.isEmpty()) {
-      final long chainedRunId = pending.remove(0);
-      if (loaded.contains(chainedRunId)) {
+      final long lastChainedRunId = pending.last();
+      pending.remove(lastChainedRunId);
+      if (loaded.contains(lastChainedRunId)) {
         continue;
       }
 
       try {
-        final Run chainedRun = findRun(chainedRunId);
+        final Run chainedRun = findRun(lastChainedRunId);
 
         if (chainedRun == null) {
-          log.warn("no run for ID {}", chainedRunId);
+          log.warn("no run for ID {}", lastChainedRunId);
           continue;
         }
 
-        final ParamSetEnumeratorBase chainedEnumerator = new ParamSetEnumeratorBase();
+        final ParamSetEnumerator chainedEnumerator = new ParamSetEnumerator();
         final long confId = chainedRun.getConfUid();
 
         boolean valid = true;
         if (confId >= 0) {
           final Conf chainedConf = findConfById(confId);
           if (chainedConf != null) {
-            chainedEnumerator.load(listParametersForConf(chainedConf.getUid()));
+            chainedEnumerator.load(listParametersForConf(chainedConf.getUid()), lastChainedRunId);
           } else {
-            log.warn("failed to load conf {} of run {}", chainedRunId, confId);
+            log.warn("failed to load conf {} of run {}", lastChainedRunId, confId);
             valid = false;
           }
         }
 
         if (valid) {
-          result.add(new RunInfo(chainedEnumerator, chainedRun));
-          loaded.add(chainedRunId);
+          result.put(lastChainedRunId, new RunInfo(chainedEnumerator, chainedRun));
+          loaded.add(lastChainedRunId);
 
-          if (!Strings.isNullOrEmpty(chainedRun.getChain())) {
-            pending.addAll(Arrays.asList(Parse.longs(chainedRun.getChain().split(" "), -1L)));
-          }
+          pending.addAll(chainedRun.getChain());
         }
       } catch (SQLException e) {
-        log.warn("failed to load run {}: {}", chainedRunId, Throwables.getRootCause(e).toString());
+        log.warn("failed to load run {}: {}", lastChainedRunId, Throwables.getRootCause(e).toString());
       }
     }
 
-    return result.toArray(new RunInfo[result.size()]);
+    return result;
   }
 
   public boolean updateRunPsetComplete(long runUid, final long psetComplete) throws SQLException {
@@ -520,29 +518,16 @@ class ConfRowProcessor extends BasicRowProcessor {
 
 class ParameterRowProcessor extends BasicRowProcessor {
   public Object toBean(ResultSet rs, Class type) throws SQLException {
-/*
-    final long uid = rs.getLong("uid");
-    final long confUid = rs.getLong("conf_uid");
-*/
     final String name = rs.getString("name");
     final String valueSpec = rs.getString("value");
-    final boolean internal = rs.getBoolean("internal");
+    final Parameter.Strategy strategy = Parameter.Strategy.fromString(rs.getString("strategy"));
+    final Parameter.Strategy chainedStrategy = Parameter.Strategy.fromString(rs.getString("chainStrategy"));
     final String desc = rs.getString("desc");
 
-    final Parameter param;
-    if (valueSpec.indexOf(ParameterRanged.SEPARATOR_REGEX) > 0) {
-      final ParameterRanged paramRanged = new ParameterRanged(name, valueSpec);
-      paramRanged.setInternal(internal);
-      paramRanged.setDesc(desc);
-
-      param = paramRanged;
-    } else {
-      final ParameterListed paramListed = new ParameterListed(name, valueSpec);
-      paramListed.setInternal(internal);
-      paramListed.setDesc(desc);
-
-      param = paramListed;
-    }
+    final Parameter param = Parameter.create(name, valueSpec);
+    param.setStrategyCurrent(strategy);
+    param.setStrategyChained(chainedStrategy);
+    param.setDesc(desc);
 
     return param;
   }
@@ -565,7 +550,12 @@ class RunRowProcessor extends BasicRowProcessor {
         rs.getLong("psetComplete")
     );
 
-    run.setChain(rs.getString("chain"));
+    final String chainStr = rs.getString("chain");
+    if (!Strings.isNullOrEmpty(chainStr)) {
+      final List<Long> chain = Arrays.asList(Parse.longs(chainStr.split(" "), null));
+      chain.removeAll(Collections.singletonList((Long) null));
+      run.setChain(chain);
+    }
 
     if (loadNames) {
       run.setConfDesc(rs.getString("conf_desc"));

@@ -25,8 +25,8 @@ import org.akraievoy.base.Format;
 import org.akraievoy.base.ref.RefRO;
 import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.base.runner.api.ContextInjectable;
-import org.akraievoy.base.runner.api.ParamSetEnumerator;
-import org.akraievoy.base.runner.api.StandaloneIterator;
+import org.akraievoy.base.runner.api.SkipTrigger;
+import org.akraievoy.base.runner.domain.ParamSetEnumerator;
 import org.akraievoy.cnet.metrics.domain.MetricEDataFiller;
 import org.akraievoy.cnet.metrics.domain.MetricVDataFiller;
 import org.akraievoy.cnet.net.ref.RefEdgeData;
@@ -44,7 +44,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ExportPajek implements Runnable, ContextInjectable, StandaloneIterator {
+public class ExportPajek implements Runnable, ContextInjectable, SkipTrigger {
   private static final Logger log = LoggerFactory.getLogger(ExportPajek.class);
 
   protected final String newLine = "\r\n";
@@ -76,7 +76,7 @@ public class ExportPajek implements Runnable, ContextInjectable, StandaloneItera
 
   protected PrintWriter fw;
 
-  public List<String> getIteratedParamNames() {
+  public List<String> getSkippedParams() {
     return skippedParameters;
   }
 

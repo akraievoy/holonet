@@ -21,11 +21,9 @@ package org.akraievoy.base.runner.api;
 import java.util.List;
 
 /**
- * Some experiments iterate over several parameter dimensions by themselves.
- * <p/>
- * This is the only way to report which parameters your experiment wants to control.
+ * Sometimes your experiment exhaust some of dimensions before 
  * See implementors of this interface for details.
  */
-public interface StandaloneIterator {
-  List<String> getIteratedParamNames();
+public interface SkipTrigger {
+  List<String> getSkippedParams();
 }

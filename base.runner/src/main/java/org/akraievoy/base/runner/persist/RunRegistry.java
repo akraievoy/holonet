@@ -23,6 +23,7 @@ import org.akraievoy.base.runner.vo.RunInfo;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.SortedMap;
 
 public interface RunRegistry {
   long insertRun(long confUid, long[] chain, final long psetCount) throws SQLException;
@@ -37,7 +38,7 @@ public interface RunRegistry {
 
   Run[] listRuns() throws SQLException;
 
-  RunInfo[] loadChainedRuns(List<Long> chainedRunIds);
+  SortedMap<Long, RunInfo> loadChainedRuns(List<Long> chainedRunIds);
 
   boolean updateRunPsetComplete(long runId, final long psetComplete) throws SQLException;
 

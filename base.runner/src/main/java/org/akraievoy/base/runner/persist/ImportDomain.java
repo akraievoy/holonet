@@ -18,6 +18,8 @@
 
 package org.akraievoy.base.runner.persist;
 
+import org.akraievoy.base.runner.vo.Parameter;
+
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -63,10 +65,14 @@ public class ImportDomain {
     private String name;
     private String desc;
     private String valueSpec;
-    private boolean internal = false;
+    private Parameter.Strategy strategy = Parameter.Strategy.ITERATE;
+    private Parameter.Strategy chainedStrategy = Parameter.Strategy.ITERATE;
 
-    public boolean isInternal() { return internal; }
-    public void setInternal(boolean internal) { this.internal = internal; }
+    public Parameter.Strategy getStrategy() { return strategy; }
+    public void setStrategy(Parameter.Strategy strategy) { this.strategy = strategy; }
+
+    public Parameter.Strategy getChainedStrategy() { return chainedStrategy; }
+    public void setChainedStrategy(Parameter.Strategy chainedStrategy) { this.chainedStrategy = chainedStrategy; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

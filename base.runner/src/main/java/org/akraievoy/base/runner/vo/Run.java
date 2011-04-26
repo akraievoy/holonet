@@ -18,6 +18,8 @@
 
 package org.akraievoy.base.runner.vo;
 
+import java.util.List;
+
 public interface Run {
   boolean isComplete();
 
@@ -35,7 +37,7 @@ public interface Run {
 
   String getExpDesc();
 
-  String getChain();
+  List<Long> getChain();
 
   long getPsetComplete();
 }

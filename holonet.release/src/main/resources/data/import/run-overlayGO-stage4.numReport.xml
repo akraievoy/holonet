@@ -19,11 +19,11 @@
 
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:hn="https://github.com/akraievoy/holonet/runner"
+       xmlns:hn="https://github.com/akraievoy/holonet/runner/1.3.2"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-           https://github.com/akraievoy/holonet/runner
-           https://github.com/akraievoy/holonet/raw/master/ext/holonet.runner-1.3.1.xsd"
+           https://github.com/akraievoy/holonet/runner/1.3.2
+           https://github.com/akraievoy/holonet/raw/master/ext/holonet.runner-1.3.2.xsd"
        default-init-method="start"
        default-destroy-method="stop">
   <hn:Experiment
@@ -45,17 +45,16 @@
                 value="state.similarityMean,state.fitnessDev,state.mutate,state.crossover,state.minElemFitness"/>
       <hn:Param name="main.targetFile" value="go_genState.csv"/>
     </hn:Config>
+    <hn:Config name="composites" description="Mutators/Breeders/Conditions Pass/Use Rates">
+      <hn:Param name="main.keys"
+                value="mutators.0,mutators.1,mutators.success.0,mutators.success.1,mutators.uses.0,mutators.uses.1,breeders.0,breeders.1,breeders.success.0,breeders.success.1,breeders.uses.0,breeders.uses.1"/>
+      <hn:Param name="main.targetFile" value="go_composites.csv"/>
+    </hn:Config>
     <hn:Config name="fitness" description="Fitness">
       <hn:Param name="main.keys" value="specimen.fitness"/>
       <hn:Param name="main.axisParameters" value="ovlGenOpt.generation,ovlGenOpt.specimenIndex"/>
       <hn:Param name="main.skippedParameters" value=""/>
       <hn:Param name="main.targetFile" value="go_fitness.csv"/>
-    </hn:Config>
-    <hn:Config name="composites" description="Mutators/Breeders/Conditions Pass/Use Rates">
-      <hn:Param name="main.keys"
-                value="mutators.0,mutators.1,mutators.success.0,mutators.success.1,mutators.uses.0,mutators.uses.1,breeders.0,breeders.1,breeders.success.0,breeders.success.1,breeders.uses.0,breeders.uses.1"/>
-      <hn:Param name="main.skippedParameters" value="ovlGenOpt.specimenIndex"/>
-      <hn:Param name="main.targetFile" value="go_composites.csv"/>
     </hn:Config>
   </hn:Experiment>
 

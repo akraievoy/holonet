@@ -23,6 +23,7 @@ import com.google.common.base.Throwables;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 import org.akraievoy.base.runner.vo.Experiment;
+import org.akraievoy.base.runner.vo.Parameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
@@ -48,23 +49,15 @@ public class ImportRunnable implements Runnable {
   protected final RunnerDao dao;
 
   protected String basePath = "data/import";
-  protected String registryResource = "registry.properties";
   protected Runnable afterImport = null;
+  private static final String CONFIG_ID_DEFAULT = "default";
 
   public ImportRunnable(RunnerDao dao) {
     this.dao = dao;
   }
 
-  public void setRegistryResource(String registryResource) {
-    this.registryResource = registryResource;
-  }
-
   public void setBasePath(String basePath) {
     this.basePath = basePath;
-  }
-
-  public Runnable getAfterImport() {
-    return afterImport;
   }
 
   public void setAfterImport(Runnable afterImport) {
@@ -128,7 +121,8 @@ public class ImportRunnable implements Runnable {
 
           for (ImportDomain.ParamSpec paramSpec : config.getParamSpecs().values()) {
             dao.insertParam(
-                confUid, paramSpec.getName(), paramSpec.getValueSpec(), paramSpec.isInternal(), paramSpec.getDesc()
+                confUid, paramSpec.getName(), paramSpec.getValueSpec(),
+                paramSpec.getStrategy(), paramSpec.getChainedStrategy(), paramSpec.getDesc()
             );
           }
         } catch (SQLException e) {
@@ -139,14 +133,14 @@ public class ImportRunnable implements Runnable {
   }
 
   protected void propagateDefault(ImportDomain.Experiment meta) {
-    final ImportDomain.Config defaultConf = meta.getConfigs().get("default");
+    final ImportDomain.Config defaultConf = meta.getConfigs().get(CONFIG_ID_DEFAULT);
     if (defaultConf == null) {
       return;
     }
 
     final SortedMap<String, ImportDomain.ParamSpec> temp = new TreeMap<String, ImportDomain.ParamSpec>();
     for (ImportDomain.Config config : meta.getConfigs().values()) {
-      if ("default".equalsIgnoreCase(config.getName())) {
+      if (CONFIG_ID_DEFAULT.equalsIgnoreCase(config.getName())) {
         continue;
       }
 
@@ -201,7 +195,8 @@ public class ImportRunnable implements Runnable {
             paramSpec.setName(name);
             final String desc = attributes.getValue("description");
             paramSpec.setDesc(desc == null ? "" : desc);  //  this param is not required, while DB yells at nulls...
-            paramSpec.setInternal(Boolean.valueOf(attributes.getValue("internal")));
+            paramSpec.setStrategy(Parameter.Strategy.fromString(attributes.getValue("strategy")));
+            paramSpec.setChainedStrategy(Parameter.Strategy.fromString(attributes.getValue("chainedStrategy")));
             paramSpec.setValueSpec(attributes.getValue("value"));
 
             conf.getParamSpecs().put(name, paramSpec);

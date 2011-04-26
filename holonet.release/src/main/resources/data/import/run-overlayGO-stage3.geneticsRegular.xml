@@ -19,19 +19,19 @@
 
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:hn="https://github.com/akraievoy/holonet/runner"
+       xmlns:hn="https://github.com/akraievoy/holonet/runner/1.3.2"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-           https://github.com/akraievoy/holonet/runner
-           https://github.com/akraievoy/holonet/raw/master/ext/holonet.runner-1.3.1.xsd"
+           https://github.com/akraievoy/holonet/runner/1.3.2
+           https://github.com/akraievoy/holonet/raw/master/ext/holonet.runner-1.3.2.xsd"
        default-init-method="start"
        default-destroy-method="stop">
   <hn:Experiment
       id="overlayGO-3-geneticsRegular" depends=""
       description="Overlay GO [stage3] Overlay Genetics with Regularity Constraint">
     <hn:Config name="default" description="Default (101 generations / 91 specimens)">
-      <hn:Param name="ovlGenOpt.generation" value="0-100" internal="true"/>
-      <hn:Param name="ovlGenOpt.specimenIndex" value="0-90" internal="true"/>
+      <hn:Param name="ovlGenOpt.generation" value="0-100" chainedStrategy="use_last" />
+      <hn:Param name="ovlGenOpt.specimenIndex" value="0-90" chainedStrategy="use_first" strategy="use_first" />
       <hn:Param name="geneticState.maxCrossover" value="0.25"/>
       <hn:Param name="geneticState.maxElemFitPow" value="3"/>
       <hn:Param name="geneticState.maxMutation" value="0.05"/>

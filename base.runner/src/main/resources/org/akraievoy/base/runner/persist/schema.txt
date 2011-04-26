@@ -1,12 +1,12 @@
-| hn_info | hn_exp[erim] | hn_conf[ig] | hn_par[am] | hn_run         | hn_ctx    |
-| ======= | ============ | =========== | ========== | ============== | ========= |
-| * path  | * uid        | * uid       | * uid      | * uid          | * uid     |
-|   val   |   id         | > exp_uid   | > conf_uid | > conf_uid     | > run_uid |
-|         |   path       |   name      |   name     |   millis       |   millis  |
-|         |   depends    |   desc      |   value    |   chain        |   psetI(*)|
-|         |   desc       |             |   internal |   psetCount(*) |   path    |
-|         |   millis     |             |   desc     |   psetComplete |   type    |
-|         | B springXml  |             |            |                |   val     |
-|         |              |             |            |                | B content |
+| hn_info | hn_exp[erim] | hn_conf[ig] | hn_par[am]      | hn_run         | hn_ctx    |
+| ======= | ============ | =========== | =============== | ============== | ========= |
+| * path  | * uid        | * uid       | * uid           | * uid          | * uid     |
+|   val   |   id         | > exp_uid   | > conf_uid      | > conf_uid     | > run_uid |
+|         |   path       |   name      |   name          |   millis       |   millis  |
+|         |   depends    |   desc      |   value         |   chain        |   psetI(*)|
+|         |   desc       |             |   strategy      |   psetCount(*) |   path    |
+|         |   millis     |             |   chainStrategy |   psetComplete |   type    |
+|         | B springXml  |             |   desc          |                |   val     |
+|         |              |             |                 |                | B content |
 
 * pset = parameter set

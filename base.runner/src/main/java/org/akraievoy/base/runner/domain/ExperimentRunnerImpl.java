@@ -20,10 +20,9 @@ package org.akraievoy.base.runner.domain;
 
 import com.google.common.base.Throwables;
 import org.akraievoy.base.Die;
-import org.akraievoy.base.Parse;
+import org.akraievoy.base.ObjArrays;
 import org.akraievoy.base.runner.api.ContextInjectable;
-import org.akraievoy.base.runner.api.ParamSetEnumerator;
-import org.akraievoy.base.runner.api.StandaloneIterator;
+
 import org.akraievoy.base.runner.domain.spring.StringXmlApplicationContext;
 import org.akraievoy.base.runner.persist.ExperimentRegistry;
 import org.akraievoy.base.runner.persist.RunnerDao;
@@ -38,9 +37,8 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 
 public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContextAware {
   protected ConfigurableApplicationContext applicationContext;
@@ -55,8 +53,8 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     this.expDao = expDao;
   }
 
-  public void run(Experiment info, Conf conf, RunInfo[] chainedRuns) {
-    final ParamSetEnumeratorBase rootEnumerator = createEnumerator(conf);
+  public void run(Experiment info, Conf conf, SortedMap<Long, RunInfo> chainedRuns) {
+    final ParamSetEnumerator rootEnumerator = createEnumerator(conf);
     if (!validateRunChain(rootEnumerator, chainedRuns)) {
       return;
     }
@@ -64,7 +62,8 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
 
     long runId;
     try {
-      runId = dao.insertRun(conf.getUid(), RunInfo.getRunIds(chainedRuns), widened.getCount());
+      final long[] chainedRunIds = ObjArrays.unbox(chainedRuns.keySet().toArray(new Long[chainedRuns.size()]));
+      runId = dao.insertRun(conf.getUid(), chainedRunIds, widened.getCount());
     } catch (SQLException e) {
       throw Throwables.propagate(e);
     }
@@ -73,12 +72,12 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     runIterative(runId, info, rootEnumerator, widened, chainedRuns);
   }
 
-  protected ParamSetEnumeratorBase createEnumerator(Conf conf) {
-    final ParamSetEnumeratorBase paramSetEnumerator = new ParamSetEnumeratorBase();
+  protected ParamSetEnumerator createEnumerator(Conf conf) {
+    final ParamSetEnumerator paramSetEnumerator = new ParamSetEnumerator();
 
     if (conf != null) {
       try {
-        paramSetEnumerator.load(dao.listParametersForConf(conf.getUid()));
+        paramSetEnumerator.load(dao.listParametersForConf(conf.getUid()), Long.MAX_VALUE);
       } catch (SQLException e) {
         throw new RuntimeException(e);
       }
@@ -87,16 +86,19 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     return paramSetEnumerator;
   }
 
-  protected void runIterative(long runId, Experiment exp, ParamSetEnumerator root, ParamSetEnumerator widened, RunInfo[] runChain) {
+  protected void runIterative(
+      long runId, Experiment exp,
+      ParamSetEnumerator root, ParamSetEnumerator widened,
+      SortedMap<Long, RunInfo> runChain
+  ) {
     final ContextLogging ctx = new ContextLogging(runId, dao, widened, runChain);
 
-    List<String> iteratedParamNames;
     do {
-      iteratedParamNames = runForPoses(runId, exp, widened, root, ctx);
+      runForPoses(runId, exp, widened, root, ctx);
 
-      updateComplete(runId, widened.getIndex(iteratedParamNames));
+      updateComplete(runId, widened.getIndex());
       listener.onPsetAdvance(runId, widened.getIndex());
-    } while (widened.increment(iteratedParamNames));
+    } while (widened.increment());
   }
 
   protected void updateComplete(long runId, final long index) {
@@ -111,7 +113,11 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     //	nothing to do here
   }
 
-  protected List<String> runForPoses(long runId, Experiment exp, ParamSetEnumerator widened, ParamSetEnumerator root, final ContextLogging ctx) {
+  protected void runForPoses(
+      long runId, Experiment exp,
+      ParamSetEnumerator widened, ParamSetEnumerator root,
+      ContextLogging ctx
+  ) {
     final ConfigurableApplicationContext context = new StringXmlApplicationContext(
         exp.getSpringXml(), false, applicationContext
     );
@@ -134,12 +140,6 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
       Die.ifNull("main", main);
 
       main.run();
-
-      if (main instanceof StandaloneIterator) {
-        return ((StandaloneIterator) main).getIteratedParamNames();
-      } else {
-        return Collections.emptyList();
-      }
     } finally {
       context.close();
     }
@@ -149,25 +149,26 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     this.applicationContext = (ConfigurableApplicationContext) applicationContext;
   }
 
-  protected boolean validateRunChain(ParamSetEnumeratorBase root, RunInfo[] chainedRuns) {
-    for (final RunInfo run : chainedRuns) {
-      final Parameter collision = root.findCollision((ParamSetEnumeratorBase) run.getEnumerator());
+  protected boolean validateRunChain(ParamSetEnumerator root, SortedMap<Long, RunInfo> chainedRuns) {
+    for (final RunInfo run : chainedRuns.values()) {
+      final Parameter collision = root.findCollision(run.getEnumerator());
       if (collision != null) {
         reportRootCollision(run, collision);
         return false;
       }
     }
 
-    for (int i = 0, chainedRunsLength = chainedRuns.length; i < chainedRunsLength; i++) {
-      final RunInfo runI = chainedRuns[i];
-      final ParamSetEnumeratorBase enumI = (ParamSetEnumeratorBase) runI.getEnumerator();
-      for (int j = 0; j < i; j++) {
-        final RunInfo runJ = chainedRuns[j];
-        final ParamSetEnumeratorBase enumJ = (ParamSetEnumeratorBase) runJ.getEnumerator();
-        final Parameter collision = enumI.findCollision(enumJ);
+    for (long idI : chainedRuns.keySet()) {
+      final ParamSetEnumerator enumI = chainedRuns.get(idI).getEnumerator();
+      for (long idJ : chainedRuns.keySet()) {
+        if (idI <= idJ) {
+          continue;
+        }
+        final ParamSetEnumerator enumJ = chainedRuns.get(idJ).getEnumerator();
 
+        final Parameter collision = enumI.findCollision(enumJ);
         if (collision != null) {
-          reportChainedCollision(runI, runJ, collision);
+          reportChainedCollision(chainedRuns.get(idI), chainedRuns.get(idJ), collision);
           return false;
         }
       }
@@ -184,27 +185,21 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     //	nothing to do here
   }
 
-  protected ParamSetEnumerator widen(ParamSetEnumerator root, RunInfo[] runChain) {
-    final ParamSetEnumerator widenedPse = root.dupe(true);
+  protected ParamSetEnumerator widen(ParamSetEnumerator root, SortedMap<Long, RunInfo> runChain) {
+    final ParamSetEnumerator current = root.dupe(true);
 
-    for (RunInfo chained : runChain) {
-      widenedPse.widen(chained.getEnumerator());
+    for (RunInfo chained : runChain.values()) {
+      current.widen(chained.getEnumerator());
     }
 
     //	we need to recreate same parameter spaces for all chained experiments
-    for (RunInfo widenee : runChain) {
-      final Long[] chainedRefs = Parse.longs(widenee.getRun().getChain().split(" "), -1L);
-      for (Long chainedRef : chainedRefs) {
-        for (RunInfo widener : runChain) {
-          if (widener.getRun().getUid() == chainedRef) {
-            widenee.getEnumerator().widen(widener.getEnumerator());
-            break;
-          }
-        }
+    for (RunInfo widenee : runChain.values()) {
+      for (Long chainedRef : widenee.getRun().getChain()) {
+        widenee.getEnumerator().widen(runChain.get(chainedRef).getEnumerator());
       }
     }
 
-    return widenedPse;
+    return current;
   }
 
   public void setListener(RunStateListener listener) {

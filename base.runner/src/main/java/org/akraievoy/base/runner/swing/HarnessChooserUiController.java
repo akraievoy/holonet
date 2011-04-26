@@ -40,9 +40,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 
 public class HarnessChooserUiController implements Startable {
@@ -289,18 +287,18 @@ public class HarnessChooserUiController implements Startable {
       }
 
       onHarnessRunningChange(true);
-      executor.execute(new RunHarnessTask(selectedExperiment, conf, getChainedRuns()));
+      executor.execute(new RunExperimentTask(selectedExperiment, conf, getChainedRuns()));
 
       harnessChooserFrame.getTabPane().setSelectedIndex(2);
     }
 
-    protected RunInfo[] getChainedRuns() {
+    protected SortedMap<Long, RunInfo> getChainedRuns() {
       final String chainStr = harnessChooserFrame.getChainTextField().getText();
 
       final String safeChainStr = chainStr.replaceAll("[^ 0-9]+", "").replaceAll("\\s+", " ").trim();
 
       if (safeChainStr.length() == 0) {
-        return new RunInfo[0];
+        return new TreeMap<Long, RunInfo>();
       }
 
       harnessChooserFrame.getChainTextField().setText(safeChainStr);
@@ -335,12 +333,12 @@ public class HarnessChooserUiController implements Startable {
     }
   }
 
-  class RunHarnessTask implements Runnable {
+  class RunExperimentTask implements Runnable {
     protected final Experiment info;
     protected final Conf conf;
-    protected final RunInfo[] chainedRuns;
+    protected final SortedMap<Long, RunInfo> chainedRuns;
 
-    RunHarnessTask(Experiment info, Conf conf, RunInfo[] chainedRuns) {
+    RunExperimentTask(Experiment info, Conf conf, SortedMap<Long, RunInfo> chainedRuns) {
       this.info = info;
       this.conf = conf;
       this.chainedRuns = chainedRuns;

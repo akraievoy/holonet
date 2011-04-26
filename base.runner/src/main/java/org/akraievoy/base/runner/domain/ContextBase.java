@@ -19,7 +19,6 @@
 package org.akraievoy.base.runner.domain;
 
 import org.akraievoy.base.runner.api.Context;
-import org.akraievoy.base.runner.api.ParamSetEnumerator;
 import org.akraievoy.base.runner.persist.RunRegistry;
 import org.akraievoy.base.runner.vo.Parameter;
 import org.akraievoy.base.runner.vo.RunInfo;
@@ -27,15 +26,16 @@ import org.akraievoy.base.runner.vo.RunInfo;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedMap;
 
 public class ContextBase implements Context {
   protected final ParamSetEnumerator widenedPse;
   protected final RunRegistry dao;
   protected final long runId;
 
-  protected final RunInfo[] runChain;
+  protected final SortedMap<Long, RunInfo> runChain;
 
-  public ContextBase(ParamSetEnumerator widenedPse, RunRegistry dao, long runId, RunInfo[] runChain) {
+  public ContextBase(ParamSetEnumerator widenedPse, RunRegistry dao, long runId, SortedMap<Long, RunInfo> runChain) {
     this.widenedPse = widenedPse;
     this.dao = dao;
     this.runId = runId;
@@ -71,7 +71,7 @@ public class ContextBase implements Context {
         return true;
       }
 
-      for (RunInfo chained : runChain) {
+      for (RunInfo chained : runChain.values()) {
         final long translated = widenedPse.translateIndex(chained.getEnumerator());
 
         final boolean chainedValue = dao.findCtxAttrNoLoad(
@@ -99,7 +99,7 @@ public class ContextBase implements Context {
         return value;
       }
 
-      for (RunInfo chained : runChain) {
+      for (RunInfo chained : runChain.values()) {
         final long translated = widenedPse.translateIndex(chained.getEnumerator());
 
         final Object chainedValue = dao.findCtxAttr(
@@ -152,7 +152,7 @@ public class ContextBase implements Context {
 
     try {
       paths.addAll(dao.listCtxPaths(runId));
-      for (RunInfo chain : runChain) {
+      for (RunInfo chain : runChain.values()) {
         paths.addAll(dao.listCtxPaths(chain.getRun().getUid()));
       }
 

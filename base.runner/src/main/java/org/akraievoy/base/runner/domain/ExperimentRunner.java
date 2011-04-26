@@ -24,10 +24,12 @@ import org.akraievoy.base.runner.vo.RunInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.SortedMap;
+
 public interface ExperimentRunner {
   Logger log = LoggerFactory.getLogger(ExperimentRunner.class);
 
-  void run(Experiment info, Conf conf, RunInfo[] chainedRuns);
+  void run(Experiment info, Conf conf, SortedMap<Long, RunInfo> chainedRuns);
 
   void setListener(RunStateListener listener);
 }

@@ -18,20 +18,146 @@
 
 package org.akraievoy.base.runner.vo;
 
-public interface Parameter {
-  String getName();
+import com.google.common.base.Strings;
+import org.akraievoy.base.Die;
+import org.akraievoy.base.ObjArrays;
 
-  boolean isInternal();
+import javax.annotation.Nullable;
+import java.util.Arrays;
 
-  String getDesc();
+public class Parameter {
+  public static enum Strategy {
+    /**
+     * Use in current and propagate parameter to chained experiments.
+     */
+    ITERATE,
+    /**
+     * Use only the first value of parameter in current and chained experiments.
+     */
+    USE_FIRST,
+    /**
+     * Use only the last value of parameter in current and chained experiments.
+     */
+    USE_LAST;
 
-  long getValueCount();
+    public static Strategy fromString(String str) {
+      return Strings.isNullOrEmpty(str) ? ITERATE : valueOf(str.toUpperCase());
+    }
+  }
 
-  String getValue(long index);
+  private static final String TOKEN_LIST = ";";
+  private static final String TOKEN_RANGE = "-";
 
-  boolean hasSameValues(Parameter chainedParam);
+  private static final String PARAM_VALUE_STRATEGY = "*strategy*";
 
-  void validatePos(long pos);
+  private final String name;
+  private final String[] values;
+  private String desc;
+  private Strategy strategyCurrent = Strategy.ITERATE;
+  private Strategy strategyChained = Strategy.ITERATE;
+  private long runUid = 0;
+  private boolean chained = false;
 
-  String[] getValues();
+  protected Parameter(final String newName, final String[] newValues) {
+    name = newName;
+    values = newValues.clone();
+  }
+
+  public String getName() { return name; }
+
+  public Strategy getStrategyCurrent() { return strategyCurrent; }
+  public void setStrategyCurrent(Strategy strategyCurrent) { this.strategyCurrent = strategyCurrent; }
+
+  public Strategy getStrategyChained() { return strategyChained; }
+  public void setStrategyChained(Strategy strategyChained) { this.strategyChained = strategyChained; }
+
+  public String getDesc() { return desc; }
+  public void setDesc(String desc) { this.desc = desc; }
+
+  public String[] getValues() { return values.clone(); }
+  public long getValueCount() { return values.length; }
+
+  public boolean isChained() { return chained; }
+  public void setChained(boolean chained) { this.chained = chained; }
+
+  public long getRunUid() { return runUid; }
+  public void setRunUid(long runUid) { this.runUid = runUid; }
+
+  public Parameter copy() {
+    final Parameter copy = new Parameter(name, values);
+
+    copy.strategyCurrent = strategyCurrent;
+    copy.strategyChained = strategyChained;
+    copy.desc = desc;
+    copy.chained = chained;
+    copy.runUid = runUid;
+
+    return copy;
+  }
+  public String getValue(final long index) {
+    validatePos(index);
+    return values[(int) index];
+  }
+
+  public boolean sameValues(Parameter param) {
+    return this == param || param != null && Arrays.equals(getValues(), param.getValues());
+  }
+
+  public void validatePos(long pos) {
+    Die.ifTrue("pos < 0", pos < 0);
+    Die.ifTrue("pos >= valueCount", pos >= getValueCount());
+  }
+
+  public String toString() {
+    if (values == null) {
+      return String.valueOf(name);
+    }
+
+    return String.valueOf(name) + "[" + getValueCount() + "] {" + Arrays.deepToString(values) + "}";
+  }
+
+  public static Parameter create(final String name, final String valueSpec) {
+    final String[] valuesArr;
+
+    if (valueSpec.indexOf(TOKEN_RANGE) <= 0) {
+      valuesArr = valueSpec.split(TOKEN_LIST);
+    } else {
+      final String[] valueSpecArr = valueSpec.split(TOKEN_RANGE);
+      Die.ifFalse("values.length == 2", valueSpecArr.length == 2);
+
+      long valueStart = Long.parseLong(valueSpecArr[0]);
+      long valueEnd = Long.parseLong(valueSpecArr[1]);
+
+      final long valueCount = Math.abs(valueEnd - valueStart) + 1;
+      Die.ifTrue("valueCount > Integer.MAX_VALUE", valueCount > Integer.MAX_VALUE);
+      valuesArr = new String[(int) valueCount];
+
+      for (int i = 0; i < valueCount; i++) {
+        valuesArr[i] = String.valueOf(valueStart + (valueEnd >= valueStart ? i : -i));
+      }
+    }
+
+    return new Parameter(name, valuesArr);
+  }
+
+  public boolean isStrategy() {
+    return ObjArrays.contains(getValues(), PARAM_VALUE_STRATEGY);
+  }
+
+  public void applyStrategy(@Nullable Parameter strategy) {
+    if (strategy == null) {
+      return;
+    }
+
+    setStrategyCurrent(strategy.getStrategyCurrent());
+    setStrategyChained(strategy.getStrategyChained());
+  }
+
+  public Strategy getStrategy() {
+    return chained ? strategyChained : strategyCurrent;
+  }
+
+  public long getInitialPos() {
+    return getStrategy() == Strategy.USE_LAST ? getValueCount() - 1 : 0L;
+  }
 }

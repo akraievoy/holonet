@@ -18,6 +18,9 @@
 
 package org.akraievoy.base.runner.vo;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class RunBean implements Run {
   protected final long uid;
   protected final long expUid;
@@ -28,7 +31,7 @@ public class RunBean implements Run {
 
   protected String expDesc;
   protected String confDesc;
-  protected String chain = "";  //  TODO morph to long[]
+  protected List<Long> chain = new ArrayList<Long>();
 
   public RunBean(long uid, long expUid, long confUid, long millis, long psetCount, long psetComplete) {
     this.confUid = confUid;
@@ -79,12 +82,13 @@ public class RunBean implements Run {
     return expDesc;
   }
 
-  public String getChain() {
+  public List<Long> getChain() {
     return chain;
   }
 
-  public void setChain(String chain) {
-    this.chain = chain;
+  public void setChain(List<Long> chain) {
+    this.chain.clear();
+    this.chain.addAll(chain);
   }
 
   public void setExpDesc(String expDesc) {

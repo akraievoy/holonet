@@ -18,10 +18,7 @@
 
 package org.akraievoy.base.runner.persist;
 
-import org.akraievoy.base.runner.vo.Conf;
-import org.akraievoy.base.runner.vo.Experiment;
-import org.akraievoy.base.runner.vo.IdName;
-import org.akraievoy.base.runner.vo.Parameter;
+import org.akraievoy.base.runner.vo.*;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -45,6 +42,6 @@ public interface ExperimentRegistry {
   List<Parameter> listParametersForConf(long confUid) throws SQLException;
 
   int insertParam(
-      long confUid, String name, String value, boolean internal, String desc
+      long confUid, String name, String value, Parameter.Strategy strategy, Parameter.Strategy chainedStrategy, String desc
   ) throws SQLException;
 }

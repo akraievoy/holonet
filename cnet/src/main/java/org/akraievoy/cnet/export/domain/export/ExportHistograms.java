@@ -21,6 +21,7 @@ package org.akraievoy.cnet.export.domain.export;
 import com.google.common.base.Throwables;
 import com.google.common.io.Closeables;
 import org.akraievoy.base.runner.api.*;
+import org.akraievoy.base.runner.domain.ParamSetEnumerator;
 import org.akraievoy.cnet.metrics.vo.Histogram;
 import org.akraievoy.cnet.metrics.vo.Stat;
 import org.slf4j.Logger;
@@ -33,7 +34,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ExportHistograms implements Runnable, ContextInjectable, StandaloneIterator {
+public class ExportHistograms implements Runnable, ContextInjectable {
   private static final Logger log = LoggerFactory.getLogger(ExportHistograms.class);
 
   protected Context ctx;
@@ -53,10 +54,6 @@ public class ExportHistograms implements Runnable, ContextInjectable, Standalone
   protected PrintWriter fw;
   protected int minStripes = 30;
   protected double minStripeWidth = 0.5;
-
-  public List<String> getIteratedParamNames() {
-    return skippedParameters;
-  }
 
   public void setCtx(Context ctx) {
     this.ctx = ctx;

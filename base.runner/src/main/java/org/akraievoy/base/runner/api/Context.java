@@ -18,6 +18,8 @@
 
 package org.akraievoy.base.runner.api;
 
+import org.akraievoy.base.runner.domain.ParamSetEnumerator;
+
 public interface Context {
   <E> E get(String key, Class<E> attrType, final boolean cache);
 
