@@ -113,8 +113,7 @@ public class Db implements Startable {
       ScriptReader scriptReader = new ScriptReader(reader);
       Statement statement = connection.createStatement();
 
-      String value = nextSql = scriptReader.readStatement();
-      while (!Strings.isNullOrEmpty(value)) {
+      while (!Strings.isNullOrEmpty(nextSql = scriptReader.readStatement())) {
         statement.execute(nextSql);
         statementsRun++;
       }
