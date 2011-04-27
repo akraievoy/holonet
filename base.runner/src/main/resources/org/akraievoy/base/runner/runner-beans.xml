@@ -58,21 +58,21 @@
   </bean>
 
   <bean class="org.akraievoy.base.Executors" id="executor" factory-method="scheduledExecutor">
-    <constructor-arg type="java.lang.String" value="Harness Runner"/>
+    <constructor-arg type="java.lang.String" value="Experiment Runner"/>
     <constructor-arg type="int" value="2"/>
     <constructor-arg type="boolean" value="true"/>
   </bean>
 
-  <bean class="org.akraievoy.base.runner.persist.ImportRunnable" id="harnessImporter">
+  <bean class="org.akraievoy.base.runner.persist.ImportRunnable" id="experimentImporter">
     <constructor-arg ref="runnerDao"/>
   </bean>
 
-  <bean class="org.akraievoy.base.runner.domain.ExperimentRunnerLogging" id="harnessRunner">
+  <bean class="org.akraievoy.base.runner.domain.ExperimentRunnerLogging" id="experimentRunner">
     <constructor-arg ref="runnerDao"/>
     <constructor-arg ref="runnerDao"/>
   </bean>
 
-  <bean class="org.akraievoy.base.runner.swing.ExperimentTableModel" id="harnessTableModel">
+  <bean class="org.akraievoy.base.runner.swing.ExperimentTableModel" id="experimentsTableModel">
     <constructor-arg ref="runnerDao"/>
   </bean>
 
@@ -80,21 +80,21 @@
     <constructor-arg ref="runnerDao"/>
   </bean>
 
-  <bean class="org.akraievoy.base.runner.swing.HarnessChooserPanel" id="harnessChooserPanel"/>
-  <bean class="org.akraievoy.base.runner.swing.HarnessChooserFrame" id="harnessChooserFrame">
-    <constructor-arg ref="harnessChooserPanel"/>
+  <bean class="org.akraievoy.base.runner.swing.ExperimentChooserPanel" id="experimentChooserPanel"/>
+  <bean class="org.akraievoy.base.runner.swing.ExperimentChooserFrame" id="experimentChooserFrame">
+    <constructor-arg ref="experimentChooserPanel"/>
   </bean>
 
   <bean class="org.akraievoy.base.runner.ContainerStopperImpl" id="containerStopper"/>
 
-  <bean class="org.akraievoy.base.runner.swing.HarnessChooserUiController" id="uiController">
-    <constructor-arg ref="harnessChooserFrame"/>
+  <bean class="org.akraievoy.base.runner.swing.ExperimentChooserUiController" id="uiController">
+    <constructor-arg ref="experimentChooserFrame"/>
     <constructor-arg ref="containerStopper"/>
-    <constructor-arg ref="harnessTableModel"/>
+    <constructor-arg ref="experimentsTableModel"/>
     <constructor-arg ref="runTableModel"/>
     <constructor-arg ref="executor"/>
-    <constructor-arg ref="harnessRunner"/>
+    <constructor-arg ref="experimentRunner"/>
     <constructor-arg ref="runnerDao"/>
-    <constructor-arg ref="harnessImporter"/>
+    <constructor-arg ref="experimentImporter"/>
   </bean>
 </beans>

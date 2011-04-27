@@ -66,13 +66,13 @@
   <bean class="org.akraievoy.base.runner.domain.RunnableComposite" id="main">
     <property name="group">
       <list>
-        <bean class="org.akraievoy.base.runner.api.TimingHarness">
+        <bean class="org.akraievoy.base.runner.api.ExperimentTiming">
           <constructor-arg ref="locationGenerator"/>
 
           <property name="durationRef" ref="location_time_millis"/>
           <property name="durationTextRef" ref="location_time_text"/>
         </bean>
-        <bean class="org.akraievoy.base.runner.api.TimingHarness">
+        <bean class="org.akraievoy.base.runner.api.ExperimentTiming">
           <constructor-arg ref="images"/>
 
           <property name="durationRef" ref="images_time_millis"/>

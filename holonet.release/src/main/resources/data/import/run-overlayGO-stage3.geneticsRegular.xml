@@ -97,7 +97,7 @@
     <property name="requestSource" ref="ref_overlay_edata_requests"/>
   </bean>
 
-  <bean class="org.akraievoy.cnet.opt.domain.HarnessGeneticOpt" id="ovlGenOpt">
+  <bean class="org.akraievoy.cnet.opt.domain.ExperimentGeneticOpt" id="ovlGenOpt">
     <constructor-arg ref="entropySourceGenetics"/>
     <constructor-arg ref="geneticStrategy"/>
 
@@ -160,7 +160,7 @@
     <property name="specimenIndexParamName" value="ovlGenOpt.specimenIndex"/>
   </bean>
 
-  <bean class="org.akraievoy.base.runner.api.TimingHarness" id="main">
+  <bean class="org.akraievoy.base.runner.api.ExperimentTiming" id="main">
     <constructor-arg ref="ovlGenOpt"/>
 
     <property name="durationTextRef" ref="main_duration_text"/>

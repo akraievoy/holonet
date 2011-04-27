@@ -43,10 +43,10 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 
-public class HarnessChooserUiController implements Startable {
-  private static final org.slf4j.Logger log = LoggerFactory.getLogger(HarnessChooserUiController.class);
+public class ExperimentChooserUiController implements Startable {
+  private static final org.slf4j.Logger log = LoggerFactory.getLogger(ExperimentChooserUiController.class);
 
-  protected final HarnessChooserFrame harnessChooserFrame;
+  protected final ExperimentChooserFrame experimentChooserFrame;
   protected final ContainerStopper stopper;
   protected final ExperimentTableModel experimentTableModel;
   protected final RunTableModel runTableModel;
@@ -62,11 +62,11 @@ public class HarnessChooserUiController implements Startable {
   protected final ChainAction chainAction = new ChainAction();
   protected final ImportAction importAction = new ImportAction();
 
-  protected boolean harnessRunning = false;
+  protected boolean experimentRunning = false;
   protected Experiment selectedExperiment;
 
-  public HarnessChooserUiController(
-      final HarnessChooserFrame harnessChooserFrame,
+  public ExperimentChooserUiController(
+      final ExperimentChooserFrame experimentChooserFrame,
       final ContainerStopper stopper,
       final ExperimentTableModel experimentTableModel,
       final RunTableModel runTableModel,
@@ -75,7 +75,7 @@ public class HarnessChooserUiController implements Startable {
       final RunnerDao runnerDao,
       final ImportRunnable importRunnable
   ) throws HeadlessException {
-    this.harnessChooserFrame = harnessChooserFrame;
+    this.experimentChooserFrame = experimentChooserFrame;
     this.stopper = stopper;
     this.experimentTableModel = experimentTableModel;
     this.runTableModel = runTableModel;
@@ -86,29 +86,29 @@ public class HarnessChooserUiController implements Startable {
   }
 
   public void start() {
-    harnessChooserFrame.setup();
+    experimentChooserFrame.setup();
 
-    harnessChooserFrame.addWindowListener(new WindowAdapter());
-    harnessChooserFrame.getCloseButton().setAction(closeAction);
-    harnessChooserFrame.getLaunchButton().setAction(launchAction);
-    harnessChooserFrame.getSelectButton().setAction(selectAction);
-    harnessChooserFrame.getChainButton().setAction(chainAction);
-    harnessChooserFrame.getImportButton().setAction(importAction);
+    experimentChooserFrame.addWindowListener(new WindowAdapter());
+    experimentChooserFrame.getCloseButton().setAction(closeAction);
+    experimentChooserFrame.getLaunchButton().setAction(launchAction);
+    experimentChooserFrame.getSelectButton().setAction(selectAction);
+    experimentChooserFrame.getChainButton().setAction(chainAction);
+    experimentChooserFrame.getImportButton().setAction(importAction);
 
-    harnessChooserFrame.getHarnessTable().setModel(experimentTableModel);
-    harnessChooserFrame.getHarnessTable().getSelectionModel().addListSelectionListener(new HarnessSelectionListener());
+    experimentChooserFrame.getExperimentTable().setModel(experimentTableModel);
+    experimentChooserFrame.getExperimentTable().getSelectionModel().addListSelectionListener(new ExperimentSelectionListener());
 
-    harnessChooserFrame.getRunsTable().setModel(runTableModel);
-    harnessChooserFrame.getRunsTable().getSelectionModel().addListSelectionListener(new RunSelectionListener());
+    experimentChooserFrame.getRunsTable().setModel(runTableModel);
+    experimentChooserFrame.getRunsTable().getSelectionModel().addListSelectionListener(new RunSelectionListener());
 
-    harnessChooserFrame.getConfCombo().setModel(emptyModel);
+    experimentChooserFrame.getConfCombo().setModel(emptyModel);
 
     setupColumns();
 
-    onHarnessSelectionChange(-1);
+    onExperimentSelectionChange(-1);
     onRunSelectionChange(-1);
     updateSelectedExperiment(-1);
-    harnessChooserFrame.onStart();
+    experimentChooserFrame.onStart();
     importRunnable.setAfterImport(new Runnable() {
       public void run() {
         if (SwingUtilities.isEventDispatchThread()) {
@@ -121,14 +121,14 @@ public class HarnessChooserUiController implements Startable {
 
     experimentRunner.setListener(new RunStateListenerImpl());
 
-    final FeedbackAppender feedbackAppender = new FeedbackAppender(harnessChooserFrame.getOutputPane());
+    final FeedbackAppender feedbackAppender = new FeedbackAppender(experimentChooserFrame.getOutputPane());
     feedbackAppender.setThreshold(Level.ALL);
 
     Logger.getRootLogger().addAppender(feedbackAppender);
   }
 
   protected void setupColumns() {
-    final TableColumnModel tcm = harnessChooserFrame.getHarnessTable().getColumnModel();
+    final TableColumnModel tcm = experimentChooserFrame.getExperimentTable().getColumnModel();
     tcm.getColumn(tcm.getColumnIndex(ExperimentTableModel.COL_NAME)).setPreferredWidth(256);
     tcm.getColumn(tcm.getColumnIndex(ExperimentTableModel.COL_PATH)).setPreferredWidth(96);
     tcm.getColumn(tcm.getColumnIndex(ExperimentTableModel.COL_KEY)).setPreferredWidth(48);
@@ -136,10 +136,10 @@ public class HarnessChooserUiController implements Startable {
   }
 
   public void stop() {
-    harnessChooserFrame.onStop();
+    experimentChooserFrame.onStop();
   }
 
-  protected void onHarnessSelectionChange(int selectedRow) {
+  protected void onExperimentSelectionChange(int selectedRow) {
     selectAction.setEnabled(selectedRow >= 0);
   }
 
@@ -147,22 +147,25 @@ public class HarnessChooserUiController implements Startable {
     chainAction.setEnabled(selectedRow >= 0);
   }
 
-  protected void onHarnessRunningChange(boolean newHarnessRunning) {
-    this.harnessRunning = newHarnessRunning;
+  protected void onExperimentRunningChange(boolean newExperimentRunning) {
+    this.experimentRunning = newExperimentRunning;
 
-    launchAction.setEnabled(!harnessRunning && isHarnessSelected());
-    final boolean comboEnabled = !harnessRunning && isHarnessSelected() && harnessChooserFrame.getConfCombo().getModel().getSize() > 0;
-    harnessChooserFrame.getConfCombo().setEnabled(comboEnabled);
+    launchAction.setEnabled(!experimentRunning && isExperimentSelected());
+    final boolean comboEnabled =
+            !experimentRunning &&
+            isExperimentSelected() &&
+            experimentChooserFrame.getConfCombo().getModel().getSize() > 0;
 
+    experimentChooserFrame.getConfCombo().setEnabled(comboEnabled);
   }
 
   protected void updateSelectedExperiment(int selectedRow) {
-    harnessChooserFrame.getConfCombo().setModel(emptyModel);
+    experimentChooserFrame.getConfCombo().setModel(emptyModel);
 
     if (selectedRow >= 0) {
       selectedExperiment = experimentTableModel.getExperiment(selectedRow, new RefSimple<String>(null));
 
-      boolean enabled = !harnessRunning && selectedExperiment != null;
+      boolean enabled = !experimentRunning && selectedExperiment != null;
       ComboBoxModel confComboModel = emptyModel;
       try {
         if (selectedExperiment != null) {
@@ -176,19 +179,19 @@ public class HarnessChooserUiController implements Startable {
       }
 
       launchAction.setEnabled(enabled);
-      harnessChooserFrame.getExpNameLabel().setText(selectedExperiment.getDesc());
-      harnessChooserFrame.getConfCombo().setModel(confComboModel);
-      harnessChooserFrame.getConfCombo().setEnabled(enabled && confComboModel.getSize() > 0);
+      experimentChooserFrame.getExpNameLabel().setText(selectedExperiment.getDesc());
+      experimentChooserFrame.getConfCombo().setModel(confComboModel);
+      experimentChooserFrame.getConfCombo().setEnabled(enabled && confComboModel.getSize() > 0);
     } else {
       selectedExperiment = null;
       launchAction.setEnabled(false);
-      harnessChooserFrame.getExpNameLabel().setText("< none selected yet >");
-      harnessChooserFrame.getConfCombo().setEnabled(false);
+      experimentChooserFrame.getExpNameLabel().setText("< none selected yet >");
+      experimentChooserFrame.getConfCombo().setEnabled(false);
     }
   }
 
-  protected boolean isHarnessSelected() {
-    return harnessChooserFrame.getHarnessTable().getSelectedRow() >= 0;
+  protected boolean isExperimentSelected() {
+    return experimentChooserFrame.getExperimentTable().getSelectedRow() >= 0;
   }
 
   class WindowAdapter extends java.awt.event.WindowAdapter {
@@ -203,7 +206,7 @@ public class HarnessChooserUiController implements Startable {
     }
 
     public void actionPerformed(ActionEvent e) {
-      final int selectedRow = harnessChooserFrame.getRunsTable().getSelectedRow();
+      final int selectedRow = experimentChooserFrame.getRunsTable().getSelectedRow();
 
       final Run run = runTableModel.getRun(selectedRow);
 
@@ -211,7 +214,7 @@ public class HarnessChooserUiController implements Startable {
         return;
       }
 
-      final JTextField chainTF = harnessChooserFrame.getChainTextField();
+      final JTextField chainTF = experimentChooserFrame.getChainTextField();
       final String oriChainText = chainTF.getText();
       final String newText = oriChainText.trim() + " " + run.getUid();
       chainTF.setText(newText.trim());
@@ -224,11 +227,11 @@ public class HarnessChooserUiController implements Startable {
     }
 
     public void actionPerformed(ActionEvent e) {
-      final int selectedRow = harnessChooserFrame.getHarnessTable().getSelectedRow();
+      final int selectedRow = experimentChooserFrame.getExperimentTable().getSelectedRow();
       updateSelectedExperiment(selectedRow);
 
       if (selectedRow >= 0) {
-        harnessChooserFrame.getTabPane().setSelectedIndex(1);
+        experimentChooserFrame.getTabPane().setSelectedIndex(1);
       }
     }
   }
@@ -249,7 +252,7 @@ public class HarnessChooserUiController implements Startable {
     }
 
     public void actionPerformed(ActionEvent e) {
-      harnessChooserFrame.getTabPane().setSelectedIndex(2);
+      experimentChooserFrame.getTabPane().setSelectedIndex(2);
 
       executor.execute(importRunnable);
     }
@@ -261,7 +264,7 @@ public class HarnessChooserUiController implements Startable {
     }
 
     public void actionPerformed(ActionEvent e) {
-      if (harnessRunning) {
+      if (experimentRunning) {
         return;
       }
 
@@ -269,7 +272,7 @@ public class HarnessChooserUiController implements Startable {
         return;
       }
 
-      final IdName selectedConf = (IdName) harnessChooserFrame.getConfCombo().getModel().getSelectedItem();
+      final IdName selectedConf = (IdName) experimentChooserFrame.getConfCombo().getModel().getSelectedItem();
       if (selectedConf == null) {
         return;
       }
@@ -286,14 +289,14 @@ public class HarnessChooserUiController implements Startable {
         return;
       }
 
-      onHarnessRunningChange(true);
+      onExperimentRunningChange(true);
       executor.execute(new RunExperimentTask(selectedExperiment, conf, getChainedRuns()));
 
-      harnessChooserFrame.getTabPane().setSelectedIndex(2);
+      experimentChooserFrame.getTabPane().setSelectedIndex(2);
     }
 
     protected SortedMap<Long, RunInfo> getChainedRuns() {
-      final String chainStr = harnessChooserFrame.getChainTextField().getText();
+      final String chainStr = experimentChooserFrame.getChainTextField().getText();
 
       final String safeChainStr = chainStr.replaceAll("[^ 0-9]+", "").replaceAll("\\s+", " ").trim();
 
@@ -301,7 +304,7 @@ public class HarnessChooserUiController implements Startable {
         return new TreeMap<Long, RunInfo>();
       }
 
-      harnessChooserFrame.getChainTextField().setText(safeChainStr);
+      experimentChooserFrame.getChainTextField().setText(safeChainStr);
 
       final java.util.List<Long> runIds =
           new ArrayList<Long>(Arrays.asList(Parse.longs(safeChainStr.split(" "), null)));
@@ -311,14 +314,14 @@ public class HarnessChooserUiController implements Startable {
     }
   }
 
-  class HarnessSelectionListener implements ListSelectionListener {
+  class ExperimentSelectionListener implements ListSelectionListener {
     public void valueChanged(ListSelectionEvent e) {
       if (e.getValueIsAdjusting()) {
         return;
       }
 
-      final int selectedRow = harnessChooserFrame.getHarnessTable().getSelectedRow();
-      onHarnessSelectionChange(selectedRow);
+      final int selectedRow = experimentChooserFrame.getExperimentTable().getSelectedRow();
+      onExperimentSelectionChange(selectedRow);
     }
   }
 
@@ -328,7 +331,7 @@ public class HarnessChooserUiController implements Startable {
         return;
       }
 
-      final int selectedRow = harnessChooserFrame.getRunsTable().getSelectedRow();
+      final int selectedRow = experimentChooserFrame.getRunsTable().getSelectedRow();
       onRunSelectionChange(selectedRow);
     }
   }
@@ -348,9 +351,9 @@ public class HarnessChooserUiController implements Startable {
       try {
         experimentRunner.run(info, conf, chainedRuns);
       } catch (Throwable t) {
-        ExperimentRunner.log.warn("harness failed", t);
+        ExperimentRunner.log.warn("experiment failed", t);
       } finally {
-        onHarnessRunningChange(false);
+        onExperimentRunningChange(false);
       }
     }
   }

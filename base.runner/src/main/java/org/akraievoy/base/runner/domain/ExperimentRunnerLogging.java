@@ -49,7 +49,7 @@ public class ExperimentRunnerLogging extends ExperimentRunnerImpl {
     try {
       super.runIterative(runId, exp, paramSetEnumerator, widened, runChain);
 
-      log.info("Completed harness {}, runId = {}", exp.getDesc(), runId);
+      log.info("Completed experiment {}, runId = {}", exp.getDesc(), runId);
     } catch (Exception e) {
       log.error("Failed {} ", Throwables.getRootCause(e).toString());
       throw Throwables.propagate(e);

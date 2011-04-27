@@ -8,7 +8,7 @@ Features of this project:
  - an API for complex networks, aiming to be performant, but not yet profiled/compared with competition;
  - several metrics implemented over the former API, most notable are EigenGap/EigenVector metrics;
  - several random models to generate complex networks;
- - configurable/chainable Spring-based experiments, with a runner harness;
+ - configurable/chainable Spring-based experiments: runner module with Swing-based experiment selector;
  - experiment configuration allows to profile a metric against several input parameters (multi-axis parameter spaces);
  - persistence of experiment results into an H2 database;
  - tab-separated-values export for any scalar metric for any experiment; 

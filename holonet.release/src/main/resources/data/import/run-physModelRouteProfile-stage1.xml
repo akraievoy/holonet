@@ -152,13 +152,13 @@
     <property name="target" ref="ref_default_edata_routeLen"/>
   </bean>
 
-  <bean class="org.akraievoy.base.runner.api.TimingHarness" id="timedRouteLenMetric">
+  <bean class="org.akraievoy.base.runner.api.ExperimentTiming" id="timedRouteLenMetric">
     <constructor-arg ref="routeLenMetric"/>
 
     <property name="durationRef" ref="ref_duration_fw"/>
   </bean>
 
-  <bean class="org.akraievoy.base.runner.api.TimingHarness" id="timedRouteLenJMetric">
+  <bean class="org.akraievoy.base.runner.api.ExperimentTiming" id="timedRouteLenJMetric">
     <constructor-arg ref="routeLenJMetric"/>
 
     <property name="durationRef" ref="ref_duration_j"/>

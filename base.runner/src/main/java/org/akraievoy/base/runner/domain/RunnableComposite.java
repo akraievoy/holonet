@@ -40,9 +40,9 @@ public class RunnableComposite implements Startable, ContextInjectable, Runnable
   }
 
   public void start() {
-    for (Runnable harness : group) {
-      if (harness instanceof ContextInjectable) {
-        ((ContextInjectable) harness).setCtx(ctx);
+    for (Runnable experiment : group) {
+      if (experiment instanceof ContextInjectable) {
+        ((ContextInjectable) experiment).setCtx(ctx);
       }
     }
   }
@@ -57,10 +57,10 @@ public class RunnableComposite implements Startable, ContextInjectable, Runnable
 
   protected void runGroup(Context ctx) {
     for (int i = 0, groupSize = group.size(); i < groupSize; i++) {
-      final Runnable harness = group.get(i);
+      final Runnable experiment = group.get(i);
 
-      log.debug("starting #{} of {}: {}", new Object[]{i, groupSize, harness.toString()});
-      runChild(harness, ctx);
+      log.debug("starting #{} of {}: {}", new Object[]{i, groupSize, experiment.toString()});
+      runChild(experiment, ctx);
     }
   }
 

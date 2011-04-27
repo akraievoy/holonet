@@ -25,9 +25,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 
-//  LATER rename this and other Harness incantations
-public class TimingHarness implements Runnable, ContextInjectable {
-  private static final Logger log = LoggerFactory.getLogger(TimingHarness.class);
+/**
+ * Simple decorator to track Experiment execution times.
+ */
+public class ExperimentTiming implements Runnable, ContextInjectable {
+  private static final Logger log = LoggerFactory.getLogger(ExperimentTiming.class);
 
   protected final int durationReportThresh = 10000;
 
@@ -36,7 +38,7 @@ public class TimingHarness implements Runnable, ContextInjectable {
   protected RefLong durationRef = new RefLong();
   protected RefString durationTextRef = new RefString();
 
-  public TimingHarness(Runnable wrapped) {
+  public ExperimentTiming(Runnable wrapped) {
     this.wrapped = wrapped;
   }
 

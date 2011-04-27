@@ -25,7 +25,6 @@ import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.ref.RefSimple;
 import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.base.runner.api.ContextInjectable;
-import org.akraievoy.base.runner.api.SkipTrigger;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.EntropySourceRandom;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelRenorm;
@@ -39,8 +38,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class HarnessGeneticOpt implements Runnable, ContextInjectable {
-  private static final Logger log = LoggerFactory.getLogger(HarnessGeneticOpt.class);
+public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
+  private static final Logger log = LoggerFactory.getLogger(ExperimentGeneticOpt.class);
 
   protected Context ctx;
 
@@ -79,7 +78,7 @@ public class HarnessGeneticOpt implements Runnable, ContextInjectable {
 
   protected long reportPeriod = 30000;
 
-  public HarnessGeneticOpt(GeneticStrategy<Genome> strategy, final EntropySourceRandom eSource) {
+  public ExperimentGeneticOpt(GeneticStrategy<Genome> strategy, final EntropySourceRandom eSource) {
     this.strategy = strategy;
     this.eSource = eSource;
   }
