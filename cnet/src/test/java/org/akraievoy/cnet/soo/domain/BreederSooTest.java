@@ -118,7 +118,7 @@ public class BreederSooTest extends TestCase {
       }
     }
 
-    final GenomeSoo seedB = strategy.createGenome(new Object[]{solutionB});
+    final GenomeSoo seedB = strategy.createGenome();
 
     state.calibrate(null);
     final Genome child = breederSoo.crossover(strategy, seedA, seedB, state, esr);

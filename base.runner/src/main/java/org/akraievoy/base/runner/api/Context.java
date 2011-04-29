@@ -62,19 +62,23 @@ public class Context {
   }
 
   public void put(String path, Object attrvalue, Map<String, Integer> offset) {
-    putInternal(path, attrvalue, widenedPse.dupe(offset).getIndex());
+    putInternal(path, attrvalue, widenedPse.dupe(offset).getIndex(false));
+  }
+
+  public void put(String path, Object attrValue) {
+    putInternal(path, attrValue, widenedPse.getIndex(false));
   }
 
   public boolean containsKey(String path) {
     try {
-      final boolean value = dao.findCtxAttrNoLoad(runId, widenedPse.getIndex(), path);
+      final boolean value = dao.findCtxAttrNoLoad(runId, widenedPse.getIndex(false), path);
 
       if (value) {
         return true;
       }
 
       for (RunInfo chained : runChain.values()) {
-        final long translated = widenedPse.translateIndex(chained.getEnumerator());
+        final long translated = widenedPse.translateIndex(chained.getEnumerator(), false);
 
         final boolean chainedValue = dao.findCtxAttrNoLoad(
             chained.getRun().getUid(),
@@ -97,14 +101,14 @@ public class Context {
   @SuppressWarnings({"unchecked"})
   protected <E> E getInternal(String path, Class<E> attrType, ParamSetEnumerator widenedPse) {
     try {
-      final Object value = dao.findCtxAttr(runId, widenedPse.getIndex(), path);
+      final Object value = dao.findCtxAttr(runId, widenedPse.getIndex(false), path);
 
       if (value != null) {
         return (E) value;
       }
 
       for (RunInfo chained : runChain.values()) {
-        final long translated = widenedPse.translateIndex(chained.getEnumerator());
+        final long translated = widenedPse.translateIndex(chained.getEnumerator(), false);
 
         final Object chainedValue = dao.findCtxAttr(
             chained.getRun().getUid(),
@@ -124,23 +128,14 @@ public class Context {
     return null;
   }
 
-  public void put(String path, Object attrValue, final boolean cache) {
-    log.debug("{} <- {}: {}", new Object[]{path, attrValue.getClass().getSimpleName(), attrValue});
-
-    if (cache) {
-      putInternal(path, attrValue, -1);
-    } else {
-      putInternal(path, attrValue, widenedPse.getIndex());
-    }
-  }
-
   protected void putInternal(String path, Object attrValue, long psetIndex) {
-    try {
-      boolean result = dao.insertCtxAttr(runId, psetIndex, path, attrValue);
+    log.debug(
+        "{}[{}] <- {}: {}",
+        new Object[]{path, psetIndex, attrValue.getClass().getSimpleName(), attrValue}
+    );
 
-      if (result) {
-        return;
-      }
+    try {
+      dao.insertCtxAttr(runId, psetIndex, path, attrValue);
     } catch (SQLException e) {
       log.warn("failed to persist value to database: {}", Throwables.getRootCause(e).toString());
       log.debug("[detailed trace]", e);
@@ -164,10 +159,6 @@ public class Context {
     }
   }
 
-  protected String includeEnumerator(String key, final long psetIndex) {
-    return keyPrefix(psetIndex) + key;
-  }
-
   protected String keyPrefix(final long psetIndex) {
     return String.valueOf(psetIndex) + ":";
   }
@@ -183,6 +174,8 @@ public class Context {
 
     return count;
   }
+
+  public static Map<String, Integer> offset() { return new TreeMap<String, Integer>(); }
 
   public static Map<String, Integer> offset(
       String paramName, int offset

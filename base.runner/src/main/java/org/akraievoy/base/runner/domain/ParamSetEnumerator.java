@@ -204,15 +204,15 @@ public class ParamSetEnumerator {
     return result * fixed;
   }
 
-  public long getIndex() {
-    return getIndexForPos(paramPoses);
+  public long getIndex(final boolean globFixed) {
+    return getIndexForPos(paramPoses, globFixed);
   }
 
   public boolean isFirst() {
-    return getIndex() == COUNT_EMPTY;
+    return getIndex(false) == COUNT_EMPTY;
   }
 
-  protected long getIndexForPos(final List<Long> paramPoses) {
+  protected long getIndexForPos(final List<Long> paramPoses, final boolean globFixed) {
     if (params.size() == 0) {
       return COUNT_EMPTY;
     }
@@ -222,7 +222,7 @@ public class ParamSetEnumerator {
     long pow = 1;
     for (int paramI = params.size() - 1; paramI >= 0; paramI--) {
       final Parameter param = params.get(paramI);
-      if (param.getStrategy() == Parameter.Strategy.ITERATE) {
+      if (param.getStrategy() == Parameter.Strategy.ITERATE || !globFixed) {
         result += pow * paramPoses.get(paramI);
         pow *= param.getValueCount();
       } else {
@@ -282,7 +282,8 @@ public class ParamSetEnumerator {
     return null;
   }
 
-  public long translateIndex(ParamSetEnumerator chainedEnumerator) {
+  //  LATER simplify
+  public long translateIndex(ParamSetEnumerator chainedEnumerator, final boolean globFixed) {
     if (params.size() == 0) {
       return 0;
     }
@@ -298,6 +299,6 @@ public class ParamSetEnumerator {
       chainedPoses.set(chainedIndex, paramPoses.get(i));
     }
 
-    return chainedEnumerator.getIndexForPos(chainedPoses);
+    return chainedEnumerator.getIndexForPos(chainedPoses, globFixed);
   }
 }

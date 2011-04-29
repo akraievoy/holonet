@@ -91,7 +91,7 @@ public abstract class RefCtx<T> implements ContextInjectable, Ref<T> {
   }
 
   protected void ctxPut(Object value) {
-    ctx.put(path, value, false);
+    ctx.put(path, value);
   }
 
   /**

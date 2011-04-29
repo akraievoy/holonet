@@ -40,10 +40,8 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
 
   protected Context ctx;
 
-  protected final List<Specimen> gen = new ArrayList<Specimen>();
-  protected final List<Genome> newGen = new ArrayList<Genome>();
-  protected final TDoubleArrayList fitnesses = new TDoubleArrayList();
-  protected final SpecimenFitnessComparator fitnessComparator = new SpecimenFitnessComparator();
+  protected final SortedMap<FitnessKey, Genome> parents = new TreeMap<FitnessKey, Genome>();
+  protected final SortedMap<FitnessKey, Genome> children = new TreeMap<FitnessKey, Genome>();
 
   protected final GeneticStrategy<Genome> strategy;
   protected final EntropySource eSource;
@@ -144,21 +142,23 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     initOnContext();
 
     if (generation == 0) {
-      storeGen(ctx, seedSource.getSeeds(strategy), fitnesses);
-      log.info("Initialization complete; fitness = {}", fitnessReport(fitnesses));
+      final List<Genome> genomes = seedSource.getSeeds(strategy);
+      storeToPopulation(children, genomes);
+      storeToContext(ctx, children);
+      log.info("Initialization complete; fitness = {}", fitnessReport(children));
       return;
     }
 
-    loadGen(ctx, gen);
+    loadGen(ctx, parents);
 
-    if (gen.isEmpty()) {
+    if (parents.isEmpty()) {
       log.info("Generation #{} empty: specimens died-out", generation);
       return;
     }
 
     state.setCompleteness((generation + 1.0) / ctx.getCount(generationParamName));
-    state.setFitnessDeviation(fitnessDeviation(fitnesses));
-    state.setSimilarityMean(similarityMean(gen));
+    state.setFitnessDeviation(fitnessDeviation(parents));
+    state.setSimilarityMean(similarityMean(parents.values()));
 
     state.calibrate(ctx);
 
@@ -168,25 +168,21 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     events.setMinWeight(state.getMinElemFitness());
     events.setAmp(state.getElemFitPow());
 
-    for (int i = 0, genSize = gen.size(); i < genSize; i++) {
-      Specimen spec = gen.get(i);
-      events.add(i, spec.getFitness());
+    final FitnessKey[] fKeys = parents.keySet().toArray(new FitnessKey[parents.size()]);
+    for (int i = 0, genSize = fKeys.length; i < genSize; i++) {
+      events.add(i, fKeys[i].getFitness());
     }
 
     Ref<Long> lastReport = new RefSimple<Long>(System.currentTimeMillis());
-
-    final int eliteSize = Math.min(eliteLimit, gen.size());
-
-    Ref<Integer> eliteIndex = new RefSimple<Integer>(0);
     int generateCount = 0;
-    while (newGen.size() < specimenLimit && (generateCount < missLimit)) {
+    while (children.size() < specimenLimit && (generateCount < missLimit)) {
       report(lastReport);
 
       final Ref<Breeder<Genome>> breeder = new RefSimple<Breeder<Genome>>(null);
       final Ref<Mutator<Genome>> mutator = new RefSimple<Mutator<Genome>>(null);
       generateCount++;
 
-      final Genome child = generateNew(state, eliteSize, eliteIndex, breeder, mutator);
+      final Genome child = generateChild(state, fKeys, breeder, mutator);
 
       if (!validate(child)) {
         mutators.onFailure(mutator.getValue());
@@ -194,17 +190,27 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
         continue;
       }
 
-      newGen.add(child);
+      storeToPopulation(children, Collections.singletonList(child));
     }
 
     report(null);
 
-    storeGen(ctx, newGen, fitnesses);
+    storeToContext(ctx, children);
     mutators.storeRatios(ctx);
     breeders.storeRatios(ctx);
-    log.info("Generation #{} filled; fitness {}", generation, fitnessReport(fitnesses));
+    log.info("Generation #{} filled; fitness {}", generation, fitnessReport(children));
 
-    terminate = newGen.isEmpty();
+    terminate = children.isEmpty();
+  }
+
+  public void storeToPopulation(final SortedMap<FitnessKey, Genome> population, List<Genome> genomes) {
+    for (Genome genome : genomes) {
+      final double fitness = strategy.computeFitness(genome);
+      final FitnessKey fKey = new FitnessKey(population.size(), fitness);
+
+      genome.setFitness(fitness);
+      population.put(fKey, genome);
+    }
   }
 
   protected void report(Ref<Long> lastReport) {
@@ -220,12 +226,13 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     }
   }
 
-  protected static double similarityMean(final List<Specimen> gen) {
-    final Genome bestFit = gen.get(0).getGenome();
-    double similarity = 1;
+  protected static double similarityMean(final Collection<Genome> gen) {
+    final Iterator<Genome> genomeIt = gen.iterator();
+    final Genome bestFit = genomeIt.next();
 
-    for (int i = 1; i < gen.size(); i++) {
-      similarity += bestFit.similarity(gen.get(i).getGenome());
+    double similarity = 1;
+    while (genomeIt.hasNext()) {
+      similarity += bestFit.similarity(genomeIt.next());
     }
 
     return similarity / gen.size();
@@ -242,36 +249,42 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     missLimit = (long) Math.ceil(missLimitRatio * specimenLimit);
   }
 
-  protected Genome generateNew(GeneticState state, int eliteSize, Ref<Integer> eliteIndex, Ref<Breeder<Genome>> breeder, Ref<Mutator<Genome>> mutator) {
-    final Genome child;
-    final Integer eliteIndexInt = eliteIndex.getValue();
-
-    if (newGen.size() > eliteSize || eliteIndexInt >= gen.size()) {
-      Specimen parentA = gen.get(events.generate(eSource, false, null));
-      Specimen parentB = gen.get(events.generate(eSource, false, null));
-      if (parentA.getFitness() > parentB.getFitness()) {
-        Specimen temp = parentB;
-        parentB = parentA;
-        parentA = temp;
-      }
-
-      breeder.setValue(breeders.select(eSource));
-      child = breeder.getValue().crossover(strategy, parentA.getGenome(), parentB.getGenome(), state, eSource);
-
-      mutator.setValue(mutators.select(eSource));
-      mutator.getValue().mutate(strategy, child, state, eSource);
-    } else {
-      child = gen.get(eliteIndexInt).getGenome();
-      eliteIndex.setValue(eliteIndexInt + 1);
+  protected Genome generateChild(
+      GeneticState state, FitnessKey[] fKeys,
+      Ref<Breeder<Genome>> breeder, Ref<Mutator<Genome>> mutator
+  ) {
+    // FIXME there's a dead loop: if elite dies out due to constraint change 
+    if (children.size() <= eliteLimit && children.size() < parents.size()) {
+      return parents.get(fKeys[children.size()]);
     }
+
+    final FitnessKey fKeyA = fKeys[events.generate(eSource, false, null)];
+    final FitnessKey fKeyB = fKeys[events.generate(eSource, false, null)];
+    final Genome parentA;
+    final Genome parentB;
+    if (fKeyA.getFitness() > fKeyB.getFitness()) {
+      parentA = parents.get(fKeyA);
+      parentB = parents.get(fKeyB);
+    } else {
+      parentA = parents.get(fKeyB);
+      parentB = parents.get(fKeyA);
+    }
+
+    breeder.setValue(breeders.select(eSource));
+    final Genome child = breeder.getValue().crossover(strategy, parentA, parentB, state, eSource);
+
+    mutator.setValue(mutators.select(eSource));
+    mutator.getValue().mutate(strategy, child, state, eSource);
 
     return child;
   }
 
-  protected static String fitnessReport(TDoubleArrayList fitnesses) {
-    if (fitnesses.isEmpty()) {
+  protected static String fitnessReport(SortedMap<FitnessKey, Genome> population) {
+    if (population.isEmpty()) {
       return "empty";
     }
+
+    final TDoubleArrayList fitnesses = fitnesses(population);
 
     final double max = G4Stat.max(fitnesses);
     final double min = G4Stat.min(fitnesses);
@@ -279,26 +292,27 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     return Format.format6(min) + " .. " + max;
   }
 
-  protected static double fitnessDeviation(TDoubleArrayList fitnesses) {
+  protected static double fitnessDeviation(SortedMap<FitnessKey, Genome> population) {
+    final TDoubleArrayList fitnesses = fitnesses(population);
     final double mean = G4Stat.mean(fitnesses);
     final double dev = G4Stat.meanDeviation(fitnesses, mean);
 
     return dev;
   }
 
-  protected static void fitnessSetOrAdd(final TDoubleArrayList fitnesses, int specIndex, double fitness) {
-    if (fitnesses.size() == specIndex) {
-      fitnesses.insert(specIndex, fitness);
-    } else {
-      fitnesses.set(specIndex, fitness);
+  protected static TDoubleArrayList fitnesses(SortedMap<FitnessKey, Genome> population) {
+    final TDoubleArrayList fitnesses = new TDoubleArrayList(population.size());
+    for (FitnessKey fitnessKey : population.keySet()) {
+      fitnesses.add(fitnessKey.getFitness());
     }
+    return fitnesses;
   }
 
   protected boolean validate(Genome child) {
     for (int i = 0, conditionsSize = conditions.size(); i < conditionsSize; i++) {
       final Condition<Genome> cond = conditions.wrap(i);
 
-      final boolean valid = cond.isValid(strategy, child, newGen, generation);
+      final boolean valid = cond.isValid(strategy, child, children.values(), generation);
 
       if (!valid) {
         conditions.onFailure(cond);
@@ -309,11 +323,8 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     return true;
   }
 
-  protected void loadGen(Context ctx, final List<Specimen> gen) {
-    fitnesses.clear();
+  protected void loadGen(Context ctx, final SortedMap<FitnessKey, Genome> gen) {
     gen.clear();
-
-    final List<Object> genome = new ArrayList<Object>();
 
     for (int specIndex = 0; specIndex < specimenLimit; specIndex++) {
       final Map<String,Integer> offset = Context.offset(
@@ -321,113 +332,40 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
           specimenIndexParamName, specIndex
       );
 
-      final Double fitness = ctx.get(getKeyFitness(), Double.class, offset);
+      final Genome value = strategy.createGenome();
 
-      if (fitness == null) {
+      if (value.read(ctx, offset, genKey) == null) {
         break;
       }
 
-      fitnessSetOrAdd(fitnesses, specIndex, fitness);
-
-      genome.clear();
-      for (int i = 0; i == genome.size(); i++) {
-        final Object genomeComponent = ctx.get(getKeyGenomeIndexed(i), Object.class, offset);
-
-        if (genomeComponent != null) {
-          genome.add(genomeComponent);
-        }
-      }
-      final Object[] genomeArr = genome.toArray(new Object[genome.size()]);
-
-      final Specimen specimen = new Specimen<Genome>(fitness, strategy.createGenome(genomeArr));
-
-      gen.add(specimen);
+      gen.put(new FitnessKey(specIndex, value.getFitness()), value);
     }
-
-    Collections.sort(gen, fitnessComparator);
   }
 
-  protected String getKeyGenomeIndexed(int i) {
-    return genKey + ".genome" + i;
-  }
-
-  protected String getKeyFitness() {
-    return genKey + ".fitness";
-  }
-
-  protected String getKeyGenomeBestIndexed(int i) {
-    return genKey + ".best.genome" + i;
-  }
-
-  protected String getKeyFitnessBest() {
-    return genKey + ".best.fitness";
-  }
-
-  protected void storeGen(Context ctx, List<Genome> genomes, final TDoubleArrayList fitnesses) {
-    fitnesses.clear();
+  protected void storeToContext(Context ctx, Map<FitnessKey, Genome> genomes) {
     if (genomes.size() == 0) {
       return;
     }
 
-    int bestIndex = -1;
-    for (int gIndex = 0, specNum = genomes.size(); gIndex < specNum && gIndex < specimenLimit; gIndex++) {
-      final Genome genome = genomes.get(gIndex);
+    int specimenIndex = 0;
+    for (FitnessKey fKey : children.keySet()) {
+      final Genome genome = genomes.get(fKey);
 
-      final double fitness = strategy.computeFitness(genome);
-      if (fitnesses.size() == gIndex) {
-        fitnesses.insert(gIndex, fitness);
-      } else {
-        fitnesses.set(gIndex, fitness);
+      genome.write(
+          fKey.getFitness(), genKey, ctx, Context.offset(specimenIndexParamName, specimenIndex)
+      );
+
+      if (specimenIndex == 0) {
+        genome.write(
+            fKey.getFitness(), genKey + ".best", ctx, Context.offset()
+        );
       }
 
-      if (bestIndex < 0 || fitnesses.get(bestIndex) < fitness) {
-        bestIndex = gIndex;
-      }
-
-      ctx.put(getKeyFitness(), fitness, Context.offset(specimenIndexParamName, gIndex));
-
-      final Object[] genomeArr = genome.getGenomeData();
-      for (int i = 0, genomeLength = genomeArr.length; i < genomeLength; i++) {
-        final Object genomeItem = genomeArr[i];
-        ctx.put(getKeyGenomeIndexed(i), genomeItem, Context.offset(specimenIndexParamName, gIndex));
-      }
+      specimenIndex++;
     }
-
-    if (bestIndex >= 0) {
-      ctx.put(getKeyFitnessBest(), fitnesses.get(bestIndex), false);
-
-      final Object[] genomeArr = genomes.get(bestIndex).getGenomeData();
-      for (int i = 0, genomeLength = genomeArr.length; i < genomeLength; i++) {
-        final Object genomeItem = genomeArr[i];
-        ctx.put(getKeyGenomeBestIndexed(i), genomeItem, false);
-      }
-    }
-  }
-
-  protected boolean feasible(int genSize, final long sum) {
-    if (sum >= missLimit) {
-      log.warn("stopping generation: misses overflow");
-      return false;
-    }
-
-    return true;
-  }
-
-  protected long computeTotalMisses(int[] misses) {
-    long sum = 0;
-    for (int i = 0; i < misses.length; i++) {
-      sum += misses[i];
-    }
-    return sum;
   }
 
   public void setCtx(Context ctx) {
     this.ctx = ctx;
-  }
-
-  static class SpecimenFitnessComparator implements Comparator<Specimen> {
-    public int compare(Specimen o1, Specimen o2) {
-      return Double.compare(0, o1.getFitness() - o2.getFitness());
-    }
   }
 }

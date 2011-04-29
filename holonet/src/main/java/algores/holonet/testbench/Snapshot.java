@@ -81,9 +81,9 @@ public class Snapshot {
   }
 
   public void store(Context ctx) {
-    ctx.put(name + "_nodes", getNodeCount(), false);
-    ctx.put(name + "_elems", getTotalMappings(), false);
-    ctx.put(name + "_elemsAvg", getMappingsAverage(), false);
-    ctx.put(name + "_elemsDev", deviation, false);
+    ctx.put(name + "_nodes", getNodeCount());
+    ctx.put(name + "_elems", getTotalMappings());
+    ctx.put(name + "_elemsAvg", getMappingsAverage());
+    ctx.put(name + "_elemsDev", deviation);
   }
 }

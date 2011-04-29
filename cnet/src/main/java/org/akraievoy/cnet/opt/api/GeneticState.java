@@ -154,9 +154,9 @@ public class GeneticState {
     );
 
     if (ctx != null) {
-      ctx.put(keyPrefix + ".fitnessDev", getFitnessDeviation(), false);
-      ctx.put(keyPrefix + ".completeness", getCompleteness(), false);
-      ctx.put(keyPrefix + ".similarityMean", getSimilarityMean(), false);
+      ctx.put(keyPrefix + ".fitnessDev", getFitnessDeviation());
+      ctx.put(keyPrefix + ".completeness", getCompleteness());
+      ctx.put(keyPrefix + ".similarityMean", getSimilarityMean());
     }
 
     minElemFitness = (1 - completeness) * similarityMean * minElemFitnessNorm;
@@ -175,10 +175,10 @@ public class GeneticState {
     );
 
     if (ctx != null) {
-      ctx.put(keyPrefix + ".minElemFitness", getMinElemFitness(), false);
-      ctx.put(keyPrefix + ".elemFitPow", getElemFitPow(), false);
-      ctx.put(keyPrefix + ".crossover", getCrossoverRatio(), false);
-      ctx.put(keyPrefix + ".mutate", getMutateRatio(), false);
+      ctx.put(keyPrefix + ".minElemFitness", getMinElemFitness());
+      ctx.put(keyPrefix + ".elemFitPow", getElemFitPow());
+      ctx.put(keyPrefix + ".crossover", getCrossoverRatio());
+      ctx.put(keyPrefix + ".mutate", getMutateRatio());
     }
   }
 }

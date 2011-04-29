@@ -30,5 +30,5 @@ public interface GeneticStrategy<G extends Genome> {
 
   double computeFitness(G genome);
 
-  G createGenome(Object[] genomeArr);
+  G createGenome();
 }

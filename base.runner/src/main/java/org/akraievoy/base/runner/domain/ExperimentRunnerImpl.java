@@ -97,8 +97,8 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     do {
       runForPoses(runId, exp, widened, root, ctx);
 
-      updateComplete(runId, widened.getIndex());
-      listener.onPsetAdvance(runId, widened.getIndex());
+      updateComplete(runId, widened.getIndex(true));
+      listener.onPsetAdvance(runId, widened.getIndex(true));
     } while (widened.increment());
   }
 

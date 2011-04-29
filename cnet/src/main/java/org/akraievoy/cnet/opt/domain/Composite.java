@@ -61,9 +61,9 @@ public abstract class Composite<Component> {
       final double ratio = computeRatio(fails, uses, times);
       final double success = (1.0 + uses - fails) / (1.0 + uses);
 
-      ctx.put(getKeyRatio(i), ratio, false);
-      ctx.put(getKeySuccess(i), success, false);
-      ctx.put(getKeyUses(i), uses, false);
+      ctx.put(getKeyRatio(i), ratio);
+      ctx.put(getKeySuccess(i), success);
+      ctx.put(getKeyUses(i), uses);
     }
   }
 

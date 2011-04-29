@@ -20,10 +20,10 @@ package org.akraievoy.cnet.opt.api;
 
 import org.akraievoy.cnet.soo.domain.GenomeSoo;
 
-import java.util.List;
+import java.util.Collection;
 
 public class ConditionUnique implements Condition<GenomeSoo> {
-  public boolean isValid(GeneticStrategy strategy, GenomeSoo child, List<GenomeSoo> generation, int generationIndex) {
+  public boolean isValid(GeneticStrategy strategy, GenomeSoo child, Collection<GenomeSoo> generation, int generationIndex) {
     for (GenomeSoo added : generation) {
       if (child.isDupeOf(added)) {
         return false;

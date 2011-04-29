@@ -22,7 +22,7 @@ import org.akraievoy.cnet.opt.api.Condition;
 import org.akraievoy.cnet.opt.api.GeneticStrategy;
 import org.akraievoy.cnet.opt.api.Genome;
 
-import java.util.List;
+import java.util.Collection;
 
 public class CompositeCondition extends Composite<Condition<Genome>> {
   protected Condition<Genome> createReportingWrapper(int breederI, Condition<Genome> wrapped) {
@@ -42,7 +42,7 @@ public class CompositeCondition extends Composite<Condition<Genome>> {
       this.wrapped = wrapped;
     }
 
-    public boolean isValid(GeneticStrategy strategy, Genome child, List<Genome> generation, int generationIndex) {
+    public boolean isValid(GeneticStrategy strategy, Genome child, Collection<Genome> generation, int generationIndex) {
       elemUses[index]++;
 
       final long breederStart = System.currentTimeMillis();

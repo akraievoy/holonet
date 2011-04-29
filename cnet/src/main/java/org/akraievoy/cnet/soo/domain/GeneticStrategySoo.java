@@ -132,12 +132,8 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
     return (startLambda * (lambdaTargetGeneration - generationIndex) + generationIndex * lambda) / lambdaTargetGeneration;
   }
 
-  public GenomeSoo createGenome(Object[] genomeArr) {
-    final GenomeSoo genome = new GenomeSoo();
-
-    genome.setGenomeData(genomeArr);
-
-    return genome;
+  public GenomeSoo createGenome() {
+    return new GenomeSoo();
   }
 
   public double computeFitness(GenomeSoo genome) {

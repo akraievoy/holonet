@@ -18,8 +18,9 @@
 
 package org.akraievoy.cnet.opt.api;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface Condition<G extends Genome> {
-  boolean isValid(GeneticStrategy strategy, G child, List<G> generation, int generationIndex);
+  boolean isValid(GeneticStrategy strategy, G child, Collection<G> generation, int generationIndex);
 }

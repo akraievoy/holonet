@@ -68,7 +68,7 @@ public class ExperimentRunnerLogging extends ExperimentRunnerImpl {
     final long totalMem = runtime.totalMemory();
     final long freeMem = runtime.freeMemory();
     if (paramSetCount > 0) {
-      final long index = widenedPse.getIndex();
+      final long index = widenedPse.getIndex(true);
       log.info("Parameter set {} / {}, mem used {} / {}, ETA: {} ",
           new Object[]{
               index, paramSetCount,

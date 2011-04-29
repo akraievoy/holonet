@@ -173,21 +173,21 @@ public class Metrics implements NetworkInterceptor {
   }
 
   public void store(Context ctx) {
-    ctx.put(periodName + "_joins", getNodeArrivalSuccesses(), false);
-    ctx.put(periodName + "_joinFails", getNodeArrivalFailures(), false);
-    ctx.put(periodName + "_joinRatio", getArrivalSuccessRatio(), false);
-    ctx.put(periodName + "_leaves", getNodeDepartures(), false);
-    ctx.put(periodName + "_fails", getNodeFailures(), false);
+    ctx.put(periodName + "_joins", getNodeArrivalSuccesses());
+    ctx.put(periodName + "_joinFails", getNodeArrivalFailures());
+    ctx.put(periodName + "_joinRatio", getArrivalSuccessRatio());
+    ctx.put(periodName + "_leaves", getNodeDepartures());
+    ctx.put(periodName + "_fails", getNodeFailures());
 
-    ctx.put(periodName + "_lookups", getTotalRequests(), false);
-    ctx.put(periodName + "_hops", getMeanPathLength(), false);
-    ctx.put(periodName + "_delay", getMeanLatency(), false);
-    ctx.put(periodName + "_delayEff", getMeanLatencyRatio(), false);
+    ctx.put(periodName + "_lookups", getTotalRequests());
+    ctx.put(periodName + "_hops", getMeanPathLength());
+    ctx.put(periodName + "_delay", getMeanLatency());
+    ctx.put(periodName + "_delayEff", getMeanLatencyRatio());
 
-    ctx.put(periodName + "_lookupRatio", getLookupSuccessRatio(), false);
-    ctx.put(periodName + "_lookupCorr", getLookupConsistency(), false);
+    ctx.put(periodName + "_lookupRatio", getLookupSuccessRatio());
+    ctx.put(periodName + "_lookupCorr", getLookupConsistency());
 
-    ctx.put(periodName + "_rpcs", getRpcCallsTotal(), false);
-    ctx.put(periodName + "_rpcRatio", getRpcSuccessRatio(), false);
+    ctx.put(periodName + "_rpcs", getRpcCallsTotal());
+    ctx.put(periodName + "_rpcRatio", getRpcSuccessRatio());
   }
 }

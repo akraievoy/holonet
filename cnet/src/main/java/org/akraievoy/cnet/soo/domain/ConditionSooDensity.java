@@ -21,12 +21,12 @@ package org.akraievoy.cnet.soo.domain;
 import org.akraievoy.cnet.opt.api.Condition;
 import org.akraievoy.cnet.opt.api.GeneticStrategy;
 
-import java.util.List;
+import java.util.Collection;
 
 public class ConditionSooDensity implements Condition<GenomeSoo> {
   protected int linkLimit;
 
-  public boolean isValid(GeneticStrategy strategy, GenomeSoo child, List<GenomeSoo> generation, int generationIndex) {
+  public boolean isValid(GeneticStrategy strategy, GenomeSoo child, Collection<GenomeSoo> generation, int generationIndex) {
     final GeneticStrategySoo strategySoo = (GeneticStrategySoo) strategy;
 
     linkLimit = strategySoo.getTotalLinkUpperLimit();
