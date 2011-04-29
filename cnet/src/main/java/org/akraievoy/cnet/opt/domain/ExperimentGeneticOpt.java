@@ -33,10 +33,7 @@ import org.akraievoy.gear.G4Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
   private static final Logger log = LoggerFactory.getLogger(ExperimentGeneticOpt.class);
@@ -319,11 +316,12 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     final List<Object> genome = new ArrayList<Object>();
 
     for (int specIndex = 0; specIndex < specimenLimit; specIndex++) {
-      final Double fitness = ctx.get(
-          getKeyFitness(), Double.class,
-          new String[]{generationParamName, specimenIndexParamName},
-          new int[]{-1, specIndex}
+      final Map<String,Integer> offset = Context.offset(
+          generationParamName, -1,
+          specimenIndexParamName, specIndex
       );
+
+      final Double fitness = ctx.get(getKeyFitness(), Double.class, offset);
 
       if (fitness == null) {
         break;
@@ -333,11 +331,7 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
 
       genome.clear();
       for (int i = 0; i == genome.size(); i++) {
-        final Object genomeComponent = ctx.get(
-            getKeyGenomeIndexed(i), Object.class,
-            new String[]{generationParamName, specimenIndexParamName},
-            new int[]{-1, specIndex}
-        );
+        final Object genomeComponent = ctx.get(getKeyGenomeIndexed(i), Object.class, offset);
 
         if (genomeComponent != null) {
           genome.add(genomeComponent);
@@ -390,20 +384,12 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
         bestIndex = gIndex;
       }
 
-      ctx.put(
-          getKeyFitness(), fitness,
-          new String[]{specimenIndexParamName},
-          new int[]{gIndex}
-      );
+      ctx.put(getKeyFitness(), fitness, Context.offset(specimenIndexParamName, gIndex));
 
       final Object[] genomeArr = genome.getGenomeData();
       for (int i = 0, genomeLength = genomeArr.length; i < genomeLength; i++) {
         final Object genomeItem = genomeArr[i];
-        ctx.put(
-            getKeyGenomeIndexed(i), genomeItem,
-            new String[]{specimenIndexParamName},
-            new int[]{gIndex}
-        );
+        ctx.put(getKeyGenomeIndexed(i), genomeItem, Context.offset(specimenIndexParamName, gIndex));
       }
     }
 

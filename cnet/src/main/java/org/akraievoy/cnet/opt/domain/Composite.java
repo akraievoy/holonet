@@ -47,7 +47,7 @@ public abstract class Composite<Component> {
     elemsModel.clear();
 
     for (int i = 0; i < elems.size(); i++) {
-      final Double ratio = ctx.get(getKeyRatio(i), Double.class, new String[]{generationParamName}, new int[]{-1});
+      final Double ratio = ctx.get(getKeyRatio(i), Double.class, Context.offset(generationParamName, -1));
       elemsModel.add(i, ratio == null ? 1.0 : ratio);
     }
   }

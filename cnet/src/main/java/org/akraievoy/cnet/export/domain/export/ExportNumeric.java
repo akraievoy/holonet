@@ -23,7 +23,6 @@ import com.google.common.io.Closeables;
 import org.akraievoy.base.Die;
 import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.base.runner.api.ContextInjectable;
-import org.akraievoy.base.runner.api.SkipTrigger;
 import org.akraievoy.base.runner.domain.ParamSetEnumerator;
 import org.akraievoy.base.runner.vo.Parameter;
 import org.slf4j.Logger;
@@ -36,6 +35,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class ExportNumeric implements Runnable, ContextInjectable {
   private static final Logger log = LoggerFactory.getLogger(ExportNumeric.class);
@@ -185,10 +185,7 @@ public class ExportNumeric implements Runnable, ContextInjectable {
       printCell(vParam.getValue(v));
       for (String key : keys) {
         for (int h = 0; h < hParam.getValueCount(); h++) {
-          final Object obj = ctx.get(
-              key, Object.class,
-              new String[]{hParam.getName(), vParam.getName()}, new int[]{h, v}
-          );
+          final Object obj = ctx.get(key, Object.class, Context.offset(hParam.getName(), h, vParam.getName(), v));
           printDataCell(obj);
         }
       }
@@ -228,10 +225,7 @@ public class ExportNumeric implements Runnable, ContextInjectable {
     }
     for (String key : keys) {
       for (int h = 0; h < hParam.getValueCount(); h++) {
-        final Object obj = ctx.get(
-            key, Object.class, new
-                String[]{hParam.getName()}, new int[]{h}
-        );
+        final Object obj = ctx.get(key, Object.class, Context.offset(hParam.getName(), h));
         printDataCell(obj);
       }
     }

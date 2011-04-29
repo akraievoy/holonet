@@ -187,7 +187,7 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
   }
 
   protected ParamSetEnumerator widen(ParamSetEnumerator root, SortedMap<Long, RunInfo> runChain) {
-    final ParamSetEnumerator current = root.dupe(true);
+    final ParamSetEnumerator current = root.dupe(null).restart();
 
     for (RunInfo chained : runChain.values()) {
       current.widen(chained.getEnumerator());

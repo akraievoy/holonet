@@ -112,14 +112,22 @@ public class ParamSetEnumerator {
     return result;
   }
 
-  public ParamSetEnumerator dupe(final boolean restart) {
+  public ParamSetEnumerator dupe(final Map<String, Integer> offset) {
     final ParamSetEnumerator dupe = new ParamSetEnumerator();
 
     dupe.strategies.putAll(strategies);
     dupe.params.addAll(params);
     dupe.paramPoses.addAll(paramPoses);
-    if (restart) {
-      dupe.restart();
+
+    if (offset != null) {
+      for (String paramName : offset.keySet()) {
+        final int paramIndex = getParameterIndex(paramName);
+        final Parameter param = params.get(paramIndex);
+        Die.ifFalse("paramIndex >= 0", paramIndex >= 0);
+
+        dupe.paramPoses.set(paramIndex, dupe.paramPoses.get(paramIndex) + offset.get(paramName));
+        param.validatePos(dupe.paramPoses.get(paramIndex));
+      }
     }
 
     return dupe;
@@ -200,45 +208,6 @@ public class ParamSetEnumerator {
     return getIndexForPos(paramPoses);
   }
 
-  public long getIndex(final String[] paramNames, final int[] offsets) {
-    final List<Long> paramPosesOffset = new ArrayList<Long>(paramPoses);
-
-    for (int i = 0, paramNamesLength = paramNames.length; i < paramNamesLength; i++) {
-      String paramName = paramNames[i];
-      final int paramIndex = getParameterIndex(paramName);
-      Die.ifFalse("paramIndex >= 0", paramIndex >= 0);
-
-      paramPosesOffset.set(paramIndex, paramPosesOffset.get(paramIndex) + offsets[i]);
-
-      final Parameter param = params.get(paramIndex);
-      param.validatePos(paramPosesOffset.get(paramIndex));
-    }
-
-    return getIndexForPos(paramPosesOffset);
-  }
-
-  public ParamSetEnumerator dupeOffset(final String[] paramNames, final int[] offsets) {
-    final List<Long> paramPosesOffset = new ArrayList<Long>(paramPoses);
-
-    for (int i = 0, paramNamesLength = paramNames.length; i < paramNamesLength; i++) {
-      String paramName = paramNames[i];
-      final int paramIndex = getParameterIndex(paramName);
-      Die.ifFalse("paramIndex >= 0", paramIndex >= 0);
-
-      paramPosesOffset.set(paramIndex, paramPosesOffset.get(paramIndex) + offsets[i]);
-
-      final Parameter param = params.get(paramIndex);
-      param.validatePos(paramPosesOffset.get(paramIndex));
-    }
-
-    final ParamSetEnumerator dupe = new ParamSetEnumerator();
-
-    dupe.params.addAll(params);
-    dupe.paramPoses.addAll(paramPosesOffset);
-
-    return dupe;
-  }
-
   public boolean isFirst() {
     return getIndex() == COUNT_EMPTY;
   }
@@ -289,11 +258,12 @@ public class ParamSetEnumerator {
     return -1;
   }
 
-  public void restart() {
+  public ParamSetEnumerator restart() {
     paramPoses.clear();
     for (Parameter param : params) {
       paramPoses.add(param.getInitialPos());
     }
+    return this;
   }
 
   public Parameter findCollision(ParamSetEnumerator chainedEnumerator) {

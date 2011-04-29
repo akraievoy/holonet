@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Map;
 
 public class EnumExperiment implements Runnable, ContextInjectable {
   private static final Logger log = LoggerFactory.getLogger(EnumExperiment.class);
@@ -221,19 +222,18 @@ public class EnumExperiment implements Runnable, ContextInjectable {
 
 
     if (ctx != null) {
-      final String[] paramParam = {lambdaParamName};
       for (int ei = 0; ei < lambdas.length; ei++) {
-        final int[] paramOffs = {ei};
+        final Map<String, Integer> offset = Context.offset(lambdaParamName, ei);
 
-        ctx.put("len", len, paramParam, paramOffs);
-        ctx.put("totalLinks", totalLinks, paramParam, paramOffs);
-        ctx.put("nodeLinks", nodeLinks, paramParam, paramOffs);
+        ctx.put("len", len, offset);
+        ctx.put("totalLinks", totalLinks, offset);
+        ctx.put("nodeLinks", nodeLinks, offset);
 
-        ctx.put("totalSets", totalSets, paramParam, paramOffs);
-        ctx.put("sparceSets", sparceSets, paramParam, paramOffs);
-        ctx.put("exactSparceSets", exactSparceSetsExpected, paramParam, paramOffs);
-        ctx.put("regularSets", regularSets, paramParam, paramOffs);
-        ctx.put("eigenSets", eigenSets, paramParam, paramOffs);
+        ctx.put("totalSets", totalSets, offset);
+        ctx.put("sparceSets", sparceSets, offset);
+        ctx.put("exactSparceSets", exactSparceSetsExpected, offset);
+        ctx.put("regularSets", regularSets, offset);
+        ctx.put("eigenSets", eigenSets, offset);
       }
     }
 

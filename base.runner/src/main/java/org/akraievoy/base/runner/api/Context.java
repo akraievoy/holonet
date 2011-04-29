@@ -46,25 +46,23 @@ public class Context {
     this.runChain = runChain;
   }
 
-  @SuppressWarnings({"unchecked"})
   public <E> E get(String path, Class<E> attrType, final boolean cache) {
     if (cache) {
-      final Object cached = getInternal(path, widenedPse);
+      final E cached = getInternal(path, attrType, widenedPse);
       if (cached != null) {
         return (E) cached;
       }
     }
 
-    return (E) getInternal(path, widenedPse);
+    return (E) getInternal(path, attrType, widenedPse);
   }
 
-  @SuppressWarnings({"unchecked"})
-  public <E> E get(String path, Class<E> attrType, final String[] paramNames, final int[] offsets) {
-    return (E) getInternal(path, widenedPse.dupeOffset(paramNames, offsets));
+  public <E> E get(String path, Class<E> attrType, Map<String, Integer> offset) {
+    return (E) getInternal(path, attrType, widenedPse.dupe(offset));
   }
 
-  public void put(String path, Object attrvalue, final String[] paramNames, final int[] offsets) {
-    putInternal(path, attrvalue, widenedPse.getIndex(paramNames, offsets));
+  public void put(String path, Object attrvalue, Map<String, Integer> offset) {
+    putInternal(path, attrvalue, widenedPse.dupe(offset).getIndex());
   }
 
   public boolean containsKey(String path) {
@@ -96,12 +94,13 @@ public class Context {
     return false;
   }
 
-  protected Object getInternal(String path, ParamSetEnumerator widenedPse) {
+  @SuppressWarnings({"unchecked"})
+  protected <E> E getInternal(String path, Class<E> attrType, ParamSetEnumerator widenedPse) {
     try {
       final Object value = dao.findCtxAttr(runId, widenedPse.getIndex(), path);
 
       if (value != null) {
-        return value;
+        return (E) value;
       }
 
       for (RunInfo chained : runChain.values()) {
@@ -114,7 +113,7 @@ public class Context {
         );
 
         if (chainedValue != null) {
-          return chainedValue;
+          return (E) chainedValue;
         }
       }
     } catch (SQLException e) {
@@ -185,13 +184,25 @@ public class Context {
     return count;
   }
 
-  public Map<String, Integer> fromArrays(String[] paramNames, int[] offsets) {
-    final Map<String, Integer> offset = new TreeMap<String, Integer>();
+  public static Map<String, Integer> offset(
+      String paramName, int offset
+  ) {
+    final Map<String, Integer> offsetMap = new TreeMap<String, Integer>();
 
-    for (int i = 0, paramNamesLength = paramNames.length; i < paramNamesLength; i++) {
-      offset.put(paramNames[i], offsets[i]);
-    }
+    offsetMap.put(paramName, offset);
 
-    return offset;
+    return offsetMap;
+  }
+
+  public static Map<String, Integer> offset(
+      String param1, int offset1,
+      String param2, int offset2
+  ) {
+    final Map<String, Integer> offsetMap = new TreeMap<String, Integer>();
+
+    offsetMap.put(param1, offset1);
+    offsetMap.put(param2, offset2);
+
+    return offsetMap;
   }
 }
