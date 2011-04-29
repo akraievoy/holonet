@@ -20,6 +20,7 @@ package org.akraievoy.base.runner.domain;
 
 import com.google.common.base.Throwables;
 import org.akraievoy.base.Format;
+import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.base.runner.persist.ExperimentRegistry;
 import org.akraievoy.base.runner.persist.RunnerDao;
 import org.akraievoy.base.runner.vo.Experiment;
@@ -27,7 +28,6 @@ import org.akraievoy.base.runner.vo.Parameter;
 import org.akraievoy.base.runner.vo.RunInfo;
 
 import java.sql.SQLException;
-import java.util.List;
 import java.util.SortedMap;
 
 //	LATER this looks like a listener, not a subclass
@@ -56,7 +56,10 @@ public class ExperimentRunnerLogging extends ExperimentRunnerImpl {
     }
   }
 
-  protected void runForPoses(long runId, Experiment exp, ParamSetEnumerator widenedPse, ParamSetEnumerator pse, final ContextLogging ctx) {
+  protected void runForPoses(
+      long runId, Experiment exp,
+      ParamSetEnumerator widenedPse, ParamSetEnumerator pse, 
+      final Context ctx) {
     final long paramSetCount = widenedPse.getCount();
     final Runtime runtime = Runtime.getRuntime();
 

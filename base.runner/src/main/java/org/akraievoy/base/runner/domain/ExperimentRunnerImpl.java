@@ -21,6 +21,7 @@ package org.akraievoy.base.runner.domain;
 import com.google.common.base.Throwables;
 import org.akraievoy.base.Die;
 import org.akraievoy.base.ObjArrays;
+import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.base.runner.api.ContextInjectable;
 
 import org.akraievoy.base.runner.domain.spring.StringXmlApplicationContext;
@@ -91,7 +92,7 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
       ParamSetEnumerator root, ParamSetEnumerator widened,
       SortedMap<Long, RunInfo> runChain
   ) {
-    final ContextLogging ctx = new ContextLogging(runId, dao, widened, runChain);
+    final Context ctx = new Context(widened, dao, runId, runChain);
 
     do {
       runForPoses(runId, exp, widened, root, ctx);
@@ -116,7 +117,7 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
   protected void runForPoses(
       long runId, Experiment exp,
       ParamSetEnumerator widened, ParamSetEnumerator root,
-      ContextLogging ctx
+      Context ctx
   ) {
     final ConfigurableApplicationContext context = new StringXmlApplicationContext(
         exp.getSpringXml(), false, applicationContext
