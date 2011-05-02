@@ -62,18 +62,12 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
 
     while (curNode != null && !curNode.equals(owner.getAddress())) {
       final PGrid rpc = rpc(curNode);
-      PGridRouting result1;
-      synchronized (this) {
-        result1 = getRouting();
-      }
+      PGridRouting result1 = getRouting();
       final Range path = result1.getPath();
       final Set<Key> keys = owner.getServices().getStorage().getDataEntries().keySet();
       InviteResponse response = rpc.invite(path, keys);
 
-      PGridRouting result;
-      synchronized (this) {
-        result = getRouting();
-      }
+      PGridRouting result = getRouting();
       result.update(response.getOwnRoute(), Event.HEART_BEAT);
 
       if (response.getDelegated() == null || replicas.contains(response.getDelegated().getAddress())) {
@@ -87,10 +81,7 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
 
   public String toString() {
     final String keyNum = String.valueOf(owner.getServices().getStorage().getKeys().size());
-    PGridRouting result;
-    synchronized (this) {
-      result = getRouting();
-    }
+    PGridRouting result = getRouting();
     return PADDING[keyNum.length()] + keyNum + "@" + result.getPath().toString();
   }
 
@@ -113,16 +104,10 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
   }
 
   public InviteResponse invite(Range rPath, Set<Key> pKeys) throws CommunicationException {
-    PGridRouting result2;
-    synchronized (this) {
-      result2 = getRouting();
-    }
+    PGridRouting result2 = getRouting();
     if (result2.getPath().isSame(rPath)) {  //	keys are same
       if (isSplitRequired(rPath, pKeys)) {
-        PGridRouting result;
-        synchronized (this) {
-          result = getRouting();
-        }
+        PGridRouting result = getRouting();
         balSplit(result.getPath(), pKeys);
         return inviteResponse(replicaRoute());
       } else {
@@ -131,15 +116,9 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
       }
     }
 
-    PGridRouting result1;
-    synchronized (this) {
-      result1 = getRouting();
-    }
+    PGridRouting result1 = getRouting();
     if (result1.getPath().isPrefixFor(rPath, false)) {
-      PGridRouting result;
-      synchronized (this) {
-        result = getRouting();
-      }
+      PGridRouting result = getRouting();
       if (isSplitRequired(result.getPath(), pKeys)) {
         unbalSpitL(rPath, pKeys);
         return inviteResponse(replicaRoute());
@@ -149,10 +128,7 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
       }
     }
 
-    PGridRouting result;
-    synchronized (this) {
-      result = getRouting();
-    }
+    PGridRouting result = getRouting();
     if (rPath.isPrefixFor(result.getPath(), false)) {
       if (isSplitRequired(rPath, pKeys)) {
         unbalSplitR(rPath, pKeys);
@@ -169,31 +145,19 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
   //	TODO inline that
 
   protected RoutingEntry route(Range rPath) {
-    PGridRouting result;
-    synchronized (this) {
-      result = getRouting();
-    }
-    return result.localLookup(rPath.getKey(), 1, true)[0];
+    PGridRouting result = getRouting();
+    return result.localLookup(rPath.getKey(), 1, true).get(0);
   }
 
   protected RoutingEntry replicaRoute() {
-    PGridRouting result;
-    synchronized (this) {
-      result = getRouting();
-    }
-    PGridRouting result1;
-    synchronized (this) {
-      result1 = getRouting();
-    }
-    return result1.replicaSet(result.getOwnRoute().getKey(), Byte.MAX_VALUE)[0];
+    PGridRouting result = getRouting();
+    PGridRouting result1 = getRouting();
+    return result1.replicaSet(result.getOwnRoute().getKey(), Byte.MAX_VALUE).get(0);
   }
 
   protected InviteResponse inviteResponse(RoutingEntry delegated) {
     final int entries = owner.getServices().getStorage().getDataEntries().size();
-    PGridRouting result;
-    synchronized (this) {
-      result = getRouting();
-    }
+    PGridRouting result = getRouting();
     final RoutingEntry updatedOwnRoute = result.getOwnRoute().updateEntryCount(entries);
     return new InviteResponse(delegated, updatedOwnRoute);
   }
@@ -204,56 +168,35 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
 
   protected void balDataExchange(Set<Key> pKeys) throws CommunicationException {
     //noinspection ConstantConditions
-    PGridRouting result2;
-    synchronized (this) {
-      result2 = getRouting();
-    }
+    PGridRouting result2 = getRouting();
     final String operation = TRACE_OPERATIONS ? "{balDataExchange} path: " + result2.getPath() : null;
     if (TRACE_OPERATIONS) {
       operations.add(operation);
     }
-    PGridRouting result;
-    synchronized (this) {
-      result = getRouting();
-    }
-    PGridRouting result1;
-    synchronized (this) {
-      result1 = getRouting();
-    }
+    PGridRouting result = getRouting();
+    PGridRouting result1 = getRouting();
     split(result1.getPath(), result.getPath(), false, operation);
   }
 
   protected void unbalDataExchangeL(Range rPath, Set<Key> pKeys) throws CommunicationException {
     //noinspection ConstantConditions
-    PGridRouting result1;
-    synchronized (this) {
-      result1 = getRouting();
-    }
+    PGridRouting result1 = getRouting();
     final String operation = TRACE_OPERATIONS ? "{unbalDataExchangeL} localPath: " + result1.getPath() + " rPath: " + rPath : null;
     if (TRACE_OPERATIONS) {
       operations.add(operation);
     }
-    PGridRouting result;
-    synchronized (this) {
-      result = getRouting();
-    }
+    PGridRouting result = getRouting();
     split(result.getPath(), rPath, false, operation);
   }
 
   protected void unbalDataExchangeR(Range rPath, Set<Key> pKeys) throws CommunicationException {
     //noinspection ConstantConditions
-    PGridRouting result1;
-    synchronized (this) {
-      result1 = getRouting();
-    }
+    PGridRouting result1 = getRouting();
     final String operation = TRACE_OPERATIONS ? "{unbalDataExchangeR} localPath: " + result1.getPath() + " rPath: " + rPath : null;
     if (TRACE_OPERATIONS) {
       operations.add(operation);
     }
-    PGridRouting result;
-    synchronized (this) {
-      result = getRouting();
-    }
+    PGridRouting result = getRouting();
     split(result.getPath(), rPath, false, operation);
   }
 
@@ -263,39 +206,24 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
 
   protected void unbalSplitR(Range rPath, Set<Key> pKeys) throws CommunicationException {
     //noinspection ConstantConditions
-    PGridRouting result2;
-    synchronized (this) {
-      result2 = getRouting();
-    }
+    PGridRouting result2 = getRouting();
     final String operation = TRACE_OPERATIONS ? "{unbalSplitR} localPath: " + result2.getPath() + " rPath: " + rPath : null;
     if (TRACE_OPERATIONS) {
       operations.add(operation);
     }
-    PGridRouting result;
-    synchronized (this) {
-      result = getRouting();
-    }
-    PGridRouting result1;
-    synchronized (this) {
-      result1 = getRouting();
-    }
+    PGridRouting result = getRouting();
+    PGridRouting result1 = getRouting();
     split(result1.getPath(), rPath.expandWithComplement(result.getPath()), true, operation);
   }
 
   protected void unbalSpitL(Range rPath, Set<Key> pKeys) throws CommunicationException {
     //noinspection ConstantConditions
-    PGridRouting result1;
-    synchronized (this) {
-      result1 = getRouting();
-    }
+    PGridRouting result1 = getRouting();
     final String operation = TRACE_OPERATIONS ? "{unbalSpitL} localPath: " + result1.getPath() + " rPath: " + rPath : null;
     if (TRACE_OPERATIONS) {
       operations.add(operation);
     }
-    PGridRouting result;
-    synchronized (this) {
-      result = getRouting();
-    }
+    PGridRouting result = getRouting();
     split(result.getPath().expandWithComplement(rPath), rPath, true, operation);
   }
 
@@ -338,38 +266,23 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
     if (TRACE_OPERATIONS) {
       operations.add("--> {split} localPath: " + localPath + " remotePath: " + remotePath + (remove ? " remove" : ""));
     }
-    PGridRouting result3;
-    synchronized (this) {
-      result3 = getRouting();
-    }
-    result3.setPath(localPath);
+    PGridRouting routingLocal = getRouting();
+
+    routingLocal.setPath(localPath);
 
     final StorageService storage = owner.getServices().getStorage();
     final Map<Key, Object> movedData = storage.filterTo(remotePath.getKey(), remotePath.getBits(), remove, new TreeMap<Key, Object>());
-    PGridRouting result2;
-    synchronized (this) {
-      result2 = getRouting();
-    }
-    result2.getOwnRoute().updateEntryCount(storage.getDataEntries().size());
+    routingLocal.getOwnRoute().updateEntryCount(storage.getDataEntries().size());
 
-    PGridRouting result1;
-    synchronized (this) {
-      result1 = getRouting();
-    }
-    final List<RoutingEntry> copiedRoutes = new ArrayList<RoutingEntry>(Arrays.asList(result1.getRoutes()));
-    SplitData splitData = new SplitData(copiedRoutes, movedData);
+    SplitData splitData = new SplitData(routingLocal.getRoutes(), movedData);
 
     //	entries moved from remote party stored in the same variable
     SplitData rData = rpc(getCaller()).splitCallback(remotePath, splitData, localPath, remove, operation);
 
     storage.putAll(rData.getData());
     //	TODO discern caller own route from the table-stored routes (live rpc and indirect discovery)
-    PGridRouting result;
-    synchronized (this) {
-      result = getRouting();
-    }
     final List<RoutingEntry> routes = rData.getRoutes();
-    result.update(routes.toArray(new RoutingEntry[routes.size()]), Event.DISCOVERED);
+    routingLocal.update(routes.toArray(new RoutingEntry[routes.size()]), Event.DISCOVERED);
   }
 
   /**
@@ -382,60 +295,36 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
     final StorageService storage = owner.getServices().getStorage();
     storage.putAll(sData.getData());
 
-    PGridRouting result3;
-    synchronized (this) {
-      result3 = getRouting();
-    }
-    result3.setPath(newLocalPath);
-    PGridRouting result2;
-    synchronized (this) {
-      result2 = getRouting();
-    }
+    PGridRouting routingLocal = getRouting();
+    routingLocal.setPath(newLocalPath);
     final List<RoutingEntry> sDataRoutes = sData.getRoutes();
-    result2.update(sDataRoutes.toArray(new RoutingEntry[sDataRoutes.size()]), Event.DISCOVERED);
+    routingLocal.update(sDataRoutes.toArray(new RoutingEntry[sDataRoutes.size()]), Event.DISCOVERED);
 
     sData.getData().clear();
     sData.getRoutes().clear();
 
     storage.filterTo(newRemotePath.getKey(), newRemotePath.getBits(), remove, sData.getData());
-    PGridRouting result1;
-    synchronized (this) {
-      result1 = getRouting();
-    }
-    result1.getOwnRoute().updateEntryCount(storage.getDataEntries().size());
+    routingLocal.getOwnRoute().updateEntryCount(storage.getDataEntries().size());
     sData.getRoutes().clear();
-    PGridRouting result;
-    synchronized (this) {
-      result = getRouting();
-    }
-    sData.getRoutes().addAll(Arrays.asList(result.getRoutes()));
+    sData.getRoutes().addAll(routingLocal.getRoutes());
 
     return sData;
   }
 
   public void leave() throws CommunicationException {
-    PGridRouting result2;
-    synchronized (this) {
-      result2 = getRouting();
-    }
+    PGridRouting result2 = getRouting();
     Map<Key, Object> dataEntries = owner.getServices().getStorage().filter(result2.getPath().getKey(), 0, false);
-    List<RoutingEntry> allRoutes = new ArrayList<RoutingEntry>(Arrays.asList((getRouting().getRoutes())));
+    List<RoutingEntry> allRoutes = getRouting().getRoutes();
 
-    final RoutingEntry[] replicas = getRouting().replicaSet(getRouting().getPath().getKey(), Byte.MAX_VALUE);
+    final List<RoutingEntry> replicas = getRouting().replicaSet(getRouting().getPath().getKey(), Byte.MAX_VALUE);
 
     for (RoutingEntry replica : replicas) {
       if (replica.getAddress().equals(owner.getAddress())) {
         continue;
       }
       try {
-        PGridRouting result;
-        synchronized (this) {
-          result = getRouting();
-        }
-        PGridRouting result1;
-        synchronized (this) {
-          result1 = getRouting();
-        }
+        PGridRouting result = getRouting();
+        PGridRouting result1 = getRouting();
         rpc(replica.getAddress()).splitCallback(
             result1.getPath(),
             new SplitData(allRoutes, dataEntries),
@@ -456,14 +345,8 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
       }
 
       try {
-        PGridRouting result;
-        synchronized (this) {
-          result = getRouting();
-        }
-        PGridRouting result1;
-        synchronized (this) {
-          result1 = getRouting();
-        }
+        PGridRouting result = getRouting();
+        PGridRouting result1 = getRouting();
         rpc(complement.getAddress()).splitCallback(
             result1.getPath().getCommonPrefixPath(complement.getRange()),
             new SplitData(allRoutes, dataEntries),
@@ -483,15 +366,9 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
     final Set<Address> processed = new HashSet<Address>();
     boolean more = true;
     while (more) {
-      PGridRouting result;
-      synchronized (this) {
-        result = getRouting();
-      }
-      PGridRouting result1;
-      synchronized (this) {
-        result1 = getRouting();
-      }
-      final RoutingEntry[] routes = result1.replicaSet(result.getPath().getKey(), Byte.MAX_VALUE);
+      PGridRouting result = getRouting();
+      PGridRouting result1 = getRouting();
+      final List<RoutingEntry> routes = result1.replicaSet(result.getPath().getKey(), Byte.MAX_VALUE);
       more = false;
 
       for (RoutingEntry route : routes) {

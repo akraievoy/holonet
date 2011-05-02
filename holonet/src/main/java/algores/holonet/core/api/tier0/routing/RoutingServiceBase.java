@@ -64,7 +64,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     this.redundancy = redundancy;
   }
 
-  public RoutingEntry[] localLookup(Key key, int num, boolean safe) {
+  public List<RoutingEntry> localLookup(Key key, int num, boolean safe) {
     Die.ifNull("ownRoute", ownRoute);
     final List<RoutingEntry> result = new ArrayList<RoutingEntry>();
 
@@ -80,7 +80,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       result.subList(num, result.size()).clear();
     }
 
-    return result.toArray(new RoutingEntry[result.size()]);
+    return result;
   }
 
   protected void localLookupInternal(Key key, int num, List<RoutingEntry> result) {
@@ -118,7 +118,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     return livenessAvg;
   }
 
-  public RoutingEntry[] neighborSet(int num) {
+  public List<RoutingEntry> neighborSet(int num) {
     Die.ifNull("ownRoute", ownRoute);
 
     final List<RoutingEntry> result = new ArrayList<RoutingEntry>();
@@ -132,7 +132,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       }
     }
 
-    return result.toArray(new RoutingEntry[result.size()]);
+    return result;
   }
 
   protected boolean isNeighbor(RoutingEntry ownerEntry, RoutingEntry routingEntry) {
@@ -148,7 +148,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     return routingEntry.isReplicaFor(nextLKey, Byte.MAX_VALUE) || routingEntry.isReplicaFor(prevRKey, Byte.MAX_VALUE);
   }
 
-  public RoutingEntry[] replicaSet(Key key, byte maxRank) {
+  public List<RoutingEntry> replicaSet(Key key, byte maxRank) {
     Die.ifNull("ownRoute", ownRoute);
 
     final List<RoutingEntry> result = new ArrayList<RoutingEntry>();
@@ -167,16 +167,16 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
     Collections.sort(result, getRoutingPreference().createReComparator(key));
 
-    return result.toArray(new RoutingEntry[result.size()]);
+    return result;
   }
 
   @Deprecated
-  public void update(NodeHandle handle, boolean joined) {
+  public void update(RoutingEntry handle, boolean joined) {
     update(handle, joined ? Event.JOINED : Event.LEFT);
   }
 
   @Deprecated
-  public boolean range(NodeHandle handle, byte rank, AtomicReference<Key> lKey, AtomicReference<Key> rKey) {
+  public boolean range(RoutingEntry handle, byte rank, AtomicReference<Key> lKey, AtomicReference<Key> rKey) {
     Die.ifNull("ownRoute", ownRoute);
 
     final RoutingEntry re = getEntry(handle);
@@ -223,7 +223,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     return null;
   }
 
-  public void update(NodeHandle[] entries, Event event) {
+  public void update(RoutingEntry[] entries, Event event) {
     Die.ifNull("ownRoute", ownRoute);
 
     boolean added = false;
@@ -268,7 +268,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     }
   }
 
-  public void update(NodeHandle upNh, Event event) {
+  public void update(RoutingEntry upNh, Event event) {
     Die.ifNull("ownRoute", ownRoute);
 
     if (upNh.getAddress().equals(ownRoute.getAddress())) {
@@ -370,14 +370,14 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
   public abstract RoutingPreferenceBase getRoutingPreference();
 
-  public RoutingEntry[] getRoutes() {
-    if (routes.contains(getOwnRoute())) {
-      return routes.toArray(new RoutingEntry[routes.size()]);
+  public List<RoutingEntry> getRoutes() {
+    final ArrayList<RoutingEntry> routesRes = new ArrayList<RoutingEntry>(routes);
+
+    if (!routes.contains(getOwnRoute())) {
+      routesRes.add(getOwnRoute());
     }
 
-    final RoutingEntry[] routingEntries = routes.toArray(new RoutingEntry[routes.size() + 1]);
-    routingEntries[routes.size()] = getOwnRoute();
-    return routingEntries;
+    return routesRes;
   }
 
   public void registerCommunicationFailure(Address calleeAddress) {

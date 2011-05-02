@@ -22,11 +22,9 @@ import algores.holonet.core.CommunicationException;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.LocalServiceBase;
-import algores.holonet.core.api.NodeHandle;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.routing.RoutingService;
 import org.akraievoy.base.Die;
-import org.akraievoy.base.ObjArrays;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -86,7 +84,7 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
       return ownerAddress;
     }
 
-    final RoutingEntry[] routes = lookupRoutes(key);
+    final List<RoutingEntry> routes = lookupRoutes(key);
     Die.ifNull("routes", routes);
 
     final List<RoutingEntry> pending = callerPending != null ? callerPending : new ArrayList<RoutingEntry>();
@@ -128,38 +126,24 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     return null;
   }
 
-  protected static int addNewRoutes(List<RoutingEntry> pending, RoutingEntry[] routingEntries) {
-    int addedCount = 0;
-
-    for (RoutingEntry r : routingEntries) {
-      if (!pending.contains(r)) {
-        pending.add(r);
-        addedCount++;
-      }
-    }
+  protected static int addNewRoutes(List<RoutingEntry> pending, List<RoutingEntry> routingEntries) {
+    routingEntries.removeAll(pending);
+    int addedCount = routingEntries.size();
+    pending.addAll(routingEntries);
 
     return addedCount;
   }
 
-  public RoutingEntry[] lookupRoutes(Key key) throws CommunicationException {
-    final RoutingEntry[] replicas = getRouting().replicaSet(key, Byte.MAX_VALUE);
+  public List<RoutingEntry> lookupRoutes(Key key) throws CommunicationException {
+    final List<RoutingEntry> replicas = getRouting().replicaSet(key, Byte.MAX_VALUE);
+    final List<RoutingEntry> nodeHandles = getRouting().localLookup(key, 5, true);
 
-    final RoutingEntry[] nodeHandles = getRouting().localLookup(key, 5, true);
+    replicas.addAll(nodeHandles);
 
-    return ObjArrays.join(replicas, nodeHandles);
+    return replicas;
   }
 
   protected RoutingService getRouting() {
     return getOwner().getServices().getRouting();
-  }
-
-  protected static Address[] asAddresses(NodeHandle[] nodeHandles) {
-    final Address[] addresses = new Address[nodeHandles.length];
-
-    for (int i = 0; i < nodeHandles.length; i++) {
-      addresses[i] = nodeHandles[i].getAddress();
-    }
-
-    return addresses;
   }
 }

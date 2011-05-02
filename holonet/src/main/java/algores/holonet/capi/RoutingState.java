@@ -20,6 +20,7 @@ package algores.holonet.capi;
 
 import algores.holonet.core.api.NodeHandle;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -55,7 +56,7 @@ public interface RoutingState<NH extends NodeHandle, K extends Key> {
    * @param safe try to filter unsafe hops
    * @return list of next hops for the <code>key</code>
    */
-  NH[] localLookup(K key, int num, boolean safe);
+  List<? extends NH> localLookup(K key, int num, boolean safe);
 
   /**
    * Produces an unordered list of nodehandles that are neighbors of the local node in the ID space. Up to num node
@@ -64,7 +65,7 @@ public interface RoutingState<NH extends NodeHandle, K extends Key> {
    * @param num upper limit on result size
    * @return unordered list of neighbors in the key space
    */
-  NH[] neighborSet(int num);
+  List<? extends NH> neighborSet(int num);
 
   /**
    * Returns an ordered set of nodehandles on which replicas of the object with key <i>k</i>
@@ -79,7 +80,7 @@ public interface RoutingState<NH extends NodeHandle, K extends Key> {
    * @param maxRank replica rank limit
    * @return ordered set of replica nodehandles
    */
-  NH[] replicaSet(K key, byte maxRank);
+  List<? extends NH> replicaSet(K key, byte maxRank);
 
   /**
    * Invoked to inform the application that node handle has either joined or left the neighbor set of the local

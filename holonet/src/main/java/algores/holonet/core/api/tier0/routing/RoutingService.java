@@ -26,15 +26,16 @@ import algores.holonet.core.api.Key;
 import algores.holonet.core.api.NodeHandle;
 import algores.holonet.core.api.Range;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Anton Kraievoy
  */
-public interface RoutingService extends RoutingState<NodeHandle, Key> {
-  void update(NodeHandle handle, Event event);
+public interface RoutingService extends RoutingState<RoutingEntry, Key> {
+  void update(RoutingEntry handle, Event event);
 
-  void update(NodeHandle[] routingData, Event event);
+  void update(RoutingEntry[] routingData, Event event);
 
   RoutingEntry getOwnRoute() throws CommunicationException;
 
@@ -73,15 +74,15 @@ public interface RoutingService extends RoutingState<NodeHandle, Key> {
    *             use {@link RoutingService#getRange(NodeHandle , byte, Key)} instead
    */
   @Deprecated
-  boolean range(NodeHandle handle, byte rank, AtomicReference<Key> lKey, AtomicReference<Key> rKey);
+  boolean range(RoutingEntry handle, byte rank, AtomicReference<Key> lKey, AtomicReference<Key> rKey);
 
-  RoutingEntry[] localLookup(Key key, int num, boolean safe);
+  List<RoutingEntry> localLookup(Key key, int num, boolean safe);
 
-  RoutingEntry[] neighborSet(int num);
+  List<RoutingEntry> neighborSet(int num);
 
-  RoutingEntry[] replicaSet(Key key, byte maxRank);
+  List<RoutingEntry> replicaSet(Key key, byte maxRank);
 
-  RoutingEntry[] getRoutes() throws CommunicationException;
+  List<RoutingEntry> getRoutes() throws CommunicationException;
 
   void registerCommunicationFailure(Address calleeAddress);
 
