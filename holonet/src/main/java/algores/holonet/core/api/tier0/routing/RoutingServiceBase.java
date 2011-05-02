@@ -280,24 +280,20 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
         continue;
       }
 
-      if (upNh instanceof RoutingEntry) {
-        final RoutingEntry upRe = (RoutingEntry) upNh;
-        if (myRe.getStamp() < upRe.getStamp()) {
-          myRe.update(upRe.getStamp(), upRe.getEntryCount(), upRe.getRanges());
-        }
+      final RoutingEntry upRe = (RoutingEntry) upNh;
+      if (myRe.getStamp() < upRe.getStamp()) {
+        myRe.update(upRe.getStamp(), upRe.getEntryCount(), upRe.getRanges());
       }
       myRe.updateLiveness(event);
 
       return;
     }
 
-    if (upNh instanceof RoutingEntry) {
-      final RoutingEntry newRe = ((RoutingEntry) upNh).copy();
-      storeFlavor(flavorize(ownRoute, newRe));
-      newRe.updateLiveness(event);
+    final RoutingEntry newRe = ((RoutingEntry) upNh).copy();
+    storeFlavor(flavorize(ownRoute, newRe));
+    newRe.updateLiveness(event);
 
-      maintainRedundancyRatio();
-    }
+    maintainRedundancyRatio();
   }
 
   protected void reflavor() {
