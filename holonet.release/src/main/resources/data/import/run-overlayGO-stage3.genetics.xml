@@ -62,7 +62,7 @@
       <hn:Param name="geneticStrategy.lambda" value="0.70"/>
       <hn:Param name="geneticStrategy.lambdaTargetGeneration" value="1"/>
     </hn:Config>
-    <hn:Config name="lambda70" description="Lambda: 0.70 --&gt; 0.75">
+    <hn:Config name="lambda7075" description="Lambda: 0.70 --&gt; 0.75">
       <hn:Param name="geneticStrategy.startLambda" value="0.70"/>
       <hn:Param name="geneticStrategy.lambda" value="0.75"/>
       <hn:Param name="geneticStrategy.lambdaTargetGeneration" value="50"/>
