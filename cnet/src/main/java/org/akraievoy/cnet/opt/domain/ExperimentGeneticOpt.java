@@ -57,8 +57,7 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
   protected double eliteRatio = 0.05;
   protected double mutationRatio = 0.05;
   protected double crossoverRatio = 0.25;
-  protected double missLimitRatio = 12.0;
-  protected boolean terminate;
+  protected double missLimitRatio = 60.0;
 
   protected int generation = 0;
   protected int specimenIndex = 0;
@@ -182,7 +181,7 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
       final Ref<Mutator<Genome>> mutator = new RefSimple<Mutator<Genome>>(null);
       generateCount++;
 
-      final Genome child = generateChild(state, fKeys, breeder, mutator);
+      final Genome child = generateChild(state, fKeys, breeder, mutator, generateCount);
 
       if (!validate(child)) {
         mutators.onFailure(mutator.getValue());
@@ -199,8 +198,6 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     mutators.storeRatios(ctx);
     breeders.storeRatios(ctx);
     log.info("Generation #{} filled; fitness {}", generation, fitnessReport(children));
-
-    terminate = children.isEmpty();
   }
 
   public void storeToPopulation(final SortedMap<FitnessKey, Genome> population, List<Genome> genomes) {
@@ -251,11 +248,10 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
 
   protected Genome generateChild(
       GeneticState state, FitnessKey[] fKeys,
-      Ref<Breeder<Genome>> breeder, Ref<Mutator<Genome>> mutator
-  ) {
-    // FIXME there's a dead loop: if elite dies out due to constraint change 
-    if (children.size() <= eliteLimit && children.size() < parents.size()) {
-      return parents.get(fKeys[children.size()]);
+      Ref<Breeder<Genome>> breeder, Ref<Mutator<Genome>> mutator,
+      int generateCount) {
+    if (children.size() <= eliteLimit && generateCount < parents.size()) {
+      return parents.get(fKeys[generateCount]);
     }
 
     final FitnessKey fKeyA = fKeys[events.generate(eSource, false, null)];
