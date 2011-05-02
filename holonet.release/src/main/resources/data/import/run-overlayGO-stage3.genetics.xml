@@ -32,7 +32,7 @@
     <hn:Config name="default" description="Default (101 generations / 91 specimens)">
       <hn:Param name="ovlGenOpt.generation" value="0-100" chainedStrategy="use_last" />
       <hn:Param name="ovlGenOpt.specimenIndex" value="0-90" chainedStrategy="use_first" strategy="use_first" />
-      <hn:Param name="ovlGenOpt.missLimitRatio" value="60"/>
+      <hn:Param name="ovlGenOpt.missLimitRatio" value="200"/>
       <hn:Param name="geneticState.maxCrossover" value="0.25"/>
       <hn:Param name="geneticState.maxElemFitPow" value="3"/>
       <hn:Param name="geneticState.maxMutation" value="0.05"/>
@@ -42,22 +42,42 @@
       <hn:Param name="geneticStrategy.lambda" value="0.65"/>
       <hn:Param name="geneticStrategy.lambdaTargetGeneration" value="50"/>
     </hn:Config>
-    <hn:Config name="lambda6570" description="Lambda: 0.65 --> 0.70">
+    <hn:Config name="lambda65" description="Lambda: 0.65">
+      <hn:Param name="geneticStrategy.startLambda" value="0.65"/>
+      <hn:Param name="geneticStrategy.lambda" value="0.65"/>
+      <hn:Param name="geneticStrategy.lambdaTargetGeneration" value="1"/>
+    </hn:Config>
+    <hn:Config name="lambda6570" description="Lambda: 0.65 --&gt; 0.70">
       <hn:Param name="geneticStrategy.startLambda" value="0.65"/>
       <hn:Param name="geneticStrategy.lambda" value="0.70"/>
       <hn:Param name="geneticStrategy.lambdaTargetGeneration" value="50"/>
     </hn:Config>
-    <hn:Config name="lambda6575" description="Lambda: 0.65 --> 0.75">
+    <hn:Config name="lambda6575" description="Lambda: 0.65 --&gt; 0.75">
       <hn:Param name="geneticStrategy.startLambda" value="0.65"/>
       <hn:Param name="geneticStrategy.lambda" value="0.75"/>
       <hn:Param name="geneticStrategy.lambdaTargetGeneration" value="50"/>
     </hn:Config>
-    <hn:Config name="lambda7580" description="Lambda: 0.75 --> 0.80">
+    <hn:Config name="lambda70" description="Lambda: 0.70">
+      <hn:Param name="geneticStrategy.startLambda" value="0.70"/>
+      <hn:Param name="geneticStrategy.lambda" value="0.70"/>
+      <hn:Param name="geneticStrategy.lambdaTargetGeneration" value="1"/>
+    </hn:Config>
+    <hn:Config name="lambda70" description="Lambda: 0.70 --&gt; 0.75">
+      <hn:Param name="geneticStrategy.startLambda" value="0.70"/>
+      <hn:Param name="geneticStrategy.lambda" value="0.75"/>
+      <hn:Param name="geneticStrategy.lambdaTargetGeneration" value="50"/>
+    </hn:Config>
+    <hn:Config name="lambda75" description="Lambda: 0.75">
+      <hn:Param name="geneticStrategy.startLambda" value="0.75"/>
+      <hn:Param name="geneticStrategy.lambda" value="0.75"/>
+      <hn:Param name="geneticStrategy.lambdaTargetGeneration" value="1"/>
+    </hn:Config>
+    <hn:Config name="lambda7580" description="Lambda: 0.75 --&gt; 0.80">
       <hn:Param name="geneticStrategy.startLambda" value="0.75"/>
       <hn:Param name="geneticStrategy.lambda" value="0.80"/>
       <hn:Param name="geneticStrategy.lambdaTargetGeneration" value="50"/>
     </hn:Config>
-    <hn:Config name="lambda7585" description="Lambda: 0.75 --> 0.85">
+    <hn:Config name="lambda7585" description="Lambda: 0.75 --&gt; 0.85">
       <hn:Param name="geneticStrategy.startLambda" value="0.75"/>
       <hn:Param name="geneticStrategy.lambda" value="0.85"/>
       <hn:Param name="geneticStrategy.lambdaTargetGeneration" value="50"/>
