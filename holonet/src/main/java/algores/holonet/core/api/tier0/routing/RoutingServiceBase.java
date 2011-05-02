@@ -289,7 +289,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       return;
     }
 
-    final RoutingEntry newRe = ((RoutingEntry) upNh).copy();
+    final RoutingEntry newRe = upNh.copy();
     storeFlavor(flavorize(ownRoute, newRe));
     newRe.updateLiveness(event);
 
