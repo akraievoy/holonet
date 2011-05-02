@@ -179,9 +179,9 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
 
       final Ref<Breeder<Genome>> breeder = new RefSimple<Breeder<Genome>>(null);
       final Ref<Mutator<Genome>> mutator = new RefSimple<Mutator<Genome>>(null);
-      generateCount++;
 
       final Genome child = generateChild(state, fKeys, breeder, mutator, generateCount);
+      generateCount++;
 
       if (!validate(child)) {
         mutators.onFailure(mutator.getValue());
