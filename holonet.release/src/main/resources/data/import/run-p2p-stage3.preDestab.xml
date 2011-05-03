@@ -85,6 +85,9 @@
   <bean class="org.akraievoy.cnet.net.ref.RefEdgeData" id="ref_overlay_edata_requests">
     <property name="path" value="overlay.requests"/>
   </bean>
+  <bean class="org.akraievoy.cnet.net.ref.RefEdgeData" id="ref_overlay_structure">
+    <property name="path" value="gen.best.0"/>
+  </bean>
 
   <bean class="algores.holonet.testbench.Testbench" id="main">
     <property name="initSeedRef" ref="tbInitSeed"/>
@@ -99,6 +102,7 @@
             <property name="locY" ref="ref_overlay_vdata_location_y"/>
             <property name="dist" ref="ref_overlay_edata_distance"/>
             <property name="req" ref="ref_overlay_edata_requests"/>
+            <property name="overlay" ref="ref_overlay_structure"/>
           </bean>
         </property>
       </bean>

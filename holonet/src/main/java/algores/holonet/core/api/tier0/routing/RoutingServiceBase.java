@@ -391,6 +391,15 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       public int compare(RoutingEntry r1, RoutingEntry r2) {
         final Range bestR1 = r1.selectRange(localAddress, key, preference);
         final Range bestR2 = r2.selectRange(localAddress, key, preference);
+
+        if (owner.getNetwork().getEnv().isPreferred(localAddress, r1.getAddress(), r2.getAddress())) {
+          return -1;
+        }
+
+        if (owner.getNetwork().getEnv().isPreferred(localAddress, r2.getAddress(), r1.getAddress())) {
+          return -1;
+        }
+
         if (preference.isPreferred(localAddress, key, r1.getAddress(), bestR1, r2.getAddress(), bestR2)) {
           return -1;
         }

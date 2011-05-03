@@ -59,4 +59,8 @@ public class EnvSimple implements Env {
   public void init() {
     //	nothing to do
   }
+
+  public boolean isPreferred(Address localAddress, Address currentAddress, Address bestAddress) {
+    return false;
+  }
 }

@@ -27,6 +27,7 @@ import org.akraievoy.cnet.gen.vo.WeightedEventModel;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelBase;
 import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.ref.RefVertexData;
+import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.VertexData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,7 @@ public class EnvCNet implements Env {
 
   protected RefEdgeData dist;
   protected RefEdgeData req;
+  protected RefEdgeData overlay;
 
   protected WeightedEventModel nodeUse = new WeightedEventModelBase();
   protected WeightedEventModel nodeSel = new WeightedEventModelBase();
@@ -73,6 +75,10 @@ public class EnvCNet implements Env {
     this.req = req;
   }
 
+  public void setOverlay(RefEdgeData overlay) {
+    this.overlay = overlay;
+  }
+
   protected boolean refSet(final RefCtx[] refs) {
     for (RefCtx ref : refs) {
       if (ref == null || ref.getValue() == null) {
@@ -84,7 +90,7 @@ public class EnvCNet implements Env {
 
   public void init() {
     if (!refSet(new RefCtx[]{locX, locY, density, dist, req})) {
-      log.info("activating fallback to EnvSimple: not all refs set");
+      log.warn("activating fallback to EnvSimple: not all refs set");
       fallback = new EnvSimple();
       return;
     }
@@ -96,6 +102,29 @@ public class EnvCNet implements Env {
       nodeUse.add(i, density.get(i));
       nodeSel.add(i, density.get(i));
     }
+  }
+
+  public boolean isPreferred(Address localAddress, Address currentAddress, Address bestAddress) {
+    if (fallback != null) {
+      return fallback.isPreferred(localAddress, currentAddress, bestAddress);
+    }
+
+    final AddressCNet local = (AddressCNet) localAddress;
+    final AddressCNet curr = (AddressCNet) currentAddress;
+    final AddressCNet best = (AddressCNet) bestAddress;
+
+    if (curr.equals(best)) {
+      return false;
+    }
+
+    if (local.equals(best)) {
+      return false;
+    }
+
+    final EdgeData overlayEdges = overlay.getValue();
+    final int localIdx = local.getNodeIdx();
+
+    return overlayEdges.get(localIdx, curr.getNodeIdx()) > overlayEdges.get(localIdx, best.getNodeIdx());
   }
 
   public Address createNetworkAddress(EntropySource eSource) {

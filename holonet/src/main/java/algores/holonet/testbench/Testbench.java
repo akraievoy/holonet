@@ -95,10 +95,6 @@ public class Testbench implements Runnable, ContextInjectable {
   }
 
   public void run() {
-    if (false) {
-      //  FIXME how do we detect previous experiments with pre-generatied networks?
-    }
-
     this.initEntropySource.setSeed(initSeedRef.getValue());
     this.runEntropySource.setSeed(runSeedRef.getValue());
 

@@ -35,4 +35,6 @@ public interface Env {
   Collection<Node> getAllNodes();
 
   void init();
+
+  boolean isPreferred(Address localAddress, Address currentAddress, Address bestAddress);
 }
