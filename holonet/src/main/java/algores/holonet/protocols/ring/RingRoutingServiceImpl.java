@@ -23,7 +23,7 @@ import algores.holonet.core.Node;
 import algores.holonet.core.api.Range;
 import algores.holonet.core.api.RangeBase;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
-import algores.holonet.core.api.tier0.routing.RoutingPreferenceBase;
+import algores.holonet.core.api.tier0.routing.RoutingPreference;
 import algores.holonet.core.api.tier0.routing.RoutingServiceBase;
 import org.akraievoy.base.Die;
 
@@ -31,7 +31,7 @@ import org.akraievoy.base.Die;
  * Default implementation.
  */
 public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRoutingService {
-  protected RoutingPreferenceBase routingPreference;
+  protected RoutingPreference routingPreference;
 
   protected RoutingEntry successor;
   protected RoutingEntry predecessor;
@@ -65,11 +65,11 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
     setRedundancy(3);
   }
 
-  public RoutingPreferenceBase getRoutingPreference() {
+  public RoutingPreference getRoutingPreference() {
     return routingPreference;
   }
 
-  public void setRoutingPreference(RoutingPreferenceBase routingPreference) {
+  public void setRoutingPreference(RoutingPreference routingPreference) {
     this.routingPreference = routingPreference;
   }
 

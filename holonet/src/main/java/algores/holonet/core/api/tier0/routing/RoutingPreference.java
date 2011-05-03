@@ -18,6 +18,7 @@
 
 package algores.holonet.core.api.tier0.routing;
 
+import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.Range;
 
@@ -31,20 +32,18 @@ public interface RoutingPreference {
   /**
    * Returns true in case <code>curRange</code> is preferred over <code>bestRange</code>.
    *
+   * @param localAddress for which preference is evaluated
    * @param target    the Key we route towards
+   * @param curAddress address of the range we are looking at
    * @param curRange  range we are looking at
+   * @param bestAddress address of the range currently deemed as best
    * @param bestRange best range for now
+   *  
    * @return true in case <code>curRange</code> is preferred over <code>bestRange</code>.
    */
-  boolean isPreferred(Key target, Range curRange, Range bestRange);
-
-  /**
-   * Comparator should list most preferred items first (so they are <i>less</i> than others).
-   *
-   * @param target the Key we route towards
-   * @return Comparator should list most preferred items first (so they are <i>less</i> than others).
-   */
-  Comparator<Range> createRangeComparator(Key target);
-
-  Comparator<RoutingEntry> createReComparator(Key target);
+  boolean isPreferred(
+      Address localAddress, Key target,
+      Address curAddress, Range curRange,
+      Address bestAddress, Range bestRange
+  );
 }

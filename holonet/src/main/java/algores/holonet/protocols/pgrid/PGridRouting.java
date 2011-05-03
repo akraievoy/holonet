@@ -22,7 +22,7 @@ import algores.holonet.core.Node;
 import algores.holonet.core.api.Range;
 import algores.holonet.core.api.RangeBase;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
-import algores.holonet.core.api.tier0.routing.RoutingPreferenceBase;
+import algores.holonet.core.api.tier0.routing.RoutingPreference;
 import algores.holonet.core.api.tier0.routing.RoutingServiceBase;
 
 class PGridRouting extends RoutingServiceBase {
@@ -67,7 +67,7 @@ class PGridRouting extends RoutingServiceBase {
     return "complement:" + commonPrefixLen;
   }
 
-  public RoutingPreferenceBase getRoutingPreference() {
+  public RoutingPreference getRoutingPreference() {
     return routingPreference;
   }
 

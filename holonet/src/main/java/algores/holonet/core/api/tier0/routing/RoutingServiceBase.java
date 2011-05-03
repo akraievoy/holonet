@@ -74,7 +74,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       result.addAll(routes);
     }
 
-    localLookupInternal(key, num, result);
+    localLookupInternal(key, result);
 
     if (result.size() > num) {
       result.subList(num, result.size()).clear();
@@ -83,17 +83,17 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     return result;
   }
 
-  protected void localLookupInternal(Key key, int num, List<RoutingEntry> result) {
-    final RoutingPreferenceBase pref = getRoutingPreference();
-    final Comparator<Range> comparator = pref.createRangeComparator(key);
-    final TreeMap<Range, RoutingEntry> rangeToEntry = new TreeMap<Range, RoutingEntry>(comparator);
+  protected void localLookupInternal(Key key, List<RoutingEntry> result) {
+    final RoutingPreference pref = getRoutingPreference();
+    final Comparator<RoutingEntry> comparator = preferenceComparator(key, pref);
+    final TreeSet<RoutingEntry> entries = new TreeSet<RoutingEntry>(comparator);
 
     for (RoutingEntry re : result) {
-      rangeToEntry.put(re.selectRange(key, pref), re);
+      entries.add(re);
     }
 
     result.clear();
-    result.addAll(rangeToEntry.values());
+    result.addAll(entries);
   }
 
   protected void filterSafeRoutes(List<RoutingEntry> result) {
@@ -165,7 +165,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       }
     }
 
-    Collections.sort(result, getRoutingPreference().createReComparator(key));
+    Collections.sort(result, preferenceComparator(key, getRoutingPreference()));
 
     return result;
   }
@@ -228,22 +228,19 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
     boolean added = false;
 
-    for (NodeHandle upNh : entries) {
-      if (upNh.getAddress().equals(ownRoute.getAddress())) {
+    for (RoutingEntry upEntry : entries) {
+      if (upEntry.getAddress().equals(ownRoute.getAddress())) {
         continue;
       }
 
       boolean found = false;
       for (RoutingEntry myRe : routes) {
-        if (!myRe.getAddress().equals(upNh.getAddress())) {
+        if (!myRe.getAddress().equals(upEntry.getAddress())) {
           continue;
         }
 
-        if (upNh instanceof RoutingEntry) {
-          final RoutingEntry upRe = (RoutingEntry) upNh;
-          if (myRe.getStamp() < upRe.getStamp()) {
-            myRe.update(upRe.getStamp(), upRe.getEntryCount(), upRe.getRanges());
-          }
+        if (myRe.getStamp() < upEntry.getStamp()) {
+          myRe.update(upEntry.getStamp(), upEntry.getEntryCount(), upEntry.getRanges());
         }
         myRe.updateLiveness(event);
 
@@ -255,12 +252,10 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
         continue;
       }
 
-      if (upNh instanceof RoutingEntry) {
-        added = true;
+      added = true;
 
-        final RoutingEntry newRe = ((RoutingEntry) upNh).copy();
-        newRe.updateLiveness(event);
-      }
+      final RoutingEntry newRe = upEntry.copy();
+      newRe.updateLiveness(event);
     }
 
     if (added) {
@@ -268,28 +263,27 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     }
   }
 
-  public void update(RoutingEntry upNh, Event event) {
+  public void update(RoutingEntry upEntry, Event event) {
     Die.ifNull("ownRoute", ownRoute);
 
-    if (upNh.getAddress().equals(ownRoute.getAddress())) {
+    if (upEntry.getAddress().equals(ownRoute.getAddress())) {
       return;
     }
 
     for (RoutingEntry myRe : routes) {
-      if (!myRe.getAddress().equals(upNh.getAddress())) {
+      if (!myRe.getAddress().equals(upEntry.getAddress())) {
         continue;
       }
 
-      final RoutingEntry upRe = (RoutingEntry) upNh;
-      if (myRe.getStamp() < upRe.getStamp()) {
-        myRe.update(upRe.getStamp(), upRe.getEntryCount(), upRe.getRanges());
+      if (myRe.getStamp() < upEntry.getStamp()) {
+        myRe.update(upEntry.getStamp(), upEntry.getEntryCount(), upEntry.getRanges());
       }
       myRe.updateLiveness(event);
 
       return;
     }
 
-    final RoutingEntry newRe = upNh.copy();
+    final RoutingEntry newRe = upEntry.copy();
     storeFlavor(flavorize(ownRoute, newRe));
     newRe.updateLiveness(event);
 
@@ -364,7 +358,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     maintainRedundancyRatio();
   }
 
-  public abstract RoutingPreferenceBase getRoutingPreference();
+  public abstract RoutingPreference getRoutingPreference();
 
   public List<RoutingEntry> getRoutes() {
     final ArrayList<RoutingEntry> routesRes = new ArrayList<RoutingEntry>(routes);
@@ -386,6 +380,28 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     } else {
 //			System.out.println("stamped a foreign route entry");
     }
+  }
+
+  protected Comparator<RoutingEntry> preferenceComparator(final Key key, final RoutingPreference pref) {
+    final Address localAddress = owner.getAddress();
+    @SuppressWarnings({"UnnecessaryLocalVariable"})
+    final RoutingPreference preference = pref;
+
+    return new Comparator<RoutingEntry>() {
+      public int compare(RoutingEntry r1, RoutingEntry r2) {
+        final Range bestR1 = r1.selectRange(localAddress, key, preference);
+        final Range bestR2 = r2.selectRange(localAddress, key, preference);
+        if (preference.isPreferred(localAddress, key, r1.getAddress(), bestR1, r2.getAddress(), bestR2)) {
+          return -1;
+        }
+
+        if (preference.isPreferred(localAddress, key, r2.getAddress(), bestR2, r1.getAddress(), bestR1)) {
+          return 1;
+        }
+
+        return 0;
+      }
+    };
   }
 
   protected static class LivenessComparator implements Comparator<RoutingEntry> {

@@ -18,16 +18,17 @@
 
 package algores.holonet.protocols.ring;
 
+import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.KeySpace;
 import algores.holonet.core.api.Range;
-import algores.holonet.core.api.tier0.routing.RoutingPreferenceBase;
+import algores.holonet.core.api.tier0.routing.RoutingPreference;
 
 /**
  * Used for ring topology.
  */
-public class RingRoutingPreference extends RoutingPreferenceBase {
-  public boolean isPreferred(Key target, Range curRange, Range bestRange) {
+public class RingRoutingPreference implements RoutingPreference {
+  public boolean isPreferred(Address localAddress, Key target, Address curAddress, Range curRange, Address bestAddress, Range bestRange) {
     final boolean preferred = KeySpace.isInOpenRightRange(target, bestRange.getRKey(), curRange.getRKey());
 
     return preferred;

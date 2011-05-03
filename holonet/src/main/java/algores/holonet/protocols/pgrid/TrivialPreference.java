@@ -18,13 +18,14 @@
 
 package algores.holonet.protocols.pgrid;
 
+import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.KeySpace;
 import algores.holonet.core.api.Range;
-import algores.holonet.core.api.tier0.routing.RoutingPreferenceBase;
+import algores.holonet.core.api.tier0.routing.RoutingPreference;
 
-class TrivialPreference extends RoutingPreferenceBase {
-  public boolean isPreferred(Key target, Range curRange, Range bestRange) {
+class TrivialPreference implements RoutingPreference {
+  public boolean isPreferred(Address localAddress, Key target, Address curAddress, Range curRange, Address bestAddress, Range bestRange) {
     final int curPrefix = KeySpace.getCommonPrefixLen(curRange.getKey(), target, Key.BITNESS);
     final int bestPrefix = KeySpace.getCommonPrefixLen(bestRange.getKey(), target, Key.BITNESS);
 
