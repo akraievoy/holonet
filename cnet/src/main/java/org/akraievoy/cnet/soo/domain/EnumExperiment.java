@@ -24,6 +24,8 @@ import org.akraievoy.base.Parse;
 import org.akraievoy.base.runner.api.*;
 import org.akraievoy.base.runner.domain.ParamSetEnumerator;
 import org.akraievoy.base.runner.vo.Parameter;
+import org.akraievoy.cnet.gen.vo.EntropySource;
+import org.akraievoy.cnet.gen.vo.EntropySourceRandom;
 import org.akraievoy.cnet.metrics.domain.MetricScalarEigenGap;
 import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
@@ -40,6 +42,7 @@ import java.util.Map;
 public class EnumExperiment implements Runnable, ContextInjectable {
   private static final Logger log = LoggerFactory.getLogger(EnumExperiment.class);
 
+  protected static final double MAX_EVALS = 1e6;
   protected Context ctx;
 
   protected RefLong sizeRef = new RefLong(8);
@@ -47,9 +50,15 @@ public class EnumExperiment implements Runnable, ContextInjectable {
   protected RefDouble thetaTildeRef = new RefDouble(1);
   protected RefDouble lambdaRef = new RefDouble(0.2);
   protected String lambdaParamName;
+  protected EntropySource evalSource = new EntropySourceRandom();
+  protected static final int TIME_THROTTLE_RANGE = -8192;
 
   public void setCtx(Context ctx) {
     this.ctx = ctx;
+  }
+
+  public void setEvalSource(EntropySource evalSource) {
+    this.evalSource = evalSource;
   }
 
   public void setLambdaRef(RefDouble lambdaRef) {
@@ -72,6 +81,7 @@ public class EnumExperiment implements Runnable, ContextInjectable {
     this.lambdaParamName = lambdaParamName;
   }
 
+  //  LATER simplify this method, as soon as the code upsets you enough
   public void run() {
     if (ctx == null) {
       BasicConfigurator.configure();
@@ -103,31 +113,33 @@ public class EnumExperiment implements Runnable, ContextInjectable {
     }
 
     final BigInteger totalSets = BigInteger.valueOf(2).pow(len);
-    BigInteger sparceSets = BigInteger.ZERO;
-    BigInteger c_from_len_by_ctl = BigInteger.ONE;
+    BigInteger sparseSets = BigInteger.ZERO;
+    BigInteger c_from_len_by_totalLinks = BigInteger.ONE;
     for (int curTotalLinks = 0; curTotalLinks <= totalLinks; curTotalLinks++) {
       if (curTotalLinks > 0) {
-        c_from_len_by_ctl =
-            c_from_len_by_ctl.
+        c_from_len_by_totalLinks =
+            c_from_len_by_totalLinks.
                 multiply(BigInteger.valueOf(len + 1 - curTotalLinks)).
                 divide(BigInteger.valueOf(curTotalLinks));
       }
 
-      sparceSets = sparceSets.add(c_from_len_by_ctl);
+      sparseSets = sparseSets.add(c_from_len_by_totalLinks);
     }
 
-    long exactSparceSetsExpected = c_from_len_by_ctl.longValue();
-    long exactSparceSets = 0;
-    long regularSets = 0;
-    final long[] eigenSets = new long[lambdas.length];
+    BigInteger exactSparseSetsExpected = c_from_len_by_totalLinks;
+
+    BigInteger exactSparseSets = BigInteger.ZERO;
+    BigInteger regularSets = BigInteger.ZERO;
+    final BigInteger[] eigenSets = new BigInteger[lambdas.length];
+    Arrays.fill(eigenSets, BigInteger.ZERO);
 
     log.info("len (max links) = {}", len);
-    log.info("totalLinks (upper limit) = {}", totalLinks);
+    log.info("totalLinks (upper limit) = {} ({}% density)", totalLinks, Format.format2(100 * totalLinks / (double) len));
     log.info("nodeLinks = {}", nodeLinks);
 
     log.info("totalSets = {}", totalSets);
-    log.info("sparceSets = {}", sparceSets);
-    log.info("exactSparceSets = {}", exactSparceSetsExpected);
+    log.info("sparseSets = {} ({}% of total)", sparseSets, percentageStr(sparseSets, totalSets));
+    log.info("exactSparseSets = {} ({}% of sparse)", exactSparseSetsExpected, percentageStr(exactSparseSetsExpected, sparseSets));
 
     int idx;
     int[] powers = new int[size];
@@ -139,21 +151,26 @@ public class EnumExperiment implements Runnable, ContextInjectable {
 
     final long firstStatus = System.currentTimeMillis();
     long lastStatus = firstStatus;
-    byte timeThrottle = 0;
+    int timeThrottle = TIME_THROTTLE_RANGE;
+    final double ess = exactSparseSetsExpected.doubleValue();
+    double evalMargin = ess > MAX_EVALS ? MAX_EVALS / ess : 1;
+    log.info("eval margin: {}%", Format.format2(evalMargin * 100));
+    BigInteger evals = BigInteger.ZERO;
     while (true) {
-      long nextPerm = exactSparceSets == 0 ? 1 : nextPermExact(len, links, totalLinks);
+      long nextPerm = exactSparseSets.equals(BigInteger.ZERO) ? 1 : nextPermExact(len, links, totalLinks);
       if (nextPerm <= 0) {
         break;
       }
-      if (exactSparceSets >= exactSparceSetsExpected) {
+      if (exactSparseSets.compareTo(exactSparseSetsExpected) >= 0) {
         throw new IllegalStateException("still enumerating sets?");
       }
 
-      exactSparceSets += 1;
+      exactSparseSets = exactSparseSets.add(BigInteger.ONE);
       if (timeThrottle++ == 0) {
+        timeThrottle = TIME_THROTTLE_RANGE;
         final long now = System.currentTimeMillis();
         if (now - lastStatus >= 60 * 1000) {
-          final double percentage = Math.round(10000.0 * exactSparceSets / exactSparceSetsExpected) / 100.0;
+          final double percentage = percentage(exactSparseSets, exactSparseSetsExpected);
           log.debug(
               "completed {}%, ETA {}",
               percentage,
@@ -162,6 +179,11 @@ public class EnumExperiment implements Runnable, ContextInjectable {
           lastStatus = now;
         }
       }
+
+      if (evalSource.nextDouble() >= evalMargin) {
+        continue;
+      }
+      evals = evals.add(BigInteger.ONE);
 
       Arrays.fill(powers, 0);
       int f = 0, t = 1;
@@ -190,7 +212,7 @@ public class EnumExperiment implements Runnable, ContextInjectable {
         continue;
       }
 
-      regularSets++;
+      regularSets = regularSets.add(BigInteger.ONE);
 
       eData.clear();
       f = 0;
@@ -210,16 +232,18 @@ public class EnumExperiment implements Runnable, ContextInjectable {
       mseg.run();
       final double eg = mseg.getTarget().getValue();
       for (int ei = 0; ei < lambdas.length; ei++) {
-        if (eg >= lambdas[ei]) {
-          eigenSets[ei]++;
+        if (eg < lambdas[ei]) {
+          break;
         }
+        eigenSets[ei] = eigenSets[ei].add(BigInteger.ONE);
       }
     }
 
-    if (exactSparceSets < exactSparceSetsExpected) {
-      throw new IllegalStateException("should still enumerate: stopped on " + exactSparceSets + " instead of " + exactSparceSetsExpected);
+    if (evalMargin >= 1 && exactSparseSets.compareTo(exactSparseSetsExpected) < 0) {
+      throw new IllegalStateException(
+          "should still enumerate: stopped on " + exactSparseSets + " instead of " + exactSparseSetsExpected
+      );
     }
-
 
     if (ctx != null) {
       for (int ei = 0; ei < lambdas.length; ei++) {
@@ -229,18 +253,35 @@ public class EnumExperiment implements Runnable, ContextInjectable {
         ctx.put("totalLinks", totalLinks, offset);
         ctx.put("nodeLinks", nodeLinks, offset);
 
-        ctx.put("totalSets", totalSets, offset);
-        ctx.put("sparceSets", sparceSets, offset);
-        ctx.put("exactSparceSets", exactSparceSetsExpected, offset);
-        ctx.put("regularSets", regularSets, offset);
-        ctx.put("eigenSets", eigenSets, offset);
+        putWithLog("totalSets", offset, totalSets);
+        putWithLog("sparseSets", offset, sparseSets);
+        putWithLog("exactSparseSets", offset, exactSparseSetsExpected);
+        putWithLog("regularSets", offset, regularSets.multiply(exactSparseSetsExpected).divide(evals));
+        putWithLog("eigenSets", offset, eigenSets[ei].multiply(exactSparseSetsExpected).divide(evals));
       }
     }
 
-    log.info("regularSets = {}", regularSets);
+    log.info("evaluate margin = {}", percentageStr(evals, exactSparseSetsExpected));
+    log.info("regularSets = {} ({}% of exact sparse)", regularSets, percentageStr(regularSets, exactSparseSetsExpected));
     for (int ei = 0; ei < lambdas.length; ei++) {
-      log.info("eigenSets (eigengap >= {}) = {}", lambdas[ei], eigenSets[ei]);
+      log.info(
+          "eigenSets (eigengap >= {}) = {} ({}% of exact sparse)",
+          new Object[] {lambdas[ei], eigenSets[ei], percentageStr(eigenSets[ei], exactSparseSetsExpected) }
+      );
     }
+  }
+
+  public void putWithLog(final String path, Map<String, Integer> offset, BigInteger number) {
+    ctx.put(path, number, offset);
+    ctx.put(path+"_log", Math.log10(number.doubleValue()), offset);
+  }
+
+  protected static final BigInteger BIG_INT_10K = BigInteger.valueOf(10000);
+  protected static String percentageStr(BigInteger fraction, BigInteger total) {
+    return Format.format2(percentage(fraction, total));
+  }
+  protected static double percentage(BigInteger fraction, BigInteger total) {
+    return fraction.multiply(BIG_INT_10K).divide(total).intValue() / 100.0;
   }
 
   protected static long nextPermExact(int len, BitSet links, int totalLinks) {

@@ -28,12 +28,20 @@
        default-destroy-method="stop">
   <hn:Experiment id="overlayGO-1-enum" depends="" description="Overlay GO [Stage 1] Enumerate feasible solutions">
     <hn:Config name="default" description="Up to 10 nodes">
+      <hn:Param name="entropySource.seed" value="308692"/>
       <hn:Param name="size.value" value="7;8;9;10"/>
       <hn:Param name="theta.value" value="1"/>
       <hn:Param name="thetaTilde.value" value="0.75"/>
-      <hn:Param name="lambda.value" value="0.25;0.5;0.75;0.875;0.9325;0.96875" paramType="internal"/>
+      <hn:Param
+          name="lambda.value"
+          value="0.1;0.2;0.3;0.4;0.45;0.5;0.55;0.6;0.65;0.7;0.725;0.75;0.775;0.8;0.825;0.85;0.875;0.9;0.91;0.92;0.93;0.94;0.95;0.955;0.96;0.965;0.97;0.975;0.98;0.985;0.99;0.995;"
+          strategy="use_first"
+      />
     </hn:Config>
   </hn:Experiment>
+
+  <bean class="org.akraievoy.cnet.gen.vo.EntropySourceRandom" id="entropySource">
+  </bean>
 
   <bean id="size" class="org.akraievoy.base.runner.api.RefLong">
     <property name="path" value="size"/>
@@ -54,6 +62,7 @@
   </bean>
 
   <bean class="org.akraievoy.cnet.soo.domain.EnumExperiment" id="main">
+    <property name="evalSource" ref="entropySource"/>
     <property name="lambdaParamName" value="lambda.value"/>
     <property name="sizeRef" ref="size"/>
     <property name="thetaRef" ref="theta"/>
