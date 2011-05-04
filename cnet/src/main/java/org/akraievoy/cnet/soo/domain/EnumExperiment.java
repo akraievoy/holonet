@@ -154,7 +154,7 @@ public class EnumExperiment implements Runnable, ContextInjectable {
     int timeThrottle = TIME_THROTTLE_RANGE;
     final double ess = exactSparseSetsExpected.doubleValue();
     double evalMargin = ess > MAX_EVALS ? MAX_EVALS / ess : 1;
-    log.info("eval margin: {}%", Format.format2(evalMargin * 100));
+    log.info("eval margin: {}%", Format.format6(evalMargin * 100));
     BigInteger evals = BigInteger.ZERO;
     while (true) {
       long nextPerm = exactSparseSets.equals(BigInteger.ZERO) ? 1 : nextPermExact(len, links, totalLinks);
