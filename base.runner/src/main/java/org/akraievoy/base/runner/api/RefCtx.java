@@ -45,7 +45,7 @@ public abstract class RefCtx<T> implements ContextInjectable, Ref<T> {
   public void setCtx(Context ctx) {
     this.ctx = ctx;
 
-    //	TODO spooky effects: don't read DB in setter!
+    //	TODO spooky effects: don't read DB in setter! this actually permits to dump XML/Config into the DB and then use it in chained experiment
     if (isPersistable()) {
       if (!ctx.containsKey(path)) {
         final Object value = getVCache();

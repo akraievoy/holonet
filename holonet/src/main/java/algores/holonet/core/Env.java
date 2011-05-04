@@ -34,6 +34,9 @@ public interface Env {
 
   Collection<Node> getAllNodes();
 
+  /**
+   * Beware: init checks lots of context injectables, which are not set up if Spring calls it as a start-method.
+   */
   void init();
 
   boolean isPreferred(Address localAddress, Address currentAddress, Address bestAddress);

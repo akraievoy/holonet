@@ -124,7 +124,7 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     );
 
     final PropertyOverrideConfigurer configurer = new PropertyOverrideConfigurer();
-    root.narrow(widened);
+    root.narrow(widened); //  LATER it's better to pass params via chain, not DB
     configurer.setProperties(root.getProperties());
     context.addBeanFactoryPostProcessor(configurer);
 
