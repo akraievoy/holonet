@@ -33,6 +33,9 @@
       <hn:Param name="tbInitSeed.value" value="1234567"/>
       <hn:Param name="tbRunSeed.value" value="7654321"/>
     </hn:Config>
+    <hn:Config name="perGeneration" description="Trigger separate per-generation simulations">
+      <hn:Param name="ovlGenOpt.generation" value="*strategy*" chainedStrategy="iterate"/>
+    </hn:Config>
   </hn:Experiment>
 
   <bean id="tbInitSeed" class="org.akraievoy.base.runner.api.RefLong">

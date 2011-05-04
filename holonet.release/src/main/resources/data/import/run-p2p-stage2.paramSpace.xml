@@ -28,13 +28,13 @@
        default-destroy-method="stop">
   <hn:Experiment
       id="p2p-stage2-paramSpace" depends=""
-      description="P2P [stage1] Choose param space">
-    <hn:Config name="default" description="16 nodes with 4 elements (each)">
-      <hn:Param name="tbNodes.value" value="16"/>
-      <hn:Param name="tbElems.value" value="4"/>
-      <hn:Param name="tbLoop.value" value="8"/>
+      description="P2P [stage2] Choose param space">
+    <hn:Config name="default" description="48 nodes with 32 elements (each)">
+      <hn:Param name="tbNodes.value" value="60"/>
+      <hn:Param name="tbElems.value" value="32"/>
+      <hn:Param name="tbLoop.value" value="64"/>
 
-      <hn:Param name="tbFailProb.value" value="0.005"/>
+      <hn:Param name="tbFailProb.value" value="0.003"/>
       <hn:Param name="tbJoinProb.value" value="0.01"/>
       <hn:Param name="tbStabProb.value" value="0.01"/>
       <hn:Param name="tbAttackProb.value" value="0.01"/>

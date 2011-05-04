@@ -95,6 +95,8 @@ public class Testbench implements Runnable, ContextInjectable {
   }
 
   public void run() {
+    network.getEnv().init();   
+
     this.initEntropySource.setSeed(initSeedRef.getValue());
     this.runEntropySource.setSeed(runSeedRef.getValue());
 

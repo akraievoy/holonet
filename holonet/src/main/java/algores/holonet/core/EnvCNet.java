@@ -89,7 +89,7 @@ public class EnvCNet implements Env {
   }
 
   public void init() {
-    if (!refSet(new RefCtx[]{locX, locY, density, dist, req})) {
+    if (!refSet(new RefCtx[]{locX, locY, density, dist, req, overlay})) {
       log.warn("activating fallback to EnvSimple: not all refs set");
       fallback = new EnvSimple();
       return;

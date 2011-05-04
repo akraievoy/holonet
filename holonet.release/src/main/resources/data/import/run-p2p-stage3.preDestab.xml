@@ -86,7 +86,7 @@
     <property name="path" value="overlay.requests"/>
   </bean>
   <bean class="org.akraievoy.cnet.net.ref.RefEdgeData" id="ref_overlay_structure">
-    <property name="path" value="gen.best.0"/>
+    <property name="path" value="specimen.best.genome0"/>
   </bean>
 
   <bean class="algores.holonet.testbench.Testbench" id="main">
@@ -96,7 +96,7 @@
     <property name="network">
       <bean class="algores.holonet.core.Network">
         <property name="env">
-          <bean class="algores.holonet.core.EnvCNet" init-method="init">
+          <bean class="algores.holonet.core.EnvCNet">
             <property name="density" ref="ref_overlay_vdata_density"/>
             <property name="locX" ref="ref_overlay_vdata_location_x"/>
             <property name="locY" ref="ref_overlay_vdata_location_y"/>
