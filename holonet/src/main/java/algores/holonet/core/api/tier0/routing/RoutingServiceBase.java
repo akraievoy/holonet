@@ -286,6 +286,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     final RoutingEntry newRe = upEntry.copy();
     storeFlavor(flavorize(ownRoute, newRe));
     newRe.updateLiveness(event);
+    routes.add(newRe);
 
     maintainRedundancyRatio();
   }
@@ -393,7 +394,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
         final Range bestR2 = r2.selectRange(localAddress, key, preference);
 
         if (owner.getNetwork().getEnv().isPreferred(localAddress, r1.getAddress(), r2.getAddress())) {
-          return -1;
+          return 1;
         }
 
         if (owner.getNetwork().getEnv().isPreferred(localAddress, r2.getAddress(), r1.getAddress())) {
