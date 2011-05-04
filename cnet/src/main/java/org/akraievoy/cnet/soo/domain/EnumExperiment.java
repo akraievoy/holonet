@@ -261,7 +261,7 @@ public class EnumExperiment implements Runnable, ContextInjectable {
       }
     }
 
-    log.info("evaluate margin = {}", percentageStr(evals, exactSparseSetsExpected));
+    log.info("actual evaluate ratio = {}%", percentageStr(evals, exactSparseSetsExpected));
     log.info("regularSets = {} ({}% of exact sparse)", regularSets, percentageStr(regularSets, exactSparseSetsExpected));
     for (int ei = 0; ei < lambdas.length; ei++) {
       log.info(
