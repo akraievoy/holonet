@@ -245,8 +245,14 @@ public class EnumExperiment implements Runnable, ContextInjectable {
       );
     }
 
+    regularSets = extrapolate(regularSets, evals, exactSparseSetsExpected);
+    for (int ei = 0; ei < lambdas.length; ei++) {
+      eigenSets[ei] = extrapolate(eigenSets[ei], evals, exactSparseSetsExpected);
+    }
+
     if (ctx != null) {
       for (int ei = 0; ei < lambdas.length; ei++) {
+        eigenSets[ei] = extrapolate(eigenSets[ei], evals, exactSparseSetsExpected);
         final Map<String, Integer> offset = Context.offset(lambdaParamName, ei);
 
         ctx.put("len", len, offset);
@@ -256,8 +262,8 @@ public class EnumExperiment implements Runnable, ContextInjectable {
         putWithLog("totalSets", offset, totalSets);
         putWithLog("sparseSets", offset, sparseSets);
         putWithLog("exactSparseSets", offset, exactSparseSetsExpected);
-        putWithLog("regularSets", offset, regularSets.multiply(exactSparseSetsExpected).divide(evals));
-        putWithLog("eigenSets", offset, eigenSets[ei].multiply(exactSparseSetsExpected).divide(evals));
+        putWithLog("regularSets", offset, regularSets);
+        putWithLog("eigenSets", offset, eigenSets[ei]);
       }
     }
 
@@ -269,6 +275,10 @@ public class EnumExperiment implements Runnable, ContextInjectable {
           new Object[] {lambdas[ei], eigenSets[ei], percentageStr(eigenSets[ei], exactSparseSetsExpected) }
       );
     }
+  }
+
+  protected static BigInteger extrapolate(BigInteger regularSets, BigInteger evals, BigInteger exactSparseSetsExpected) {
+    return regularSets.multiply(exactSparseSetsExpected).divide(evals);
   }
 
   public void putWithLog(final String path, Map<String, Integer> offset, BigInteger number) {
