@@ -165,6 +165,7 @@ public class ParamSetEnumerator {
       final Parameter paramForStrategy = getParameter(sName);
       if (paramForStrategy != null) {
         paramForStrategy.applyStrategy(strategy);
+        paramPoses.set(getParameterIndex(sName), paramForStrategy.getInitialPos());
       }
     }
   }
