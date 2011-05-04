@@ -288,7 +288,7 @@ public class EnumExperiment implements Runnable, ContextInjectable {
 
   protected static final BigInteger BIG_INT_10K = BigInteger.valueOf(10000);
   protected static String percentageStr(BigInteger fraction, BigInteger total) {
-    return Format.format2(percentage(fraction, total));
+    return Format.format6(percentage(fraction, total));
   }
   protected static double percentage(BigInteger fraction, BigInteger total) {
     return fraction.multiply(BIG_INT_10K).divide(total).intValue() / 100.0;
