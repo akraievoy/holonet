@@ -252,7 +252,6 @@ public class EnumExperiment implements Runnable, ContextInjectable {
 
     if (ctx != null) {
       for (int ei = 0; ei < lambdas.length; ei++) {
-        eigenSets[ei] = extrapolate(eigenSets[ei], evals, exactSparseSetsExpected);
         final Map<String, Integer> offset = Context.offset(lambdaParamName, ei);
 
         ctx.put("len", len, offset);
