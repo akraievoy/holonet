@@ -229,10 +229,6 @@ public class ExperimentChooserUiController implements Startable {
     public void actionPerformed(ActionEvent e) {
       final int selectedRow = experimentChooserFrame.getExperimentTable().getSelectedRow();
       updateSelectedExperiment(selectedRow);
-
-      if (selectedRow >= 0) {
-        experimentChooserFrame.getTabPane().setSelectedIndex(1);
-      }
     }
   }
 
@@ -252,8 +248,6 @@ public class ExperimentChooserUiController implements Startable {
     }
 
     public void actionPerformed(ActionEvent e) {
-      experimentChooserFrame.getTabPane().setSelectedIndex(2);
-
       executor.execute(importRunnable);
     }
   }
@@ -291,8 +285,6 @@ public class ExperimentChooserUiController implements Startable {
 
       onExperimentRunningChange(true);
       executor.execute(new RunExperimentTask(selectedExperiment, conf, getChainedRuns()));
-
-      experimentChooserFrame.getTabPane().setSelectedIndex(2);
     }
 
     protected SortedMap<Long, RunInfo> getChainedRuns() {

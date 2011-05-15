@@ -90,10 +90,6 @@ public class ExperimentChooserFrame extends JFrame {
     return rootPanel.getSelectButton();
   }
 
-  public JTabbedPane getTabPane() {
-    return rootPanel.getTabPane();
-  }
-
   public JLabel getExpNameLabel() {
     return rootPanel.getExpNameLabel();
   }
