@@ -107,6 +107,9 @@ public class ExperimentChooserUiController implements Startable {
     onRunSelectionChange(-1);
     updateSelectedExperiment(-1);
     experimentChooserFrame.onStart();
+
+    log.info("Copyright (c) Anton Kraievoy 2009, 2011");
+
     importRunnable.setAfterImport(new Runnable() {
       public void run() {
         if (SwingUtilities.isEventDispatchThread()) {
