@@ -108,8 +108,6 @@ public class ExperimentChooserUiController implements Startable {
     updateSelectedExperiment(-1);
     experimentChooserFrame.onStart();
 
-    log.info("Copyright (c) Anton Kraievoy 2009, 2011");
-
     importRunnable.setAfterImport(new Runnable() {
       public void run() {
         if (SwingUtilities.isEventDispatchThread()) {
@@ -126,6 +124,8 @@ public class ExperimentChooserUiController implements Startable {
     feedbackAppender.setThreshold(Level.ALL);
 
     Logger.getRootLogger().addAppender(feedbackAppender);
+
+    log.info("Copyright (c) Anton Kraievoy 2009, 2011");
   }
 
   protected void setupColumns() {
