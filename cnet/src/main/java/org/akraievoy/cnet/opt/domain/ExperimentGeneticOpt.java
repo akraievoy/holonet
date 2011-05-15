@@ -173,15 +173,25 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     }
 
     Ref<Long> lastReport = new RefSimple<Long>(System.currentTimeMillis());
+    eliteLimit = Math.min(parents.size(), eliteLimit);
+    int elitePointer = 0;
     int generateCount = 0;
-    while (children.size() < specimenLimit && (generateCount < missLimit)) {
+    while (children.size() < specimenLimit && (generateCount < missLimit || elitePointer < eliteLimit)) {
       report(lastReport);
 
       final Ref<Breeder<Genome>> breeder = new RefSimple<Breeder<Genome>>(null);
       final Ref<Mutator<Genome>> mutator = new RefSimple<Mutator<Genome>>(null);
 
-      final Genome child = generateChild(state, fKeys, breeder, mutator, generateCount);
-      generateCount++;
+      final Genome child;
+      if (generateCount >= missLimit || children.size() + eliteLimit >= specimenLimit) {
+        child = parents.get(fKeys[elitePointer++]);
+      } else {
+        child = generateChild(
+            state, fKeys,
+            breeder, mutator
+        );
+        generateCount++;
+      }
 
       if (!validate(child)) {
         mutators.onFailure(mutator.getValue());
@@ -247,13 +257,9 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
   }
 
   protected Genome generateChild(
-      GeneticState state, FitnessKey[] fKeys,
-      Ref<Breeder<Genome>> breeder, Ref<Mutator<Genome>> mutator,
-      int generateCount) {
-    if (children.size() <= eliteLimit && generateCount < parents.size()) {
-      return parents.get(fKeys[generateCount]);
-    }
-
+      GeneticState state, FitnessKey[] fKeys, 
+      Ref<Breeder<Genome>> breeder, Ref<Mutator<Genome>> mutator
+  ) {
     final FitnessKey fKeyA = fKeys[events.generate(eSource, false, null)];
     final FitnessKey fKeyB = fKeys[events.generate(eSource, false, null)];
     final Genome parentA;
