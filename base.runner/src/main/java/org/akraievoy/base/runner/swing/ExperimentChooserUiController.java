@@ -56,7 +56,6 @@ public class ExperimentChooserUiController implements Startable {
   protected final ImportRunnable importRunnable;
 
   protected final DefaultComboBoxModel emptyModel = new DefaultComboBoxModel(new Object[0]);
-  protected final CloseAction closeAction = new CloseAction();
   protected final LaunchAction launchAction = new LaunchAction();
   protected final SelectAction selectAction = new SelectAction();
   protected final ChainAction chainAction = new ChainAction();
@@ -89,7 +88,6 @@ public class ExperimentChooserUiController implements Startable {
     experimentChooserFrame.setup();
 
     experimentChooserFrame.addWindowListener(new WindowAdapter());
-    experimentChooserFrame.getCloseButton().setAction(closeAction);
     experimentChooserFrame.getLaunchButton().setAction(launchAction);
     experimentChooserFrame.getSelectButton().setAction(selectAction);
     experimentChooserFrame.getChainButton().setAction(chainAction);
@@ -136,7 +134,7 @@ public class ExperimentChooserUiController implements Startable {
   }
 
   public void stop() {
-    experimentChooserFrame.onStop();
+    experimentChooserFrame.dispose();
   }
 
   protected void onExperimentSelectionChange(int selectedRow) {
@@ -196,7 +194,17 @@ public class ExperimentChooserUiController implements Startable {
 
   class WindowAdapter extends java.awt.event.WindowAdapter {
     public void windowClosing(WindowEvent e) {
-      stopper.forceStop();
+      if (
+          !experimentRunning ||
+          JOptionPane.showConfirmDialog(
+              experimentChooserFrame, 
+              "Experiment is running, really close?",
+              "Confirm Exit",
+              JOptionPane.OK_CANCEL_OPTION
+          ) == JOptionPane.OK_OPTION
+      ) {
+        stopper.forceStop();
+      }
     }
   }
 
@@ -229,16 +237,6 @@ public class ExperimentChooserUiController implements Startable {
     public void actionPerformed(ActionEvent e) {
       final int selectedRow = experimentChooserFrame.getExperimentTable().getSelectedRow();
       updateSelectedExperiment(selectedRow);
-    }
-  }
-
-  class CloseAction extends AbstractAction {
-    CloseAction() {
-      super("Close");
-    }
-
-    public void actionPerformed(ActionEvent e) {
-      stopper.forceStop();
     }
   }
 

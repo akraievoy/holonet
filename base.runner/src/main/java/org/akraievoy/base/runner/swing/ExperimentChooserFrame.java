@@ -35,6 +35,7 @@ public class ExperimentChooserFrame extends JFrame {
     getContentPane().setLayout(new BorderLayout());
     getContentPane().add(BorderLayout.CENTER, rootPanel.getRootPanel());
     setTitle("Experiment Registry & Runner [" + Build.getBuild() + "]");
+    setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 
     rootPanel.getExperimentTable().getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
   }
@@ -44,10 +45,6 @@ public class ExperimentChooserFrame extends JFrame {
     Swing.centerOnScreen(this);
 
     setVisible(true);
-  }
-
-  protected void onStop() {
-    dispose();
   }
 
   public JButton getCloseButton() {
