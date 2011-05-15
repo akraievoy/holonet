@@ -73,12 +73,6 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="5aa5b" class="javax.swing.JButton" binding="importButton" default-binding="true">
-                    <constraints/>
-                    <properties>
-                      <text value="Import"/>
-                    </properties>
-                  </component>
                   <component id="ec353" class="javax.swing.JButton" binding="selectButton">
                     <constraints/>
                     <properties>

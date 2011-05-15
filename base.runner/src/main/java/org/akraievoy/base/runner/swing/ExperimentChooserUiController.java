@@ -59,7 +59,6 @@ public class ExperimentChooserUiController implements Startable {
   protected final LaunchAction launchAction = new LaunchAction();
   protected final SelectAction selectAction = new SelectAction();
   protected final ChainAction chainAction = new ChainAction();
-  protected final ImportAction importAction = new ImportAction();
 
   protected boolean experimentRunning = false;
   protected Experiment selectedExperiment;
@@ -91,7 +90,6 @@ public class ExperimentChooserUiController implements Startable {
     experimentChooserFrame.getLaunchButton().setAction(launchAction);
     experimentChooserFrame.getSelectButton().setAction(selectAction);
     experimentChooserFrame.getChainButton().setAction(chainAction);
-    experimentChooserFrame.getImportButton().setAction(importAction);
 
     experimentChooserFrame.getExperimentTable().setModel(experimentTableModel);
     experimentChooserFrame.getExperimentTable().getSelectionModel().addListSelectionListener(new ExperimentSelectionListener());
@@ -209,6 +207,20 @@ public class ExperimentChooserUiController implements Startable {
         stopper.forceStop();
       }
     }
+
+    @Override
+    public void windowActivated(WindowEvent e) {
+      if (!experimentRunning) {
+        executor.execute(importRunnable);
+      }
+    }
+
+    @Override
+    public void windowOpened(WindowEvent e) {
+      if (!experimentRunning) {
+        executor.execute(importRunnable);
+      }
+    }
   }
 
   class ChainAction extends AbstractAction {
@@ -240,16 +252,6 @@ public class ExperimentChooserUiController implements Startable {
     public void actionPerformed(ActionEvent e) {
       final int selectedRow = experimentChooserFrame.getExperimentTable().getSelectedRow();
       updateSelectedExperiment(selectedRow);
-    }
-  }
-
-  class ImportAction extends AbstractAction {
-    ImportAction() {
-      super("Import");
-    }
-
-    public void actionPerformed(ActionEvent e) {
-      executor.execute(importRunnable);
     }
   }
 

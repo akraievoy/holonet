@@ -135,9 +135,6 @@ public class ExperimentChooserPanel {
     gbc.gridy = 1;
     gbc.anchor = GridBagConstraints.SOUTHEAST;
     panel1.add(panel2, gbc);
-    importButton = new JButton();
-    importButton.setText("Import");
-    panel2.add(importButton);
     selectButton = new JButton();
     selectButton.setText("Select");
     panel2.add(selectButton);
