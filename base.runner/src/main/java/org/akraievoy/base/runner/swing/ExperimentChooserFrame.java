@@ -47,10 +47,6 @@ public class ExperimentChooserFrame extends JFrame {
     setVisible(true);
   }
 
-  public JButton getCloseButton() {
-    return rootPanel.getCloseButton();
-  }
-
   public JTable getExperimentTable() {
     return rootPanel.getExperimentTable();
   }

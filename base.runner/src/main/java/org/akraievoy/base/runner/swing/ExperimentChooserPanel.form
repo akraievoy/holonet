@@ -7,51 +7,6 @@
     <properties/>
     <border type="none"/>
     <children>
-      <grid id="c57a" layout-manager="BorderLayout" hgap="0" vgap="0">
-        <constraints border-constraint="South"/>
-        <properties/>
-        <border type="none"/>
-        <children>
-          <grid id="7132f" layout-manager="FlowLayout" hgap="6" vgap="5" flow-align="1">
-            <constraints border-constraint="East"/>
-            <properties/>
-            <border type="none">
-              <title-color color="-16777216"/>
-            </border>
-            <children>
-              <component id="1b8cc" class="javax.swing.JButton" binding="closeButton">
-                <constraints/>
-                <properties>
-                  <actionCommand value="close"/>
-                  <label value="Close"/>
-                  <text value="Close"/>
-                  <toolTipText value="Close the runner"/>
-                </properties>
-              </component>
-            </children>
-          </grid>
-          <component id="628e7" class="javax.swing.JLabel">
-            <constraints border-constraint="Center"/>
-            <properties>
-              <alignmentX value="0.25"/>
-              <enabled value="false"/>
-              <focusable value="false"/>
-              <font style="2"/>
-              <foreground color="-16777216"/>
-              <horizontalAlignment value="0"/>
-              <opaque value="false"/>
-              <text value="(c) Anton Kraievoy, 2009"/>
-              <verifyInputWhenFocusTarget value="true"/>
-            </properties>
-          </component>
-          <grid id="e76da" layout-manager="GridBagLayout">
-            <constraints border-constraint="North"/>
-            <properties/>
-            <border type="none"/>
-            <children/>
-          </grid>
-        </children>
-      </grid>
       <splitpane id="a25af">
         <constraints border-constraint="Center"/>
         <properties>

@@ -22,7 +22,6 @@ import javax.swing.*;
 import java.awt.*;
 
 public class ExperimentChooserPanel {
-  protected JButton closeButton;
   protected JButton launchButton;
   protected JTable experimentTable;
   protected JPanel rootPanel;
@@ -37,10 +36,6 @@ public class ExperimentChooserPanel {
 
   public JPanel getRootPanel() {
     return rootPanel;
-  }
-
-  public JButton getCloseButton() {
-    return closeButton;
   }
 
   public JTable getExperimentTable() {
@@ -100,32 +95,6 @@ public class ExperimentChooserPanel {
   private void $$$setupUI$$$() {
     rootPanel = new JPanel();
     rootPanel.setLayout(new BorderLayout(0, 0));
-    final JPanel panel1 = new JPanel();
-    panel1.setLayout(new BorderLayout(0, 0));
-    rootPanel.add(panel1, BorderLayout.SOUTH);
-    final JPanel panel2 = new JPanel();
-    panel2.setLayout(new FlowLayout(FlowLayout.CENTER, 6, 5));
-    panel1.add(panel2, BorderLayout.EAST);
-    closeButton = new JButton();
-    closeButton.setActionCommand("close");
-    closeButton.setLabel("Close");
-    closeButton.setText("Close");
-    closeButton.setToolTipText("Close the runner");
-    panel2.add(closeButton);
-    final JLabel label1 = new JLabel();
-    label1.setAlignmentX(0.25f);
-    label1.setEnabled(false);
-    label1.setFocusable(false);
-    label1.setFont(new Font(label1.getFont().getName(), Font.ITALIC, label1.getFont().getSize()));
-    label1.setForeground(new Color(-16777216));
-    label1.setHorizontalAlignment(0);
-    label1.setOpaque(false);
-    label1.setText("(c) Anton Kraievoy, 2009");
-    label1.setVerifyInputWhenFocusTarget(true);
-    panel1.add(label1, BorderLayout.CENTER);
-    final JPanel panel3 = new JPanel();
-    panel3.setLayout(new GridBagLayout());
-    panel1.add(panel3, BorderLayout.NORTH);
     final JSplitPane splitPane1 = new JSplitPane();
     splitPane1.setDividerLocation(320);
     splitPane1.setDividerSize(5);
@@ -144,9 +113,9 @@ public class ExperimentChooserPanel {
     outputPane.setPreferredSize(new Dimension(320, 21));
     outputPane.setToolTipText("Experiment output");
     scrollPane1.setViewportView(outputPane);
-    final JPanel panel4 = new JPanel();
-    panel4.setLayout(new GridBagLayout());
-    splitPane1.setRightComponent(panel4);
+    final JPanel panel1 = new JPanel();
+    panel1.setLayout(new GridBagLayout());
+    splitPane1.setRightComponent(panel1);
     final JScrollPane scrollPane2 = new JScrollPane();
     GridBagConstraints gbc;
     gbc = new GridBagConstraints();
@@ -155,23 +124,23 @@ public class ExperimentChooserPanel {
     gbc.weightx = 1.0;
     gbc.weighty = 1.0;
     gbc.fill = GridBagConstraints.BOTH;
-    panel4.add(scrollPane2, gbc);
+    panel1.add(scrollPane2, gbc);
     experimentTable = new JTable();
     experimentTable.setPreferredScrollableViewportSize(new Dimension(240, 180));
     scrollPane2.setViewportView(experimentTable);
-    final JPanel panel5 = new JPanel();
-    panel5.setLayout(new FlowLayout(FlowLayout.RIGHT, 12, 4));
+    final JPanel panel2 = new JPanel();
+    panel2.setLayout(new FlowLayout(FlowLayout.RIGHT, 12, 4));
     gbc = new GridBagConstraints();
     gbc.gridx = 0;
     gbc.gridy = 1;
     gbc.anchor = GridBagConstraints.SOUTHEAST;
-    panel4.add(panel5, gbc);
+    panel1.add(panel2, gbc);
     importButton = new JButton();
     importButton.setText("Import");
-    panel5.add(importButton);
+    panel2.add(importButton);
     selectButton = new JButton();
     selectButton.setText("Select");
-    panel5.add(selectButton);
+    panel2.add(selectButton);
     final JScrollPane scrollPane3 = new JScrollPane();
     gbc = new GridBagConstraints();
     gbc.gridx = 0;
@@ -179,25 +148,25 @@ public class ExperimentChooserPanel {
     gbc.weightx = 1.0;
     gbc.weighty = 1.0;
     gbc.fill = GridBagConstraints.BOTH;
-    panel4.add(scrollPane3, gbc);
+    panel1.add(scrollPane3, gbc);
     runsTable = new JTable();
     runsTable.setPreferredScrollableViewportSize(new Dimension(240, 180));
     scrollPane3.setViewportView(runsTable);
-    final JPanel panel6 = new JPanel();
-    panel6.setLayout(new GridBagLayout());
+    final JPanel panel3 = new JPanel();
+    panel3.setLayout(new GridBagLayout());
     gbc = new GridBagConstraints();
     gbc.gridx = 0;
     gbc.gridy = 3;
     gbc.anchor = GridBagConstraints.EAST;
-    panel4.add(panel6, gbc);
-    final JLabel label2 = new JLabel();
-    label2.setText("Cache Chaning:");
+    panel1.add(panel3, gbc);
+    final JLabel label1 = new JLabel();
+    label1.setText("Cache Chaning:");
     gbc = new GridBagConstraints();
     gbc.gridx = 0;
     gbc.gridy = 1;
     gbc.anchor = GridBagConstraints.EAST;
     gbc.insets = new Insets(2, 2, 2, 2);
-    panel6.add(label2, gbc);
+    panel3.add(label1, gbc);
     chainTextField = new JTextField();
     chainTextField.setColumns(12);
     chainTextField.setMinimumSize(new Dimension(96, 21));
@@ -207,7 +176,7 @@ public class ExperimentChooserPanel {
     gbc.weightx = 1.0;
     gbc.fill = GridBagConstraints.HORIZONTAL;
     gbc.insets = new Insets(2, 2, 2, 2);
-    panel6.add(chainTextField, gbc);
+    panel3.add(chainTextField, gbc);
     chainButton = new JButton();
     chainButton.setText("Chain");
     chainButton.setToolTipText("Chain on selected run data");
@@ -218,15 +187,15 @@ public class ExperimentChooserPanel {
     gbc.weightx = 0.5;
     gbc.anchor = GridBagConstraints.WEST;
     gbc.insets = new Insets(2, 2, 2, 2);
-    panel6.add(chainButton, gbc);
-    final JLabel label3 = new JLabel();
-    label3.setText("Config:");
+    panel3.add(chainButton, gbc);
+    final JLabel label2 = new JLabel();
+    label2.setText("Config:");
     gbc = new GridBagConstraints();
     gbc.gridx = 0;
     gbc.gridy = 2;
     gbc.anchor = GridBagConstraints.EAST;
     gbc.insets = new Insets(2, 4, 2, 2);
-    panel6.add(label3, gbc);
+    panel3.add(label2, gbc);
     confCombo = new JComboBox();
     gbc = new GridBagConstraints();
     gbc.gridx = 1;
@@ -235,7 +204,7 @@ public class ExperimentChooserPanel {
     gbc.weightx = 2.0;
     gbc.fill = GridBagConstraints.HORIZONTAL;
     gbc.insets = new Insets(2, 2, 2, 2);
-    panel6.add(confCombo, gbc);
+    panel3.add(confCombo, gbc);
     launchButton = new JButton();
     launchButton.setActionCommand("launch");
     launchButton.setEnabled(false);
@@ -248,15 +217,15 @@ public class ExperimentChooserPanel {
     gbc.gridy = 3;
     gbc.weightx = 0.5;
     gbc.insets = new Insets(2, 2, 4, 4);
-    panel6.add(launchButton, gbc);
-    final JLabel label4 = new JLabel();
-    label4.setText("Experiment:");
+    panel3.add(launchButton, gbc);
+    final JLabel label3 = new JLabel();
+    label3.setText("Experiment:");
     gbc = new GridBagConstraints();
     gbc.gridx = 0;
     gbc.gridy = 0;
     gbc.anchor = GridBagConstraints.EAST;
     gbc.insets = new Insets(4, 4, 2, 2);
-    panel6.add(label4, gbc);
+    panel3.add(label3, gbc);
     expNameLabel = new JLabel();
     expNameLabel.setHorizontalAlignment(2);
     expNameLabel.setHorizontalTextPosition(2);
@@ -269,7 +238,7 @@ public class ExperimentChooserPanel {
     gbc.weightx = 2.0;
     gbc.fill = GridBagConstraints.HORIZONTAL;
     gbc.insets = new Insets(4, 2, 2, 2);
-    panel6.add(expNameLabel, gbc);
+    panel3.add(expNameLabel, gbc);
   }
 
   /**
