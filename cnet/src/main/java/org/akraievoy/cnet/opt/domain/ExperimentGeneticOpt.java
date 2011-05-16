@@ -176,7 +176,7 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     eliteLimit = Math.min(parents.size(), eliteLimit);
     int elitePointer = 0;
     int generateCount = 0;
-    while (children.size() < specimenLimit && (generateCount < missLimit || elitePointer < eliteLimit)) {
+    while (children.size() < specimenLimit && (generateCount < missLimit || elitePointer < parents.size())) {
       report(lastReport);
 
       final Ref<Breeder<Genome>> breeder = new RefSimple<Breeder<Genome>>(null);
