@@ -87,6 +87,17 @@
     </hn:Config>
     <hn:Config name="stepsProf" description="Varying Steps">
       <hn:Param name="geneticStrategy.steps" value="1;3;5"/>
+      <hn:Param name="geneticStrategy.startLambda" value="0.6"/>
+      <hn:Param name="geneticStrategy.lambda" value="0.6"/>
+      <hn:Param name="geneticStrategy.lambdaTargetGeneration" value="50"/>
+      <hn:Param name="entropySourceGenetics.seed" value="42600-42620"/>
+    </hn:Config>
+    <hn:Config name="stepsProf" description="3 Steps">
+      <hn:Param name="geneticStrategy.steps" value="3"/>
+      <hn:Param name="geneticStrategy.startLambda" value="0.6"/>
+      <hn:Param name="geneticStrategy.lambda" value="0.6"/>
+      <hn:Param name="geneticStrategy.lambdaTargetGeneration" value="50"/>
+      <hn:Param name="entropySourceGenetics.seed" value="42600"/>
     </hn:Config>
   </hn:Experiment>
 
