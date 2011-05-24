@@ -18,6 +18,7 @@
 
 package org.akraievoy.cnet.soo.domain;
 
+import org.akraievoy.base.soft.Soft;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.WeightedEventModel;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelRenorm;
@@ -63,64 +64,54 @@ public abstract class BreederSoo implements Breeder {
     unwireModel.setAmp(state.getElemFitPow());
 
     final double linksToUnwire = computeLinkDiff(strategy, genomeA, child);
-    if (linksToUnwire == 0) {
+    if (!Soft.MILLI.positive(linksToUnwire)) {
       return;
     }
     final double linksToUnwireFromA = (1 - state.getCrossoverRatio()) * linksToUnwire;
 
     child.getSolution().visitNotNull(new EdgeSubsetVisitor(unwireModel, linkFitness, genomeA, genomeB, codec));
+    System.out.println("unwireModel for A (before):" + unwireModel.getSize());
 
-    final double step = 1.0 / strategy.getSteps();
-    double removed = 0;
-    final int[] indexRef = new int[1];
-    for (; removed < linksToUnwireFromA && unwireModel.getSize() > 0; removed += step) {
-      final int unwireId = unwireModel.generate(eSource, false, indexRef);
-
-      final int unwireFrom = codec.id2leading(unwireId);
-      final int unwireInto = codec.id2trailing(unwireId);
-
-      final double newVal = child.getSolution().get(unwireFrom, unwireInto) - step;
-      child.getSolution().set(unwireFrom, unwireInto, newVal);
-      if (newVal <= 0) {  //	TODO add an epsilon here
-        unwireModel.removeByIndex(indexRef[0]);
-      }
+    final double[] removedRef = {0};
+    {
+      remove(strategy, child, eSource, linksToUnwireFromA, removedRef);
     }
 
+    System.out.println("unwireModel for A (after):" + unwireModel.getSize());
     unwireModel.clear();
     child.getSolution().visitNotNull(new EdgeSubsetVisitor(unwireModel, linkFitness, genomeB, genomeA, codec));
+    System.out.println("unwireModel for B (before):" + unwireModel.getSize());
 
-    //	TODO collapse the dupe with loop above
-    for (; removed < linksToUnwire && unwireModel.getSize() > 0; removed += step) {
+    remove(strategy, child, eSource, linksToUnwire, removedRef);
+    System.out.println("unwireModel for B (after):" + unwireModel.getSize());
+  }
+
+  protected void remove(
+      GeneticStrategySoo strategy, GenomeSoo child, EntropySource eSource,
+      double unwireLimit, double[] removedRef
+  ) {
+    final double step = 1.0 / strategy.getSteps();
+    final int[] indexRef = new int[1];
+    for (; Soft.MILLI.less(removedRef[0], unwireLimit)  && unwireModel.getSize() > 0; removedRef[0] += step) {
       final int unwireId = unwireModel.generate(eSource, false, indexRef);
 
       final int unwireFrom = codec.id2leading(unwireId);
       final int unwireInto = codec.id2trailing(unwireId);
 
       final double newVal = child.getSolution().get(unwireFrom, unwireInto) - step;
-      child.getSolution().set(unwireFrom, unwireInto, newVal);
-      if (newVal <= 0) {
+      final double newValStrict = newVal < 0 ? 0 : newVal;
+      child.getSolution().set(unwireFrom, unwireInto, newValStrict);
+      if (newValStrict == 0) {
         unwireModel.removeByIndex(indexRef[0]);
       }
     }
   }
 
   protected double computeLinkDiff(GeneticStrategySoo strategy, GenomeSoo genomeA, GenomeSoo child) {
-    final double[] parentConnectivity = {0};
-    genomeA.getSolution().visitNotNull(new EdgeData.EdgeVisitor() {
-      public void visit(int from, int into, double e) {
-        parentConnectivity[0] += e;
-      }
-    });
-
-    final double[] childConnectivity = {0};
-    child.getSolution().visitNotNull(new EdgeData.EdgeVisitor() {
-      public void visit(int from, int into, double e) {
-        childConnectivity[0] += e;
-      }
-    });
-
-    final double connectivityDiff = childConnectivity[0] - parentConnectivity[0];
+    final double connectivityDiff = child.getSolution().total() - genomeA.getSolution().total();
+    //  FIXME causing specimens violate density condition after breeding when steps > 1 
     return Math.round(connectivityDiff * strategy.getSteps()) / strategy.getSteps();
+//    return connectivityDiff;
   }
 
   protected GenomeSoo createChild(GenomeSoo genomeA, GenomeSoo genomeB) {

@@ -473,6 +473,17 @@ public class EdgeDataDense implements EdgeData {
     }
   }
 
+  public double total() {
+    double totalConnectivity = 0;
+    for (int from = 0; from < size; from++) {
+      for (int into = 0; into < size; into++) {
+        totalConnectivity += get(from, into);
+      }
+    }
+
+    return totalConnectivity;
+  }
+
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof EdgeData)) return false;
@@ -548,4 +559,5 @@ public class EdgeDataDense implements EdgeData {
 
     return "EdgeDataDense[" + size + "]";
   }
+
 }

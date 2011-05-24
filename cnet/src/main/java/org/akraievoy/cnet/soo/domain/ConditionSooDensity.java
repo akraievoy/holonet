@@ -18,7 +18,6 @@
 
 package org.akraievoy.cnet.soo.domain;
 
-import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.opt.api.Condition;
 import org.akraievoy.cnet.opt.api.GeneticStrategy;
 
@@ -32,14 +31,7 @@ public class ConditionSooDensity implements Condition<GenomeSoo> {
 
     linkLimit = strategySoo.getTotalLinkUpperLimit();
 
-    final double[] totalConnectivity = new double[] {0.0};
-    child.getSolution().visitNotNull(new EdgeData.EdgeVisitor() {
-      public void visit(int from, int into, double e) {
-        totalConnectivity[0] += e;
-      }
-    });
-
-    final boolean valid = totalConnectivity[0] <= linkLimit;
+    final boolean valid = child.getSolution().total() <= linkLimit;
 
     return valid;
   }

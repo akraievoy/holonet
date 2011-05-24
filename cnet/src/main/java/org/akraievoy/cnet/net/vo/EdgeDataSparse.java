@@ -374,6 +374,18 @@ public class EdgeDataSparse implements EdgeData {
     ifEdges.clear();
   }
 
+  public double total() {
+    final double[] totalConnectivity = new double[] {0.0};
+
+    fiEdges.visit(new EdgeVisitor() {
+      public void visit(int from, int into, double e) {
+        totalConnectivity[0] += e;
+      }
+    });
+
+    return totalConnectivity[0];
+  }
+
   public static class Edges {
     protected final List<TIntArrayList> index = new ArrayList<TIntArrayList>();
     protected final List<TDoubleArrayList> elems = new ArrayList<TDoubleArrayList>();

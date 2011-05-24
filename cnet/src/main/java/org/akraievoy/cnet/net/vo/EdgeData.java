@@ -109,6 +109,8 @@ public interface EdgeData extends Resizable {
 
   void visitNotNull(EdgeVisitor visitor);
 
+  double total();
+
   double similarity(EdgeData that);
 
   void clear();
