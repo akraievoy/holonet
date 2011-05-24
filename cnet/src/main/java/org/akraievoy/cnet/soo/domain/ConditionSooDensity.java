@@ -18,6 +18,7 @@
 
 package org.akraievoy.cnet.soo.domain;
 
+import org.akraievoy.base.soft.Soft;
 import org.akraievoy.cnet.opt.api.Condition;
 import org.akraievoy.cnet.opt.api.GeneticStrategy;
 
@@ -31,7 +32,7 @@ public class ConditionSooDensity implements Condition<GenomeSoo> {
 
     linkLimit = strategySoo.getTotalLinkUpperLimit();
 
-    final boolean valid = child.getSolution().total() <= linkLimit;
+    final boolean valid = !Soft.MILLI.greater(child.getSolution().total(),linkLimit);
 
     return valid;
   }

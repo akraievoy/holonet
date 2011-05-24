@@ -63,27 +63,21 @@ public abstract class BreederSoo implements Breeder {
     unwireModel.setMinWeight(state.getMinElemFitness());
     unwireModel.setAmp(state.getElemFitPow());
 
-    final double linksToUnwire = computeLinkDiff(strategy, genomeA, child);
+    final double linksToUnwire = computeLinkDiff(genomeA, child);
     if (!Soft.MILLI.positive(linksToUnwire)) {
       return;
     }
     final double linksToUnwireFromA = (1 - state.getCrossoverRatio()) * linksToUnwire;
 
     child.getSolution().visitNotNull(new EdgeSubsetVisitor(unwireModel, linkFitness, genomeA, genomeB, codec));
-    System.out.println("unwireModel for A (before):" + unwireModel.getSize());
 
     final double[] removedRef = {0};
-    {
-      remove(strategy, child, eSource, linksToUnwireFromA, removedRef);
-    }
+    remove(strategy, child, eSource, linksToUnwireFromA, removedRef);
 
-    System.out.println("unwireModel for A (after):" + unwireModel.getSize());
     unwireModel.clear();
-    child.getSolution().visitNotNull(new EdgeSubsetVisitor(unwireModel, linkFitness, genomeB, genomeA, codec));
-    System.out.println("unwireModel for B (before):" + unwireModel.getSize());
+    child.getSolution().visitNotNull(new EdgeSubsetVisitor(unwireModel, linkFitness, genomeB, null, codec));
 
     remove(strategy, child, eSource, linksToUnwire, removedRef);
-    System.out.println("unwireModel for B (after):" + unwireModel.getSize());
   }
 
   protected void remove(
@@ -99,7 +93,7 @@ public abstract class BreederSoo implements Breeder {
       final int unwireInto = codec.id2trailing(unwireId);
 
       final double newVal = child.getSolution().get(unwireFrom, unwireInto) - step;
-      final double newValStrict = newVal < 0 ? 0 : newVal;
+      final double newValStrict = Soft.MILLI.positive(newVal) ? newVal : 0;
       child.getSolution().set(unwireFrom, unwireInto, newValStrict);
       if (newValStrict == 0) {
         unwireModel.removeByIndex(indexRef[0]);
@@ -107,7 +101,7 @@ public abstract class BreederSoo implements Breeder {
     }
   }
 
-  protected double computeLinkDiff(GeneticStrategySoo strategy, GenomeSoo genomeA, GenomeSoo child) {
+  protected double computeLinkDiff(GenomeSoo genomeA, GenomeSoo child) {
     final double connectivityDiff = child.getSolution().total() - genomeA.getSolution().total();
     return connectivityDiff;
   }
@@ -147,10 +141,10 @@ public abstract class BreederSoo implements Breeder {
     }
 
     public void visit(int from, int into, double value) {
-      final boolean include = included.getSolution().conn(from, into);
+      final boolean include = Soft.MILLI.positive(included.getSolution().get(from, into));
 
       if (include) {
-        final boolean skipped = excluded.getSolution().conn(from, into);
+        final boolean skipped = excluded != null && Soft.MILLI.positive(excluded.getSolution().get(from, into));
 
         if (!skipped) {
           unwireModel.add(codec.fi2id(from, into), linkFitness.get(from, into));
