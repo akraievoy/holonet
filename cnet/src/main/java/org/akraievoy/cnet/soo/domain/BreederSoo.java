@@ -109,9 +109,7 @@ public abstract class BreederSoo implements Breeder {
 
   protected double computeLinkDiff(GeneticStrategySoo strategy, GenomeSoo genomeA, GenomeSoo child) {
     final double connectivityDiff = child.getSolution().total() - genomeA.getSolution().total();
-    //  FIXME causing specimens violate density condition after breeding when steps > 1 
-    return Math.round(connectivityDiff * strategy.getSteps()) / strategy.getSteps();
-//    return connectivityDiff;
+    return connectivityDiff;
   }
 
   protected GenomeSoo createChild(GenomeSoo genomeA, GenomeSoo genomeB) {
