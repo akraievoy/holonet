@@ -92,12 +92,21 @@
       <hn:Param name="geneticStrategy.lambdaTargetGeneration" value="50"/>
       <hn:Param name="entropySourceGenetics.seed" value="42600-42620"/>
     </hn:Config>
-    <hn:Config name="stepsProf" description="3 Steps">
+    <hn:Config name="steps3" description="3 Steps">
       <hn:Param name="geneticStrategy.steps" value="3"/>
       <hn:Param name="geneticStrategy.startLambda" value="0.6"/>
       <hn:Param name="geneticStrategy.lambda" value="0.6"/>
       <hn:Param name="geneticStrategy.lambdaTargetGeneration" value="50"/>
       <hn:Param name="entropySourceGenetics.seed" value="42600"/>
+    </hn:Config>
+    <hn:Config name="stepsProfLite" description="Varyiing Steps - Lite">
+      <hn:Param name="ovlGenOpt.generation" value="0-5" chainedStrategy="use_last" />
+      <hn:Param name="ovlGenOpt.specimenIndex" value="0-12" chainedStrategy="use_first" strategy="use_first" />
+      <hn:Param name="geneticStrategy.steps" value="1;2"/>
+      <hn:Param name="geneticStrategy.startLambda" value="0.6"/>
+      <hn:Param name="geneticStrategy.lambda" value="0.6"/>
+      <hn:Param name="geneticStrategy.lambdaTargetGeneration" value="50"/>
+      <hn:Param name="entropySourceGenetics.seed" value="42600-42602"/>
     </hn:Config>
   </hn:Experiment>
 
