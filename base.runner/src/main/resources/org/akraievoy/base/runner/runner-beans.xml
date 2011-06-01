@@ -67,7 +67,7 @@
     <constructor-arg ref="runnerDao"/>
   </bean>
 
-  <bean class="org.akraievoy.base.runner.domain.ExperimentRunnerLogging" id="experimentRunner">
+  <bean class="org.akraievoy.base.runner.domain.ExperimentRunnerImpl" id="experimentRunner">
     <constructor-arg ref="runnerDao"/>
     <constructor-arg ref="runnerDao"/>
   </bean>

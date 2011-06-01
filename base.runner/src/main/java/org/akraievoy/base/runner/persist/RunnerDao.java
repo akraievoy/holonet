@@ -18,12 +18,17 @@
 
 package org.akraievoy.base.runner.persist;
 
+import org.akraievoy.base.Parse;
+import org.akraievoy.base.runner.vo.RunInfo;
 import org.akraievoy.db.tx.TransactionAware;
 
 import java.sql.SQLException;
+import java.util.*;
 
 public interface RunnerDao extends TransactionAware, ExperimentRegistry, RunRegistry {
   void initSchema() throws SQLException;
 
   int getSchemaVersion() throws SQLException;
+
+  SortedMap<Long, RunInfo> getChainedRuns(String safeChainStr);
 }

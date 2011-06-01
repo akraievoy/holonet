@@ -40,7 +40,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.sql.SQLException;
-import java.util.*;
 import java.util.concurrent.ExecutorService;
 
 public class ExperimentChooserUiController implements Startable {
@@ -50,6 +49,8 @@ public class ExperimentChooserUiController implements Startable {
   protected final ContainerStopper stopper;
   protected final ExperimentTableModel experimentTableModel;
   protected final RunTableModel runTableModel;
+  protected final AxisTableModel axisTableModel = new AxisTableModel();
+  protected final KeyTableModel keyTableModel = new KeyTableModel();
   protected final ExecutorService executor;
   protected final ExperimentRunner experimentRunner;
   protected final RunnerDao runnerDao;
@@ -99,6 +100,11 @@ public class ExperimentChooserUiController implements Startable {
 
     experimentChooserFrame.getConfCombo().setModel(emptyModel);
 
+    experimentChooserFrame.getAxisTable().setModel(axisTableModel);
+    experimentChooserFrame.getKeyTable().setModel(keyTableModel);
+
+    //  FIXME proceed with valueTable Model
+
     setupColumns();
 
     onExperimentSelectionChange(-1);
@@ -142,8 +148,28 @@ public class ExperimentChooserUiController implements Startable {
     selectAction.setEnabled(selectedRow >= 0);
   }
 
-  protected void onRunSelectionChange(int selectedRow) {
-    chainAction.setEnabled(selectedRow >= 0);
+  protected void onRunSelectionChange(final int runRow) {
+    chainAction.setEnabled(runRow >= 0);
+
+    executor.execute(new Runnable() {
+      public void run() {
+        if (runRow >= 0) {
+          //  FIXME fetch run from DB
+          //  runnerDao.findRun();
+          //  load chained runs
+          //  construct full widened enumerator --> axisTable
+          //  list keys --> keysTable
+        } else {
+          SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+              axisTableModel.setKeyRows(new AxisTableModel.AxisRow[0]);
+              keyTableModel.setKeyRows(new KeyTableModel.KeyRow[0]);
+              //  FIXME clear thre valuesTable
+            }
+          });
+        }
+      }
+    });
   }
 
   protected void onExperimentRunningChange(boolean newExperimentRunning) {
@@ -273,7 +299,7 @@ public class ExperimentChooserUiController implements Startable {
       if (selectedConf == null) {
         return;
       }
-      final Long selectedConfUid = Parse.oneLong(selectedConf.getId(), (Long) null);
+      final Long selectedConfUid = Parse.oneLong(selectedConf.getId(), null);
       if (selectedConfUid == null) {
         return;
       }
@@ -287,25 +313,16 @@ public class ExperimentChooserUiController implements Startable {
       }
 
       onExperimentRunningChange(true);
-      executor.execute(new RunExperimentTask(selectedExperiment, conf, getChainedRuns()));
+      executor.execute(new RunExperimentTask(selectedExperiment, conf, safeChainSpec()));
     }
 
-    protected SortedMap<Long, RunInfo> getChainedRuns() {
+    protected String safeChainSpec() {
       final String chainStr = experimentChooserFrame.getChainTextField().getText();
 
       final String safeChainStr = chainStr.replaceAll("[^ 0-9]+", "").replaceAll("\\s+", " ").trim();
 
-      if (safeChainStr.length() == 0) {
-        return new TreeMap<Long, RunInfo>();
-      }
-
       experimentChooserFrame.getChainTextField().setText(safeChainStr);
-
-      final java.util.List<Long> runIds =
-          new ArrayList<Long>(Arrays.asList(Parse.longs(safeChainStr.split(" "), null)));
-      runIds.removeAll(Collections.singletonList((Long) null));
-
-      return runnerDao.loadChainedRuns(runIds);
+      return safeChainStr;
     }
   }
 
@@ -334,17 +351,17 @@ public class ExperimentChooserUiController implements Startable {
   class RunExperimentTask implements Runnable {
     protected final Experiment info;
     protected final Conf conf;
-    protected final SortedMap<Long, RunInfo> chainedRuns;
+    protected final String safeChainSpec;
 
-    RunExperimentTask(Experiment info, Conf conf, SortedMap<Long, RunInfo> chainedRuns) {
+    RunExperimentTask(Experiment info, Conf conf, String safeChainSpec) {
       this.info = info;
       this.conf = conf;
-      this.chainedRuns = chainedRuns;
+      this.safeChainSpec = safeChainSpec;
     }
 
     public void run() {
       try {
-        experimentRunner.run(info, conf, chainedRuns);
+        experimentRunner.run(info, conf.getUid(), safeChainSpec);
       } catch (Throwable t) {
         ExperimentRunner.log.warn("experiment failed", t);
       } finally {

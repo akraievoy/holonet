@@ -82,4 +82,24 @@ public class ExperimentChooserFrame extends JFrame {
   public JLabel getExpNameLabel() {
     return rootPanel.getExpNameLabel();
   }
+
+  public JComboBox getExportDestCombo() {
+    return rootPanel.getExportDestCombo();
+  }
+
+  public JComboBox getExportFormatCombo() {
+    return rootPanel.getExportFormatCombo();
+  }
+
+  public JTable getKeyTable() {
+    return rootPanel.getKeyTable();
+  }
+
+  public JTable getAxisTable() {
+    return rootPanel.getAxisTable();
+  }
+
+  public JTable getValueTable() {
+    return rootPanel.getValueTable();
+  }
 }

@@ -453,6 +453,18 @@ public class RunnerDaoBase implements RunnerDao {
 
     return attrValue.longValue() > 0;
   }
+
+  public SortedMap<Long, RunInfo> getChainedRuns(final String safeChainStr) {
+    if (safeChainStr.length() == 0) {
+      return new TreeMap<Long, RunInfo>();
+    }
+
+    final List<Long> runIds =
+        new ArrayList<Long>(Arrays.asList(Parse.longs(safeChainStr.split(" "), null)));
+    runIds.removeAll(Collections.singletonList((Long) null));
+
+    return loadChainedRuns(runIds);
+  }
 }
 
 class ExperimentRowProcessor extends BasicRowProcessor {
