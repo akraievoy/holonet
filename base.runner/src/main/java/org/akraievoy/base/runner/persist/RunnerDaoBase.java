@@ -380,9 +380,13 @@ public class RunnerDaoBase implements RunnerDao {
   }
 
   public SortedMap<Long, RunInfo> loadChainedRuns(final List<Long> chainedRunIds) {
+    final SortedMap<Long, RunInfo> result = new TreeMap<Long, RunInfo>();
+    if (chainedRunIds.isEmpty()) {
+      return result;
+    }
+
     final TreeSet<Long> pending = new TreeSet<Long>(chainedRunIds);
     final TreeSet<Long> loaded = new TreeSet<Long>();
-    final SortedMap<Long, RunInfo> result = new TreeMap<Long, RunInfo>();
 
     while (!pending.isEmpty()) {
       final long lastChainedRunId = pending.last();
@@ -455,15 +459,7 @@ public class RunnerDaoBase implements RunnerDao {
   }
 
   public SortedMap<Long, RunInfo> getChainedRuns(final String safeChainStr) {
-    if (safeChainStr.length() == 0) {
-      return new TreeMap<Long, RunInfo>();
-    }
-
-    final List<Long> runIds =
-        new ArrayList<Long>(Arrays.asList(Parse.longs(safeChainStr.split(" "), null)));
-    runIds.removeAll(Collections.singletonList((Long) null));
-
-    return loadChainedRuns(runIds);
+    return loadChainedRuns(RunBean.parseChainSpec(safeChainStr));
   }
 }
 

@@ -21,9 +21,10 @@ package org.akraievoy.base.runner.swing;
 import com.google.common.base.Throwables;
 import org.akraievoy.base.Parse;
 import org.akraievoy.base.Startable;
-import org.akraievoy.base.ref.RefSimple;
+import org.akraievoy.base.Util;
 import org.akraievoy.base.runner.ContainerStopper;
 import org.akraievoy.base.runner.domain.ExperimentRunner;
+import org.akraievoy.base.runner.domain.ParamSetEnumerator;
 import org.akraievoy.base.runner.domain.RunStateListener;
 import org.akraievoy.base.runner.persist.ImportRunnable;
 import org.akraievoy.base.runner.persist.RunnerDao;
@@ -32,17 +33,22 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+import javax.swing.event.*;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.sql.SQLException;
+import java.util.*;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-public class ExperimentChooserUiController implements Startable {
+public class ExperimentChooserUiController implements Startable, ExperimentTableModel.SelectionCallback {
   private static final org.slf4j.Logger log = LoggerFactory.getLogger(ExperimentChooserUiController.class);
 
   protected final ExperimentChooserFrame experimentChooserFrame;
@@ -58,11 +64,10 @@ public class ExperimentChooserUiController implements Startable {
 
   protected final DefaultComboBoxModel emptyModel = new DefaultComboBoxModel(new Object[0]);
   protected final LaunchAction launchAction = new LaunchAction();
-  protected final SelectAction selectAction = new SelectAction();
   protected final ChainAction chainAction = new ChainAction();
 
   protected boolean experimentRunning = false;
-  protected Experiment selectedExperiment;
+  protected ExperimentRunner.RunContext viewedContext;
 
   public ExperimentChooserUiController(
       final ExperimentChooserFrame experimentChooserFrame,
@@ -86,14 +91,13 @@ public class ExperimentChooserUiController implements Startable {
 
   public void start() {
     experimentChooserFrame.setup();
+    experimentTableModel.setCallback(this);
 
     experimentChooserFrame.addWindowListener(new WindowAdapter());
     experimentChooserFrame.getLaunchButton().setAction(launchAction);
-    experimentChooserFrame.getSelectButton().setAction(selectAction);
     experimentChooserFrame.getChainButton().setAction(chainAction);
 
     experimentChooserFrame.getExperimentTable().setModel(experimentTableModel);
-    experimentChooserFrame.getExperimentTable().getSelectionModel().addListSelectionListener(new ExperimentSelectionListener());
 
     experimentChooserFrame.getRunsTable().setModel(runTableModel);
     experimentChooserFrame.getRunsTable().getSelectionModel().addListSelectionListener(new RunSelectionListener());
@@ -107,9 +111,8 @@ public class ExperimentChooserUiController implements Startable {
 
     setupColumns();
 
-    onExperimentSelectionChange(-1);
     onRunSelectionChange(-1);
-    updateSelectedExperiment(-1);
+    experimentSelected(null);
     experimentChooserFrame.onStart();
 
     importRunnable.setAfterImport(new Runnable() {
@@ -133,19 +136,15 @@ public class ExperimentChooserUiController implements Startable {
   }
 
   protected void setupColumns() {
-    final TableColumnModel tcm = experimentChooserFrame.getExperimentTable().getColumnModel();
-    tcm.getColumn(tcm.getColumnIndex(ExperimentTableModel.COL_NAME)).setPreferredWidth(256);
-    tcm.getColumn(tcm.getColumnIndex(ExperimentTableModel.COL_PATH)).setPreferredWidth(96);
-    tcm.getColumn(tcm.getColumnIndex(ExperimentTableModel.COL_KEY)).setPreferredWidth(48);
-    tcm.getColumn(tcm.getColumnIndex(ExperimentTableModel.COL_KEY)).setMaxWidth(256);
+    TableColumnModelShrinker.setup(experimentChooserFrame.getExperimentTable());
+    TableColumnModelShrinker.setup(experimentChooserFrame.getRunsTable());
+    TableColumnModelShrinker.setup(experimentChooserFrame.getAxisTable());
+    TableColumnModelShrinker.setup(experimentChooserFrame.getKeyTable());
+    TableColumnModelShrinker.setup(experimentChooserFrame.getValueTable());
   }
 
   public void stop() {
     experimentChooserFrame.dispose();
-  }
-
-  protected void onExperimentSelectionChange(int selectedRow) {
-    selectAction.setEnabled(selectedRow >= 0);
   }
 
   protected void onRunSelectionChange(final int runRow) {
@@ -154,17 +153,48 @@ public class ExperimentChooserUiController implements Startable {
     executor.execute(new Runnable() {
       public void run() {
         if (runRow >= 0) {
-          //  FIXME fetch run from DB
-          //  runnerDao.findRun();
-          //  load chained runs
-          //  construct full widened enumerator --> axisTable
-          //  list keys --> keysTable
+
+          try {
+            final Run run = runTableModel.getRun(runRow);
+            final Conf conf = runnerDao.findConfById(run.getConfUid());
+            viewedContext = experimentRunner.loadRunContext(conf.getUid(), run.getChain());
+
+            final List<AxisTableModel.AxisRow> axisRows = new ArrayList<AxisTableModel.AxisRow>();
+            final ParamSetEnumerator wideParams = viewedContext.getWideParams();
+            for (int paramIndex = 0; paramIndex <  wideParams.getParameterCount(); paramIndex++) {
+              final Parameter parameter = wideParams.getParameter(paramIndex);
+              axisRows.add(new AxisTableModel.AxisRow(
+                  parameter.getName(), 
+                  parameter.getValueSpec(),
+                  parameter.getValueCount()
+              ));
+            }
+
+            //  TODO deep key listing?
+            final List<String> keyList = runnerDao.listCtxPaths(run.getUid());
+            final List<KeyTableModel.KeyRow> keyRows = new ArrayList<KeyTableModel.KeyRow>();
+            for (String key : keyList) {
+              keyRows.add(new KeyTableModel.KeyRow(
+                key, "FIXME" //FIXME fetch the key type
+              ));
+            }
+            SwingUtilities.invokeLater(new Runnable() {
+              public void run() {
+                axisTableModel.setAxisRows(axisRows.toArray(new AxisTableModel.AxisRow[axisRows.size()]));
+                keyTableModel.setKeyRows(keyRows.toArray(new KeyTableModel.KeyRow[keyRows.size()]));
+                //  FIXME populate the valuesTable
+              }
+            });
+          } catch (SQLException e) {
+            log.warn("failed to fetch experiment data: ", String.valueOf(e));
+            log.debug("exception details", e);
+          }
         } else {
           SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-              axisTableModel.setKeyRows(new AxisTableModel.AxisRow[0]);
+              axisTableModel.setAxisRows(new AxisTableModel.AxisRow[0]);
               keyTableModel.setKeyRows(new KeyTableModel.KeyRow[0]);
-              //  FIXME clear thre valuesTable
+              //  FIXME clear the valuesTable
             }
           });
         }
@@ -184,31 +214,25 @@ public class ExperimentChooserUiController implements Startable {
     experimentChooserFrame.getConfCombo().setEnabled(comboEnabled);
   }
 
-  protected void updateSelectedExperiment(int selectedRow) {
+  public void experimentSelected(@Nullable Experiment exp) {
     experimentChooserFrame.getConfCombo().setModel(emptyModel);
 
-    if (selectedRow >= 0) {
-      selectedExperiment = experimentTableModel.getExperiment(selectedRow, new RefSimple<String>(null));
-
-      boolean enabled = !experimentRunning && selectedExperiment != null;
+    if (exp != null) {
+      boolean enabled = !experimentRunning;
       ComboBoxModel confComboModel = emptyModel;
       try {
-        if (selectedExperiment != null) {
-          final java.util.List<IdName> confIds = runnerDao.listConfs(selectedExperiment.getUid());
-          confComboModel = new DefaultComboBoxModel(confIds.toArray(new IdName[confIds.size()]));
-        }
-
+        final java.util.List<IdName> confIds = runnerDao.listConfs(exp.getUid());
+        confComboModel = new DefaultComboBoxModel(confIds.toArray(new IdName[confIds.size()]));
       } catch (SQLException sqlE) {
         log.warn("failed while listing configurations: {}", Throwables.getRootCause(sqlE).toString());
         enabled = false;
       }
 
       launchAction.setEnabled(enabled);
-      experimentChooserFrame.getExpNameLabel().setText(selectedExperiment.getDesc());
+      experimentChooserFrame.getExpNameLabel().setText(exp.getDesc());
       experimentChooserFrame.getConfCombo().setModel(confComboModel);
       experimentChooserFrame.getConfCombo().setEnabled(enabled && confComboModel.getSize() > 0);
     } else {
-      selectedExperiment = null;
       launchAction.setEnabled(false);
       experimentChooserFrame.getExpNameLabel().setText("< none selected yet >");
       experimentChooserFrame.getConfCombo().setEnabled(false);
@@ -270,17 +294,6 @@ public class ExperimentChooserUiController implements Startable {
     }
   }
 
-  class SelectAction extends AbstractAction {
-    SelectAction() {
-      super("Select");
-    }
-
-    public void actionPerformed(ActionEvent e) {
-      final int selectedRow = experimentChooserFrame.getExperimentTable().getSelectedRow();
-      updateSelectedExperiment(selectedRow);
-    }
-  }
-
   class LaunchAction extends AbstractAction {
     LaunchAction() {
       super("Launch");
@@ -291,7 +304,8 @@ public class ExperimentChooserUiController implements Startable {
         return;
       }
 
-      if (selectedExperiment == null) {
+      final Experiment exp = experimentTableModel.getSelectedExperiment();
+      if (exp == null) {
         return;
       }
 
@@ -304,16 +318,16 @@ public class ExperimentChooserUiController implements Startable {
         return;
       }
 
-      Conf conf = null;
+      Conf conf;
       try {
-        conf = runnerDao.findConfByName(selectedExperiment.getUid(), selectedConfUid);
+        conf = runnerDao.findConfByName(exp.getUid(), selectedConfUid);
       } catch (SQLException sqlE) {
         log.warn("failed to lookup conf: {}", Throwables.getRootCause(sqlE).toString());
         return;
       }
 
       onExperimentRunningChange(true);
-      executor.execute(new RunExperimentTask(selectedExperiment, conf, safeChainSpec()));
+      executor.execute(new RunExperimentTask(exp, conf, safeChainSpec()));
     }
 
     protected String safeChainSpec() {
@@ -323,17 +337,6 @@ public class ExperimentChooserUiController implements Startable {
 
       experimentChooserFrame.getChainTextField().setText(safeChainStr);
       return safeChainStr;
-    }
-  }
-
-  class ExperimentSelectionListener implements ListSelectionListener {
-    public void valueChanged(ListSelectionEvent e) {
-      if (e.getValueIsAdjusting()) {
-        return;
-      }
-
-      final int selectedRow = experimentChooserFrame.getExperimentTable().getSelectedRow();
-      onExperimentSelectionChange(selectedRow);
     }
   }
 
@@ -361,7 +364,7 @@ public class ExperimentChooserUiController implements Startable {
 
     public void run() {
       try {
-        experimentRunner.run(info, conf.getUid(), safeChainSpec);
+        experimentRunner.run(info, conf.getUid(), RunBean.parseChainSpec(safeChainSpec));
       } catch (Throwable t) {
         ExperimentRunner.log.warn("experiment failed", t);
       } finally {
@@ -381,6 +384,60 @@ public class ExperimentChooserUiController implements Startable {
     public void onRunCreation(long runId) {
       final int rowCount = runTableModel.getRowCount();
       runTableModel.fireTableRowsInserted(rowCount, rowCount);
+    }
+  }
+
+  @Util("swing")
+  public static class TableColumnModelShrinker implements TableColumnModelListener, TableModelListener {
+    private final JTable autoTable;
+
+    private TableColumnModelShrinker(JTable autoTable) {this.autoTable = autoTable;}
+
+    public void columnAdded(TableColumnModelEvent e) { /* nothing to do */ }
+    public void columnSelectionChanged(ListSelectionEvent e) { /* nothing to do */ }
+    public void columnRemoved(TableColumnModelEvent e) { /* nothing to do */ }
+    public void columnMoved(TableColumnModelEvent e) { /* nothing to do */ }
+
+    public void tableChanged(TableModelEvent e) {
+      shrink(autoTable);  //  LATER not all events imply the neccessity of the call
+    }
+
+    public void columnMarginChanged(ChangeEvent e) {
+      shrink(autoTable);
+    }
+
+    public static void shrink(final JTable table) {
+      final TableColumnModel columnModel = table.getColumnModel();
+      final TableModel model = table.getModel();
+      final int rowCount = model.getRowCount();
+      final TableCellRenderer headerRenderer = table.getTableHeader().getDefaultRenderer();
+      for (int j = 0; j < columnModel.getColumnCount(); j++) {
+        final TableColumn col = columnModel.getColumn(j);
+        int width = prefWidth(table, headerRenderer, col.getHeaderValue());
+        for (int i = 0; i < rowCount; i++) {
+          final TableCellRenderer cellRenderer = table.getCellRenderer(i, j);
+          width = Math.max(width, prefWidth(table, cellRenderer, model.getValueAt(i, j)));
+        }
+        col.setPreferredWidth(width);
+        col.setMaxWidth(width); //  LATER add a flag to keep max constraints off
+      }
+    }
+
+    protected static int prefWidth(final JTable autoTable, TableCellRenderer renderer, final Object cellValue) {
+      if (renderer == null) {
+        return 2; //  LATER make the margin configurable
+      }
+
+      final Component component = renderer.getTableCellRendererComponent(
+          autoTable, cellValue, false, false, 0, 0
+      );
+      return component.getPreferredSize().width + 2;
+    }
+
+    public static void setup(JTable autoTable) {
+      final TableColumnModelShrinker shrinker = new TableColumnModelShrinker(autoTable);
+      autoTable.getColumnModel().addColumnModelListener(shrinker);
+      autoTable.getModel().addTableModelListener(shrinker);
     }
   }
 }

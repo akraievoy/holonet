@@ -38,6 +38,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 
@@ -55,24 +56,29 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     this.expDao = expDao;
   }
 
-  public void run(Experiment info, final long confUid, String safeChainSpec) {
-    RunContext runContext = new RunContext(confUid, safeChainSpec).invoke();
+  public void run(Experiment info, final long confUid, final List<Long> chainedRunIds) {
+    RunContext runContext = loadRunContext(confUid, chainedRunIds);
     if (!runContext.isValid()) {
       return;
     }
 
-    ParamSetEnumerator widened = runContext.getWideParams();
-
     long runId;
     try {
-      final long[] chainedRunIds = runContext.getChainedRunIds();
-      runId = dao.insertRun(confUid, chainedRunIds, runContext.getWideParams().getCount());
+      runId = dao.insertRun(
+          confUid,
+          runContext.getChainedRunIds(),
+          runContext.getWideParams().getCount()
+      );
     } catch (SQLException e) {
       throw Throwables.propagate(e);
     }
 
     listener.onRunCreation(runId);
     runIterative(runId, info, runContext);
+  }
+
+  public RunContext loadRunContext(long confUid, final List<Long> chainedRunIds) {
+    return new RunContextImpl(confUid, chainedRunIds).invoke();
   }
 
   protected ParamSetEnumerator createEnumerator(final Long confUid) {
@@ -220,17 +226,17 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     this.listener = listener;
   }
 
-  public class RunContext {
+  public class RunContextImpl implements RunContext {
     private final long confUid;
-    private final String safeChainSpec;
+    private final List<Long> chainedRunIds;
     private SortedMap<Long, RunInfo> chainedRuns;
     private ParamSetEnumerator rootParams;
     private ParamSetEnumerator wideParams;
     private boolean valid = false;
 
-    public RunContext(long confUid, String safeChainSpec) {
+    public RunContextImpl(long confUid, final List<Long> chainedRunIds) {
       this.confUid = confUid;
-      this.safeChainSpec = safeChainSpec;
+      this.chainedRunIds = chainedRunIds;
     }
 
     public SortedMap<Long, RunInfo> getChainedRuns() {
@@ -249,12 +255,12 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
       return valid;
     }
 
-    protected long[] getChainedRunIds() {
+    public long[] getChainedRunIds() {
       return ObjArrays.unbox(getChainedRuns().keySet().toArray(new Long[getChainedRuns().size()]));
     }
 
-    public RunContext invoke() {
-      chainedRuns = dao.getChainedRuns(safeChainSpec);
+    public RunContextImpl invoke() {
+      chainedRuns = dao.loadChainedRuns(chainedRunIds);
       rootParams = createEnumerator(confUid);
 
       if (!validateRunChain(rootParams, chainedRuns)) {

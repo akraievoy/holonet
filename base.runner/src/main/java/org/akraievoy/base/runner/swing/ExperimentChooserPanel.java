@@ -28,7 +28,6 @@ public class ExperimentChooserPanel {
   protected JTextPane outputPane;
   protected JComboBox confCombo;
   protected JTable runsTable;
-  protected JButton selectButton;
   protected JTextField chainTextField;
   protected JButton chainButton;
   protected JLabel expNameLabel;
@@ -73,10 +72,6 @@ public class ExperimentChooserPanel {
     return runsTable;
   }
 
-  public JButton getSelectButton() {
-    return selectButton;
-  }
-
   public JLabel getExpNameLabel() {
     return expNameLabel;
   }
@@ -119,9 +114,9 @@ public class ExperimentChooserPanel {
     rootPanel = new JPanel();
     rootPanel.setLayout(new BorderLayout(0, 0));
     final JSplitPane splitPane1 = new JSplitPane();
-    splitPane1.setContinuousLayout(true);
+    splitPane1.setContinuousLayout(false);
     splitPane1.setDividerLocation(275);
-    splitPane1.setDividerSize(7);
+    splitPane1.setDividerSize(5);
     splitPane1.setOneTouchExpandable(true);
     splitPane1.setOrientation(0);
     splitPane1.setResizeWeight(0.5);
@@ -139,16 +134,18 @@ public class ExperimentChooserPanel {
     outputPane.setToolTipText("Experiment output");
     scrollPane1.setViewportView(outputPane);
     final JSplitPane splitPane2 = new JSplitPane();
-    splitPane2.setContinuousLayout(true);
+    splitPane2.setContinuousLayout(false);
     splitPane2.setDividerLocation(193);
-    splitPane2.setDividerSize(7);
+    splitPane2.setDividerSize(5);
     splitPane2.setOneTouchExpandable(true);
     splitPane2.setResizeWeight(0.3);
     splitPane1.setLeftComponent(splitPane2);
     final JSplitPane splitPane3 = new JSplitPane();
-    splitPane3.setDividerLocation(281);
+    splitPane3.setDividerLocation(319);
+    splitPane3.setDividerSize(5);
     splitPane3.setOneTouchExpandable(true);
-    splitPane3.setResizeWeight(0.7);
+    splitPane3.setPreferredSize(new Dimension(400, 449));
+    splitPane3.setResizeWeight(0.9);
     splitPane2.setRightComponent(splitPane3);
     final JPanel panel1 = new JPanel();
     panel1.setLayout(new GridBagLayout());
@@ -180,7 +177,7 @@ public class ExperimentChooserPanel {
     gbc = new GridBagConstraints();
     gbc.gridx = 2;
     gbc.gridy = 0;
-    gbc.weightx = 0.6;
+    gbc.weightx = 0.4;
     gbc.weighty = 1.0;
     gbc.fill = GridBagConstraints.BOTH;
     gbc.insets = new Insets(2, 1, 1, 2);
@@ -192,7 +189,7 @@ public class ExperimentChooserPanel {
     gbc = new GridBagConstraints();
     gbc.gridx = 2;
     gbc.gridy = 1;
-    gbc.weightx = 1.0;
+    gbc.weightx = 0.4;
     gbc.fill = GridBagConstraints.BOTH;
     panel1.add(panel2, gbc);
     exportDestCombo = new JComboBox();
@@ -319,14 +316,6 @@ public class ExperimentChooserPanel {
     final JPanel panel5 = new JPanel();
     panel5.setLayout(new GridBagLayout());
     splitPane2.setLeftComponent(panel5);
-    selectButton = new JButton();
-    selectButton.setText("Select");
-    gbc = new GridBagConstraints();
-    gbc.gridx = 0;
-    gbc.gridy = 1;
-    gbc.anchor = GridBagConstraints.SOUTHEAST;
-    gbc.insets = new Insets(2, 2, 2, 2);
-    panel5.add(selectButton, gbc);
     final JScrollPane scrollPane3 = new JScrollPane();
     gbc = new GridBagConstraints();
     gbc.gridx = 0;

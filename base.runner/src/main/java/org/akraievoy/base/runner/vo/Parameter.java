@@ -51,6 +51,7 @@ public class Parameter {
   private static final String PARAM_VALUE_STRATEGY = "*strategy*";
 
   private final String name;
+  private final String valueSpec;
   private final String[] values;
   private String desc;
   private Strategy strategyCurrent = Strategy.ITERATE;
@@ -58,9 +59,10 @@ public class Parameter {
   private long runUid = 0;
   private boolean chained = false;
 
-  protected Parameter(final String newName, final String[] newValues) {
+  protected Parameter(final String newName, final String[] newValues, String newValueSpec) {
     name = newName;
     values = newValues.clone();
+    valueSpec = newValueSpec;
   }
 
   public String getName() { return name; }
@@ -84,7 +86,7 @@ public class Parameter {
   public void setRunUid(long runUid) { this.runUid = runUid; }
 
   public Parameter copy() {
-    final Parameter copy = new Parameter(name, values);
+    final Parameter copy = new Parameter(name, values, valueSpec);
 
     copy.strategyCurrent = strategyCurrent;
     copy.strategyChained = strategyChained;
@@ -97,6 +99,10 @@ public class Parameter {
   public String getValue(final long index) {
     validatePos(index);
     return values[(int) index];
+  }
+
+  public String getValueSpec() {
+    return valueSpec;
   }
 
   public boolean sameValues(Parameter param) {
@@ -137,7 +143,7 @@ public class Parameter {
       }
     }
 
-    return new Parameter(name, valuesArr);
+    return new Parameter(name, valuesArr, valueSpec);
   }
 
   public boolean isStrategy() {

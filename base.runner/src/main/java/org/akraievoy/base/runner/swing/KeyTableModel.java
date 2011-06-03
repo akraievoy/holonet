@@ -25,7 +25,7 @@ public class KeyTableModel extends AbstractTableModel {
   protected static final String COL_TYPE = "Type";
 
   protected static final String[] COL = {COL_NAME, COL_TYPE};
-  private KeyRow[] keyRows;
+  private KeyRow[] keyRows = new KeyRow[0];
 
   public KeyTableModel() {
   }
@@ -40,6 +40,7 @@ public class KeyTableModel extends AbstractTableModel {
 
   public void setKeyRows(KeyRow[] keyRows) {
     this.keyRows = keyRows;
+    fireTableDataChanged();
   }
 
   public int getColumnCount() {

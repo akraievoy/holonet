@@ -18,7 +18,11 @@
 
 package org.akraievoy.base.runner.vo;
 
+import org.akraievoy.base.Parse;
+
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class RunBean implements Run {
@@ -98,5 +102,12 @@ public class RunBean implements Run {
   @Override
   public String toString() {
     return "[" + uid + ":" + expUid + "@" + confUid + "] ('" + expDesc + "'@'" + confDesc + "')";
+  }
+
+  public static List<Long> parseChainSpec(String safeChainStr) {
+    final List<Long> runIds =
+        new ArrayList<Long>(Arrays.asList(Parse.longs(safeChainStr.split(" "), null)));
+    runIds.removeAll(Collections.singletonList((Long) null));
+    return runIds;
   }
 }

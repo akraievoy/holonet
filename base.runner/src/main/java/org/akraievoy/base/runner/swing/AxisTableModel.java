@@ -26,21 +26,22 @@ public class AxisTableModel extends AbstractTableModel {
   protected static final String COL_COUNT = "Count";
 
   protected static final String[] COL = {COL_NAME, COL_SPEC, COL_COUNT};
-  private AxisRow[] axisRows;
+  private AxisRow[] axisRows = new AxisRow[0];
 
   public AxisTableModel() {
   }
 
   public int getRowCount() {
-    return getKeys().length;
+    return getAxisRows().length;
   }
 
-  protected AxisRow[] getKeys() {
+  protected AxisRow[] getAxisRows() {
     return axisRows;
   }
 
-  public void setKeyRows(AxisRow[] axisRows) {
+  public void setAxisRows(AxisRow[] axisRows) {
     this.axisRows = axisRows;
+    fireTableDataChanged();
   }
 
   public int getColumnCount() {
@@ -52,7 +53,7 @@ public class AxisTableModel extends AbstractTableModel {
   }
 
   public Class<?> getColumnClass(int columnIndex) {
-    return COL_COUNT.equals(getColumnName(columnIndex)) ? Integer.class : String.class;
+    return COL_COUNT.equals(getColumnName(columnIndex)) ? Long.class : String.class;
   }
 
   public Object getValueAt(int rowIndex, int columnIndex) {
@@ -77,7 +78,7 @@ public class AxisTableModel extends AbstractTableModel {
   }
 
   public AxisRow getAxisRow(int rowIndex) {
-    final AxisRow[] axisRows = getKeys();
+    final AxisRow[] axisRows = getAxisRows();
     if (rowIndex < 0 || rowIndex >= axisRows.length) {
       return null;
     }
@@ -88,9 +89,9 @@ public class AxisTableModel extends AbstractTableModel {
   public static class AxisRow {
     private final String name;
     private final String spec;
-    private final String count;
+    private final long count;
 
-    public AxisRow(String name, String spec, String count) {
+    public AxisRow(String name, String spec, long count) {
       this.name = name;
       this.spec = spec;
       this.count = count;
@@ -98,6 +99,6 @@ public class AxisTableModel extends AbstractTableModel {
 
     public String getName() { return name; }
     public String getSpec() { return spec; }
-    public String getCount() { return count; }
+    public long getCount() { return count; }
   }
 }

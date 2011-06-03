@@ -18,7 +18,9 @@
 
 package org.akraievoy.base.runner.swing;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
+import com.sun.istack.internal.NotNull;
 import org.akraievoy.base.Die;
 import org.akraievoy.base.Format;
 import org.akraievoy.base.ref.Ref;
@@ -28,6 +30,7 @@ import org.akraievoy.base.runner.vo.Experiment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.swing.table.AbstractTableModel;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -37,15 +40,26 @@ import java.util.List;
 public class ExperimentTableModel extends AbstractTableModel {
   private static final Logger log = LoggerFactory.getLogger(ExperimentTableModel.class);
 
-  protected final ExperimentRegistry registry;
+  public static interface SelectionCallback {
+    void experimentSelected(@Nullable Experiment exp);
+  }
 
+  protected final ExperimentRegistry registry;
+  protected String selectedPath = null;
+  protected SelectionCallback callback = new SelectionCallback() {
+    public void experimentSelected(@Nullable Experiment exp) {
+      //  left empty
+    }
+  };
+
+  protected static final String COL_SELECTED = "*";
   protected static final String COL_ID = "ID";
   protected static final String COL_STAMP = "Stamp";
   protected static final String COL_NAME = "Name";
   protected static final String COL_PATH = "Path";
   protected static final String COL_KEY = "Key";
 
-  protected static final String[] COL = {COL_ID, COL_STAMP, COL_NAME, COL_KEY, COL_PATH};
+  protected static final String[] COL = {COL_SELECTED, COL_ID, COL_STAMP, COL_NAME, COL_KEY, COL_PATH};
 
   public ExperimentTableModel(ExperimentRegistry registry) {
     this.registry = registry;
@@ -65,8 +79,7 @@ public class ExperimentTableModel extends AbstractTableModel {
       keyList = Collections.emptyList();
     }
 
-    final List<String> keys = keyList;
-    return keys;
+    return keyList;
   }
 
   public int getColumnCount() {
@@ -77,17 +90,24 @@ public class ExperimentTableModel extends AbstractTableModel {
     return COL[column];
   }
 
+  @Override
+  public Class<?> getColumnClass(int columnIndex) {
+    return COL_SELECTED.equals(getColumnName(columnIndex)) ? Boolean.class : String.class;
+  }
+
   public Object getValueAt(int rowIndex, int columnIndex) {
     final RefSimple<String> key = new RefSimple<String>(null);
     final Experiment experiment = getExperiment(rowIndex, key);
+    final String colName = getColumnName(columnIndex);
 
     if (experiment == null || key.getValue() == null) {
-      return ""; //	oops, actually
+      return COL_ID.equals(colName) ? false : ""; //	oops, actually
     }
-
-    final String colName = getColumnName(columnIndex);
     if (COL_ID.equals(colName)) {
       return experiment.getUid();
+    }
+    if (COL_SELECTED.equals(colName)) {
+      return Objects.equal(selectedPath, experiment.getPath());
     }
     if (COL_STAMP.equals(colName)) {
       return Format.format(new Date(experiment.getMillis()), true);
@@ -105,10 +125,40 @@ public class ExperimentTableModel extends AbstractTableModel {
     return "";  //	ooops, actually
   }
 
+  @Override
+  public boolean isCellEditable(int rowIndex, int columnIndex) {
+    return COL_SELECTED.equals(getColumnName(columnIndex));
+  }
+
+  @Override
+  public void setValueAt(Object aValue, int row, int col) {
+    if (!COL_SELECTED.equals(getColumnName(col))) {
+      return;
+    }
+
+    final String newSelectedPath =
+        Boolean.TRUE.equals(aValue) ? getPaths().get(row) : null;
+    final boolean fireCallback = !Objects.equal(selectedPath, newSelectedPath);
+
+    final int prevRow = getPaths().indexOf(selectedPath);
+    selectedPath = newSelectedPath;
+    if (fireCallback) {
+      callback.experimentSelected(getSelectedExperiment());
+      if (prevRow >= 0) {
+        //  NOTE: if you ever fire that event for the -1th row you'll loose TableColumnModel
+        fireTableCellUpdated(prevRow, col);
+      }
+      fireTableCellUpdated(row, col);
+    }
+  }
+
+  public Experiment getSelectedExperiment() {
+    return getExperimentByPath(selectedPath);
+  }
+
   public Experiment getExperiment(int rowIndex, Ref<String> key) {
     Die.ifNull("key", key);
 
-    final Experiment experiment;
     final List<String> paths = getPaths();
 
     if (rowIndex >= paths.size()) {
@@ -119,12 +169,25 @@ public class ExperimentTableModel extends AbstractTableModel {
     final String k = paths.get(rowIndex);
     key.setValue(k);
 
+    return getExperimentByPath(k);
+  }
+
+  protected Experiment getExperimentByPath(String path) {
+    if (path == null) {
+      return null;
+    }
+
+    Experiment experiment;
     try {
-      experiment = registry.findExperimentByPath(k);
+      experiment = registry.findExperimentByPath(path);
       return experiment;
     } catch (SQLException e) {
       log.warn("error on retrieving experiment: {}", Throwables.getRootCause(e).toString());
       return null;
     }
+  }
+
+  public void setCallback(@NotNull SelectionCallback callback) {
+    this.callback = callback;
   }
 }

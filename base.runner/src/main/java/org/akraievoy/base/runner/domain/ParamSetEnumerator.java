@@ -302,4 +302,8 @@ public class ParamSetEnumerator {
 
     return chainedEnumerator.getIndexForPos(chainedPoses, globFixed);
   }
+
+  public int getParameterCount() {
+    return params.size();
+  }
 }

@@ -75,10 +75,6 @@ public class ExperimentChooserFrame extends JFrame {
     return rootPanel.getRunsTable();
   }
 
-  public JButton getSelectButton() {
-    return rootPanel.getSelectButton();
-  }
-
   public JLabel getExpNameLabel() {
     return rootPanel.getExpNameLabel();
   }

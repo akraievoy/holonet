@@ -10,9 +10,9 @@
       <splitpane id="e5683">
         <constraints border-constraint="Center"/>
         <properties>
-          <continuousLayout value="true"/>
+          <continuousLayout value="false"/>
           <dividerLocation value="275"/>
-          <dividerSize value="7"/>
+          <dividerSize value="5"/>
           <oneTouchExpandable value="true"/>
           <orientation value="0"/>
           <resizeWeight value="0.5"/>
@@ -47,9 +47,9 @@
               <splitpane position="left"/>
             </constraints>
             <properties>
-              <continuousLayout value="true"/>
+              <continuousLayout value="false"/>
               <dividerLocation value="193"/>
-              <dividerSize value="7"/>
+              <dividerSize value="5"/>
               <oneTouchExpandable value="true"/>
               <resizeWeight value="0.3"/>
             </properties>
@@ -60,9 +60,11 @@
                   <splitpane position="right"/>
                 </constraints>
                 <properties>
-                  <dividerLocation value="281"/>
+                  <dividerLocation value="319"/>
+                  <dividerSize value="5"/>
                   <oneTouchExpandable value="true"/>
-                  <resizeWeight value="0.7"/>
+                  <preferredSize width="400" height="449"/>
+                  <resizeWeight value="0.9"/>
                 </properties>
                 <border type="none"/>
                 <children>
@@ -104,7 +106,7 @@
                       <scrollpane id="c790e" binding="valueScrollPane">
                         <constraints>
                           <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                          <gridbag top="2" left="1" bottom="1" right="2" weightx="0.6" weighty="1.0"/>
+                          <gridbag top="2" left="1" bottom="1" right="2" weightx="0.4" weighty="1.0"/>
                         </constraints>
                         <properties/>
                         <border type="none"/>
@@ -118,7 +120,7 @@
                       <grid id="e92d" layout-manager="GridBagLayout">
                         <constraints>
                           <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                          <gridbag weightx="1.0" weighty="0.0"/>
+                          <gridbag weightx="0.4" weighty="0.0"/>
                         </constraints>
                         <properties/>
                         <border type="none"/>
@@ -265,15 +267,6 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="ec353" class="javax.swing.JButton" binding="selectButton">
-                    <constraints>
-                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="6" fill="0" indent="0" use-parent-layout="false"/>
-                      <gridbag top="2" left="2" bottom="2" right="2" weightx="0.0" weighty="0.0"/>
-                    </constraints>
-                    <properties>
-                      <text value="Select"/>
-                    </properties>
-                  </component>
                   <scrollpane id="b867b">
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
