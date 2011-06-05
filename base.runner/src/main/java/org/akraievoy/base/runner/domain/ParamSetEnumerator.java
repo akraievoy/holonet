@@ -306,4 +306,19 @@ public class ParamSetEnumerator {
   public int getParameterCount() {
     return params.size();
   }
+
+  public long getPos(String paramName) {
+    return paramPoses.get(getParameterIndex(paramName));  
+  }
+
+  public Map<String, Integer> asOffsets(ParamSetEnumerator baseParams) {
+    final Map<String, Integer> offsets = new TreeMap<String, Integer>();
+
+    for (int paramIndex = 0; paramIndex < params.size(); paramIndex++) {
+      final String paramName = params.get(paramIndex).getName();
+      offsets.put(paramName, (int) (paramPoses.get(paramIndex) - baseParams.getPos(paramName)));
+    }
+
+    return offsets;
+  }
 }

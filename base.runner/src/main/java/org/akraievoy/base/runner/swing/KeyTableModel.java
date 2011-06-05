@@ -18,16 +18,76 @@
 
 package org.akraievoy.base.runner.swing;
 
-import javax.swing.table.AbstractTableModel;
+import com.google.common.base.Objects;
+import org.akraievoy.base.eventBroadcast.EventBroadcast;
+import org.akraievoy.base.runner.api.Context;
 
-public class KeyTableModel extends AbstractTableModel {
+import javax.swing.table.AbstractTableModel;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+public class KeyTableModel extends AbstractTableModel implements AxisTableModel.Callback {
+  public static interface Callback {
+    public void keySelected(Context viewedContext, List<String> axisNames, final String selectedKey);
+  }
+
+  protected static final String COL_SELECTED = "*";
   protected static final String COL_NAME = "Name";
   protected static final String COL_TYPE = "Type";
 
-  protected static final String[] COL = {COL_NAME, COL_TYPE};
+  protected static final String[] COL = {COL_SELECTED, COL_NAME, COL_TYPE};
+
+  private AxisTableModel parent;
   private KeyRow[] keyRows = new KeyRow[0];
+  private String selectedKey = null;
+
+  private final EventBroadcast<Callback> broadcast = new EventBroadcast<Callback>();
+  private final Callback callback = broadcast.getBroadcast(Callback.class);
 
   public KeyTableModel() {
+  }
+
+  public void setParent(AxisTableModel parent) {
+    this.parent = parent;
+  }
+
+  public void addCallback(Callback impl) {
+    broadcast.add(impl);
+  }
+
+  public void removeCallback(Callback impl) {
+    broadcast.remove(impl);
+  }
+
+  public void axisSelectionChanged(Context viewedContext, List<String> axisNames) {
+    callback.keySelected(viewedContext, axisNames, selectedKey);
+  }
+
+  public void contextSwitched(Context viewedContext, List<String> axisNames) {
+    keyRows = new KeyRow[0];
+
+    if (viewedContext == null) {
+      selectedKey = null;
+      callback.keySelected(viewedContext, axisNames, selectedKey);
+      fireTableDataChanged();
+      return;
+    }
+
+    final Map<String, String> pathMap = viewedContext.listPaths();
+    final List<KeyTableModel.KeyRow> keyRows = new ArrayList<KeyRow>();
+    for (String key : pathMap.keySet()) {
+      keyRows.add(new KeyTableModel.KeyRow(
+        key, pathMap.get(key)
+      ));
+    }
+
+    this.keyRows = keyRows.toArray(new KeyRow[keyRows.size()]);
+    if (rowForKey(selectedKey) < 0) {
+      selectedKey = null;
+    }
+    callback.keySelected(viewedContext, axisNames, selectedKey);
+    fireTableDataChanged();
   }
 
   public int getRowCount() {
@@ -36,11 +96,6 @@ public class KeyTableModel extends AbstractTableModel {
 
   protected KeyRow[] getKeys() {
     return keyRows;
-  }
-
-  public void setKeyRows(KeyRow[] keyRows) {
-    this.keyRows = keyRows;
-    fireTableDataChanged();
   }
 
   public int getColumnCount() {
@@ -52,7 +107,48 @@ public class KeyTableModel extends AbstractTableModel {
   }
 
   public Class<?> getColumnClass(int columnIndex) {
+    if (COL_SELECTED.equals(getColumnName(columnIndex))) {
+      return Boolean.class;
+    }
+
     return String.class;
+  }
+
+  @Override
+  public boolean isCellEditable(int rowIndex, int columnIndex) {
+    return COL_SELECTED.equals(getColumnName(columnIndex));
+  }
+
+  @Override
+  public void setValueAt(Object aValue, int row, int col) {
+    if (!COL_SELECTED.equals(getColumnName(col))) {
+      return;
+    }
+
+    final String newSelectedKey =
+        Boolean.TRUE.equals(aValue) ? getKeys()[row].getName() : null;
+    final boolean fireCallback = !Objects.equal(selectedKey, newSelectedKey);
+
+    int prevRow = rowForKey(selectedKey);
+    selectedKey = newSelectedKey;
+    if (fireCallback) {
+      callback.keySelected(parent.getViewedContext(), parent.getUsed(), newSelectedKey);
+      if (prevRow >= 0) {
+        fireTableCellUpdated(prevRow, col);
+      }
+      fireTableCellUpdated(row, col);
+    }
+  }
+
+  protected int rowForKey(final String key) {
+    int prevRow = -1;
+    for (int r = 0; r < getKeys().length; r++ ) {
+      if (Objects.equal(getKeys()[r].getName(), key)) {
+        prevRow = r;
+        break;
+      }
+    }
+    return prevRow;
   }
 
   public Object getValueAt(int rowIndex, int columnIndex) {
@@ -63,6 +159,9 @@ public class KeyTableModel extends AbstractTableModel {
     }
 
     final String colName = getColumnName(columnIndex);
+    if (COL_SELECTED.equals(colName)) {
+      return Objects.equal(selectedKey, keyRow.getName());
+    }
     if (COL_NAME.equals(colName)) {
       return keyRow.getName();
     }

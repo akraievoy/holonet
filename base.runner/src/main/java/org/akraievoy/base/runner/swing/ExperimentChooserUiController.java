@@ -25,7 +25,6 @@ import org.akraievoy.base.Util;
 import org.akraievoy.base.runner.ContainerStopper;
 import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.base.runner.domain.ExperimentRunner;
-import org.akraievoy.base.runner.domain.ParamSetEnumerator;
 import org.akraievoy.base.runner.domain.RunStateListener;
 import org.akraievoy.base.runner.persist.ImportRunnable;
 import org.akraievoy.base.runner.persist.RunnerDao;
@@ -58,6 +57,7 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
   protected final RunTableModel runTableModel;
   protected final AxisTableModel axisTableModel = new AxisTableModel();
   protected final KeyTableModel keyTableModel = new KeyTableModel();
+  protected final ValueTableModel valueTableModel = new ValueTableModel();
   protected final ExecutorService executor;
   protected final ExperimentRunner experimentRunner;
   protected final RunnerDao runnerDao;
@@ -68,7 +68,6 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
   protected final ChainAction chainAction = new ChainAction();
 
   protected boolean experimentRunning = false;
-  protected Context viewedContext;
 
   public ExperimentChooserUiController(
       final ExperimentChooserFrame experimentChooserFrame,
@@ -93,6 +92,9 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
   public void start() {
     experimentChooserFrame.setup();
     experimentTableModel.setCallback(this);
+    keyTableModel.setParent(axisTableModel);
+    axisTableModel.addCallback(keyTableModel);
+    keyTableModel.addCallback(valueTableModel);
 
     experimentChooserFrame.addWindowListener(new WindowAdapter());
     experimentChooserFrame.getLaunchButton().setAction(launchAction);
@@ -107,13 +109,13 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
 
     experimentChooserFrame.getAxisTable().setModel(axisTableModel);
     experimentChooserFrame.getKeyTable().setModel(keyTableModel);
-
-    //  FIXME proceed with valueTable Model
+    experimentChooserFrame.getValueTable().setModel(valueTableModel);
 
     setupColumns();
 
     onRunSelectionChange(-1);
     experimentSelected(null);
+    axisTableModel.setViewedContext(null);
     experimentChooserFrame.onStart();
 
     importRunnable.setAfterImport(new Runnable() {
@@ -158,34 +160,14 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
           try {
             final Run run = runTableModel.getRun(runRow);
             final Conf conf = runnerDao.findConfById(run.getConfUid());
-            ExperimentRunner.RunContext runContext = experimentRunner.loadRunContext(
+            final ExperimentRunner.RunContext runContext = experimentRunner.loadRunContext(
                 run.getUid(), conf.getUid(), run.getChain()
             );
-            viewedContext = new Context(runContext, runnerDao);
+            final Context viewedContext = new Context(runContext, runnerDao);
 
-            final List<AxisTableModel.AxisRow> axisRows = new ArrayList<AxisTableModel.AxisRow>();
-            final ParamSetEnumerator wideParams = viewedContext.getRunContext().getWideParams();
-            for (int paramIndex = 0; paramIndex <  wideParams.getParameterCount(); paramIndex++) {
-              final Parameter parameter = wideParams.getParameter(paramIndex);
-              axisRows.add(new AxisTableModel.AxisRow(
-                  parameter.getName(), 
-                  parameter.getValueSpec(),
-                  parameter.getValueCount()
-              ));
-            }
-
-            final Map<String, String> pathMap = viewedContext.listPaths();
-            final List<KeyTableModel.KeyRow> keyRows = new ArrayList<KeyTableModel.KeyRow>();
-            for (String key : pathMap.keySet()) {
-              keyRows.add(new KeyTableModel.KeyRow(
-                key, pathMap.get(key)
-              ));
-            }
             SwingUtilities.invokeLater(new Runnable() {
               public void run() {
-                axisTableModel.setAxisRows(axisRows.toArray(new AxisTableModel.AxisRow[axisRows.size()]));
-                keyTableModel.setKeyRows(keyRows.toArray(new KeyTableModel.KeyRow[keyRows.size()]));
-                //  FIXME populate the valuesTable
+                axisTableModel.setViewedContext(viewedContext);
               }
             });
           } catch (SQLException e) {
@@ -195,9 +177,7 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
         } else {
           SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-              axisTableModel.setAxisRows(new AxisTableModel.AxisRow[0]);
-              keyTableModel.setKeyRows(new KeyTableModel.KeyRow[0]);
-              //  FIXME clear the valuesTable
+              axisTableModel.setViewedContext(null);
             }
           });
         }
@@ -421,20 +401,19 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
           final TableCellRenderer cellRenderer = table.getCellRenderer(i, j);
           width = Math.max(width, prefWidth(table, cellRenderer, model.getValueAt(i, j)));
         }
-        col.setPreferredWidth(width);
-        col.setMaxWidth(width); //  LATER add a flag to keep max constraints off
+        col.setMaxWidth(width);
       }
     }
 
     protected static int prefWidth(final JTable autoTable, TableCellRenderer renderer, final Object cellValue) {
       if (renderer == null) {
-        return 2; //  LATER make the margin configurable
+        return 1; //  LATER make the margin configurable
       }
 
       final Component component = renderer.getTableCellRendererComponent(
           autoTable, cellValue, false, false, 0, 0
       );
-      return component.getPreferredSize().width + 2;
+      return component.getPreferredSize().width + 1;
     }
 
     public static void setup(JTable autoTable) {

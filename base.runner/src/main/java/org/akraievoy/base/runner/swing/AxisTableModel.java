@@ -18,30 +18,89 @@
 
 package org.akraievoy.base.runner.swing;
 
+import org.akraievoy.base.eventBroadcast.EventBroadcast;
+import org.akraievoy.base.runner.api.Context;
+import org.akraievoy.base.runner.domain.ParamSetEnumerator;
+import org.akraievoy.base.runner.vo.Parameter;
+
 import javax.swing.table.AbstractTableModel;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AxisTableModel extends AbstractTableModel {
+  public static interface Callback {
+    void contextSwitched(final Context viewedContext, final List<String> axisNames);
+    void axisSelectionChanged(final Context viewedContext, final List<String> axisNames);
+  }
+
   protected static final String COL_NAME = "Name";
   protected static final String COL_SPEC = "Spec";
   protected static final String COL_COUNT = "Count";
+  protected static final String COL_STRATEGY = "Strategy";
+  protected static final String COL_USE = "Use";
 
-  protected static final String[] COL = {COL_NAME, COL_SPEC, COL_COUNT};
-  private AxisRow[] axisRows = new AxisRow[0];
+  protected static final String[] COL = {COL_USE, COL_NAME, COL_SPEC, COL_COUNT, COL_STRATEGY};
+
+  private Context viewedContext;
+  private List<Parameter> axisRows = new ArrayList<Parameter>();
+  private List<String> used = new ArrayList<String>();
+
+  private final EventBroadcast<Callback> broadcast = new EventBroadcast<Callback>();
+  private final Callback callback = broadcast.getBroadcast(Callback.class);
 
   public AxisTableModel() {
   }
 
-  public int getRowCount() {
-    return getAxisRows().length;
+  public void addCallback(Callback impl) {
+    broadcast.add(impl);
   }
 
-  protected AxisRow[] getAxisRows() {
+  public void removeCallback(Callback impl) {
+    broadcast.remove(impl);
+  }
+
+  public void setViewedContext(Context viewedContext) {
+    this.viewedContext = viewedContext;
+    this.axisRows.clear();
+    this.used.clear();
+
+    if (viewedContext == null) {
+      callback.contextSwitched(null, used);
+      fireTableDataChanged();
+      return;
+    }
+
+    final List<Parameter> axisRows = new ArrayList<Parameter>();
+    final ParamSetEnumerator wideParams = viewedContext.getRunContext().getWideParams();
+    for (int paramIndex = 0; paramIndex <  wideParams.getParameterCount(); paramIndex++) {
+      axisRows.add(wideParams.getParameter(paramIndex));
+    }
+
+    this.axisRows.addAll(axisRows);
+    for (Parameter axis : axisRows) {
+      if (iterated(axis)) {
+        this.used.add(axis.getName());
+      }
+    }
+
+    callback.contextSwitched(viewedContext, used);
+    fireTableDataChanged();
+  }
+
+  public Context getViewedContext() {
+    return viewedContext;
+  }
+
+  public List<String> getUsed() {
+    return used;
+  }
+
+  protected List<Parameter> getAxisRows() {
     return axisRows;
   }
 
-  public void setAxisRows(AxisRow[] axisRows) {
-    this.axisRows = axisRows;
-    fireTableDataChanged();
+  public int getRowCount() {
+    return getAxisRows().size();
   }
 
   public int getColumnCount() {
@@ -53,52 +112,77 @@ public class AxisTableModel extends AbstractTableModel {
   }
 
   public Class<?> getColumnClass(int columnIndex) {
-    return COL_COUNT.equals(getColumnName(columnIndex)) ? Long.class : String.class;
+    if (COL_USE.equals(getColumnName(columnIndex))) {
+      return Boolean.class;
+    }
+    if (COL_COUNT.equals(getColumnName(columnIndex))) {
+      return Long.class;
+    }
+    return String.class;
+  }
+
+  @Override
+  public boolean isCellEditable(int rowIndex, int columnIndex) {
+    return COL_USE.equals(getColumnName(columnIndex));
+  }
+
+  @Override
+  public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+    if (!COL_USE.equals(getColumnName(columnIndex))) {
+      return;
+    }
+
+    final Parameter row = getAxisRow(rowIndex);
+    if (row == null) {
+      return;
+    }
+
+    used.remove(row.getName());
+    if (Boolean.TRUE.equals(aValue) || iterated(row)) {
+      used.add(row.getName());
+    }
+
+    callback.axisSelectionChanged(viewedContext, used);
+    fireTableCellUpdated(rowIndex, columnIndex);
+  }
+
+  protected static boolean iterated(Parameter row) {
+    return row.getStrategyCurrent() == Parameter.Strategy.ITERATE && row.getValueCount() > 1;
   }
 
   public Object getValueAt(int rowIndex, int columnIndex) {
-    final AxisRow axisRow = getAxisRow(rowIndex);
+    final Parameter row = getAxisRow(rowIndex);
 
-    if (axisRow == null) {
+    if (row == null) {
       return ""; //	oops, actually
     }
 
     final String colName = getColumnName(columnIndex);
+    if (COL_USE.equals(colName)) {
+      return used.contains(row.getName());
+    }
     if (COL_NAME.equals(colName)) {
-      return axisRow.getName();
+      return row.getName();
     }
     if (COL_SPEC.equals(colName)) {
-      return axisRow.getSpec();
+      return row.getValueSpec();
     }
     if (COL_COUNT.equals(colName)) {
-      return axisRow.getCount();
+      return row.getValueCount();
+    }
+    if (COL_STRATEGY.equals(colName)) {
+      return row.getStrategyCurrent();
     }
 
     return "";  //	ooops, actually
   }
 
-  public AxisRow getAxisRow(int rowIndex) {
-    final AxisRow[] axisRows = getAxisRows();
-    if (rowIndex < 0 || rowIndex >= axisRows.length) {
+  public Parameter getAxisRow(int rowIndex) {
+    final List<Parameter> axisRows = getAxisRows();
+    if (rowIndex < 0 || rowIndex >= axisRows.size()) {
       return null;
     }
 
-    return axisRows[rowIndex];
-  }
-
-  public static class AxisRow {
-    private final String name;
-    private final String spec;
-    private final long count;
-
-    public AxisRow(String name, String spec, long count) {
-      this.name = name;
-      this.spec = spec;
-      this.count = count;
-    }
-
-    public String getName() { return name; }
-    public String getSpec() { return spec; }
-    public long getCount() { return count; }
+    return axisRows.get(rowIndex);
   }
 }
