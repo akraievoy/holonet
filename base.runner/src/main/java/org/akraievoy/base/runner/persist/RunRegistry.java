@@ -23,6 +23,7 @@ import org.akraievoy.base.runner.vo.RunInfo;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
 
 public interface RunRegistry {
@@ -34,7 +35,7 @@ public interface RunRegistry {
 
   Object findCtxAttr(long runUid, long index, String path) throws SQLException;
 
-  List<String> listCtxPaths(long runUid) throws SQLException;
+  Map<String, String> listCtxPaths(long runUid) throws SQLException;
 
   Run[] listRuns() throws SQLException;
 

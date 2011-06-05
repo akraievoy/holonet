@@ -108,7 +108,7 @@ public class ExportNumeric implements Runnable, ContextInjectable {
     zapped.addAll(systemParameters);
 
     if (keys.isEmpty()) {
-      keys = Arrays.asList(ctx.listPaths());
+      keys = new ArrayList<String>(ctx.listPaths().keySet());
     }
 
     fw = null;

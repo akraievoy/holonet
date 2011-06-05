@@ -33,10 +33,7 @@ import org.akraievoy.db.QueryRegistry;
 import org.akraievoy.db.tx.TransactionContext;
 import org.akraievoy.db.tx.TransactionContextBase;
 import org.apache.commons.dbutils.BasicRowProcessor;
-import org.apache.commons.dbutils.handlers.BeanHandler;
-import org.apache.commons.dbutils.handlers.BeanListHandler;
-import org.apache.commons.dbutils.handlers.ColumnListHandler;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.apache.commons.dbutils.handlers.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -191,18 +188,27 @@ public class RunnerDaoBase implements RunnerDao {
     return attrValue;
   }
 
-  public List<String> listCtxPaths(final long runUid) throws SQLException {
+  public Map<String, String> listCtxPaths(final long runUid) throws SQLException {
     final List paths = (List) getCtx().getQueryRunner().query(
         getCtx().getConn(),
         q.getQuery("ctx.listPaths"),
         new Object[]{runUid},
-        new ColumnListHandler()
+        new MapListHandler()
     );
 
-    final List<String> result = new ArrayList<String>(paths.size());
+    final Map<String, String> result = new TreeMap<String, String>();
+    for (Object rsRow : paths) {
+      @SuppressWarnings({"unchecked"})
+      final Map<String, Object> rsRowMap = (Map<String, Object>) rsRow;
+      final String pathStr = String.valueOf(rsRowMap.get("path"));
+      final String typeStr = String.valueOf(rsRowMap.get("type"));
 
-    //noinspection unchecked
-    result.addAll(paths);
+      if (result.containsKey(pathStr)) {
+        result.put(pathStr, "*");
+      } else {
+        result.put(pathStr, typeStr.substring(typeStr.lastIndexOf(".") + 1));
+      }
+    }
 
     return result;
   }

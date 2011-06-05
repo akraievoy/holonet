@@ -57,28 +57,31 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
   }
 
   public void run(Experiment info, final long confUid, final List<Long> chainedRunIds) {
-    RunContext runContext = loadRunContext(confUid, chainedRunIds);
+    RunContextImpl runContext = loadRunContext(null, confUid, chainedRunIds);
     if (!runContext.isValid()) {
       return;
     }
 
-    long runId;
     try {
-      runId = dao.insertRun(
+      runContext.setRunId(dao.insertRun(
           confUid,
           runContext.getChainedRunIds(),
           runContext.getWideParams().getCount()
-      );
+      ));
     } catch (SQLException e) {
       throw Throwables.propagate(e);
     }
 
-    listener.onRunCreation(runId);
-    runIterative(runId, info, runContext);
+    listener.onRunCreation(runContext.getRunId());
+    runIterative(info, runContext);
   }
 
-  public RunContext loadRunContext(long confUid, final List<Long> chainedRunIds) {
-    return new RunContextImpl(confUid, chainedRunIds).invoke();
+  public RunContextImpl loadRunContext(final Long runUid, long confUid, final List<Long> chainedRunIds) {
+    final RunContextImpl runContext = new RunContextImpl(confUid, chainedRunIds).invoke();
+    if (runUid != null) {
+      runContext.setRunId(runUid);
+    }
+    return runContext;
   }
 
   protected ParamSetEnumerator createEnumerator(final Long confUid) {
@@ -94,21 +97,22 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
 
     return paramSetEnumerator;
   }
-  protected void runIterative(long runId, Experiment exp, RunContext runContext) {
-    log.info("Starting {} with runId = {}", exp.getDesc(), runId);
+
+  protected void runIterative(Experiment exp, RunContext runContext) {
+    log.info("Starting {} with runId = {}", exp.getDesc(), runContext.getRunId());
     startMillis = System.currentTimeMillis();
 
     try {
-      final Context ctx = new Context(runContext.getWideParams(), dao, runId, runContext.getChainedRuns());
+      final Context ctx = new Context(runContext, dao);
 
       do {
         runForPoses(exp, runContext.getWideParams(), runContext.getRootParams(), ctx);
 
-        updateComplete(runId, runContext.getWideParams().getIndex(true));
-        listener.onPsetAdvance(runId, runContext.getWideParams().getIndex(true));
+        updateComplete(runContext.getRunId(), runContext.getWideParams().getIndex(true));
+        listener.onPsetAdvance(runContext.getRunId(), runContext.getWideParams().getIndex(true));
       } while (runContext.getWideParams().increment());
 
-      log.info("Completed experiment {}, runId = {}", exp.getDesc(), runId);
+      log.info("Completed experiment {}, runId = {}", exp.getDesc(), runContext.getRunId());
     } catch (Exception e) {
       log.error("Failed {} ", Throwables.getRootCause(e).toString());
       throw Throwables.propagate(e);
@@ -233,6 +237,7 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     private ParamSetEnumerator rootParams;
     private ParamSetEnumerator wideParams;
     private boolean valid = false;
+    private long runId;
 
     public RunContextImpl(long confUid, final List<Long> chainedRunIds) {
       this.confUid = confUid;
@@ -257,6 +262,14 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
 
     public long[] getChainedRunIds() {
       return ObjArrays.unbox(getChainedRuns().keySet().toArray(new Long[getChainedRuns().size()]));
+    }
+
+    public long getRunId() {
+      return runId;
+    }
+
+    public void setRunId(long runId) {
+      this.runId = runId;
     }
 
     public RunContextImpl invoke() {

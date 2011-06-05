@@ -23,6 +23,7 @@ import org.akraievoy.base.Parse;
 import org.akraievoy.base.Startable;
 import org.akraievoy.base.Util;
 import org.akraievoy.base.runner.ContainerStopper;
+import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.base.runner.domain.ExperimentRunner;
 import org.akraievoy.base.runner.domain.ParamSetEnumerator;
 import org.akraievoy.base.runner.domain.RunStateListener;
@@ -67,7 +68,7 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
   protected final ChainAction chainAction = new ChainAction();
 
   protected boolean experimentRunning = false;
-  protected ExperimentRunner.RunContext viewedContext;
+  protected Context viewedContext;
 
   public ExperimentChooserUiController(
       final ExperimentChooserFrame experimentChooserFrame,
@@ -157,10 +158,13 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
           try {
             final Run run = runTableModel.getRun(runRow);
             final Conf conf = runnerDao.findConfById(run.getConfUid());
-            viewedContext = experimentRunner.loadRunContext(conf.getUid(), run.getChain());
+            ExperimentRunner.RunContext runContext = experimentRunner.loadRunContext(
+                run.getUid(), conf.getUid(), run.getChain()
+            );
+            viewedContext = new Context(runContext, runnerDao);
 
             final List<AxisTableModel.AxisRow> axisRows = new ArrayList<AxisTableModel.AxisRow>();
-            final ParamSetEnumerator wideParams = viewedContext.getWideParams();
+            final ParamSetEnumerator wideParams = viewedContext.getRunContext().getWideParams();
             for (int paramIndex = 0; paramIndex <  wideParams.getParameterCount(); paramIndex++) {
               final Parameter parameter = wideParams.getParameter(paramIndex);
               axisRows.add(new AxisTableModel.AxisRow(
@@ -170,12 +174,11 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
               ));
             }
 
-            //  TODO deep key listing?
-            final List<String> keyList = runnerDao.listCtxPaths(run.getUid());
+            final Map<String, String> pathMap = viewedContext.listPaths();
             final List<KeyTableModel.KeyRow> keyRows = new ArrayList<KeyTableModel.KeyRow>();
-            for (String key : keyList) {
+            for (String key : pathMap.keySet()) {
               keyRows.add(new KeyTableModel.KeyRow(
-                key, "FIXME" //FIXME fetch the key type
+                key, pathMap.get(key)
               ));
             }
             SwingUtilities.invokeLater(new Runnable() {

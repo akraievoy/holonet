@@ -19,6 +19,7 @@
 package org.akraievoy.base.runner.api;
 
 import com.google.common.base.Throwables;
+import org.akraievoy.base.runner.domain.ExperimentRunner;
 import org.akraievoy.base.runner.domain.ParamSetEnumerator;
 import org.akraievoy.base.runner.persist.RunRegistry;
 import org.akraievoy.base.runner.vo.Parameter;
@@ -33,52 +34,51 @@ import java.util.*;
 public class Context {
   private static final Logger log = LoggerFactory.getLogger(Context.class);
 
-  protected final ParamSetEnumerator widenedPse;
+  private final ExperimentRunner.RunContext runContext;
   protected final RunRegistry dao;
-  protected final long runId;
 
-  protected final SortedMap<Long, RunInfo> runChain;
-
-  public Context(ParamSetEnumerator widenedPse, RunRegistry dao, long runId, SortedMap<Long, RunInfo> runChain) {
-    this.widenedPse = widenedPse;
+  public Context(ExperimentRunner.RunContext runContext, RunRegistry dao) {
+    this.runContext = runContext;
     this.dao = dao;
-    this.runId = runId;
-    this.runChain = runChain;
+  }
+
+  public ExperimentRunner.RunContext getRunContext() {
+    return runContext;
   }
 
   public <E> E get(String path, Class<E> attrType, final boolean cache) {
     if (cache) {
-      final E cached = getInternal(path, attrType, widenedPse);
+      final E cached = getInternal(path, attrType, runContext.getWideParams());
       if (cached != null) {
         return (E) cached;
       }
     }
 
-    return (E) getInternal(path, attrType, widenedPse);
+    return (E) getInternal(path, attrType, runContext.getWideParams());
   }
 
   public <E> E get(String path, Class<E> attrType, Map<String, Integer> offset) {
-    return (E) getInternal(path, attrType, widenedPse.dupe(offset));
+    return (E) getInternal(path, attrType, runContext.getWideParams().dupe(offset));
   }
 
   public void put(String path, Object attrvalue, Map<String, Integer> offset) {
-    putInternal(path, attrvalue, widenedPse.dupe(offset).getIndex(false));
+    putInternal(path, attrvalue, runContext.getWideParams().dupe(offset).getIndex(false));
   }
 
   public void put(String path, Object attrValue) {
-    putInternal(path, attrValue, widenedPse.getIndex(false));
+    putInternal(path, attrValue, runContext.getWideParams().getIndex(false));
   }
 
   public boolean containsKey(String path) {
     try {
-      final boolean value = dao.findCtxAttrNoLoad(runId, widenedPse.getIndex(false), path);
+      final boolean value = dao.findCtxAttrNoLoad(runContext.getRunId(), runContext.getWideParams().getIndex(false), path);
 
       if (value) {
         return true;
       }
 
-      for (RunInfo chained : runChain.values()) {
-        final long translated = widenedPse.translateIndex(chained.getEnumerator(), false);
+      for (RunInfo chained : runContext.getChainedRuns().values()) {
+        final long translated = runContext.getWideParams().translateIndex(chained.getEnumerator(), false);
 
         final boolean chainedValue = dao.findCtxAttrNoLoad(
             chained.getRun().getUid(),
@@ -101,13 +101,13 @@ public class Context {
   @SuppressWarnings({"unchecked"})
   protected <E> E getInternal(String path, Class<E> attrType, ParamSetEnumerator widenedPse) {
     try {
-      final Object value = dao.findCtxAttr(runId, widenedPse.getIndex(false), path);
+      final Object value = dao.findCtxAttr(runContext.getRunId(), widenedPse.getIndex(false), path);
 
       if (value != null) {
         return (E) value;
       }
 
-      for (RunInfo chained : runChain.values()) {
+      for (RunInfo chained : runContext.getChainedRuns().values()) {
         final long translated = widenedPse.translateIndex(chained.getEnumerator(), false);
 
         final Object chainedValue = dao.findCtxAttr(
@@ -135,41 +135,37 @@ public class Context {
     );
 
     try {
-      dao.insertCtxAttr(runId, psetIndex, path, attrValue);
+      dao.insertCtxAttr(runContext.getRunId(), psetIndex, path, attrValue);
     } catch (SQLException e) {
       log.warn("failed to persist value to database: {}", Throwables.getRootCause(e).toString());
       log.debug("[detailed trace]", e);
     }
   }
 
-  public String[] listPaths() {
-    List<String> paths = new ArrayList<String>();
+  public Map<String, String> listPaths() {
+    Map<String, String> paths = new TreeMap<String, String>();
 
     try {
-      paths.addAll(dao.listCtxPaths(runId));
-      for (RunInfo chain : runChain.values()) {
-        paths.addAll(dao.listCtxPaths(chain.getRun().getUid()));
+      paths.putAll(dao.listCtxPaths(runContext.getRunId()));
+      for (RunInfo chain : runContext.getChainedRuns().values()) {
+        paths.putAll(dao.listCtxPaths(chain.getRun().getUid()));
       }
 
-      return paths.toArray(new String[paths.size()]);
+      return paths;
     } catch (SQLException e) {
       log.warn("failed to list values: {}", Throwables.getRootCause(e).toString());
       log.debug("[detailed trace]", e);
-      return new String[0];
+      return Collections.emptyMap();
     }
   }
 
-  protected String keyPrefix(final long psetIndex) {
-    return String.valueOf(psetIndex) + ":";
-  }
-
   public ParamSetEnumerator getEnumerator() {
-    return widenedPse;
+    return runContext.getWideParams();
   }
 
   public long getCount(String paramName) {
-    final int parameterIndex = widenedPse.getParameterIndex(paramName);
-    final Parameter parameter = widenedPse.getParameter(parameterIndex);
+    final int parameterIndex = runContext.getWideParams().getParameterIndex(paramName);
+    final Parameter parameter = runContext.getWideParams().getParameter(parameterIndex);
     final long count = parameter.getValueCount();
 
     return count;

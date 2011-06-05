@@ -33,7 +33,7 @@ public interface ExperimentRunner {
 
   void setListener(RunStateListener listener);
 
-  RunContext loadRunContext(long confUid, final List<Long> chainedRunIds);
+  RunContext loadRunContext(final Long runUid, long confUid, final List<Long> chainedRunIds);
 
   interface RunContext {
     SortedMap<Long, RunInfo> getChainedRuns();
@@ -45,5 +45,7 @@ public interface ExperimentRunner {
     boolean isValid();
 
     long[] getChainedRunIds();
+
+    long getRunId();
   }
 }
