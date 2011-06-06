@@ -20,7 +20,6 @@ package org.akraievoy.base.runner.swing;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
-import com.sun.istack.internal.NotNull;
 import org.akraievoy.base.Die;
 import org.akraievoy.base.Format;
 import org.akraievoy.base.ref.Ref;
@@ -30,7 +29,7 @@ import org.akraievoy.base.runner.vo.Experiment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import javax.swing.table.AbstractTableModel;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -187,7 +186,7 @@ public class ExperimentTableModel extends AbstractTableModel {
     }
   }
 
-  public void setCallback(@NotNull SelectionCallback callback) {
+  public void setCallback(@Nonnull SelectionCallback callback) {
     this.callback = callback;
   }
 }
