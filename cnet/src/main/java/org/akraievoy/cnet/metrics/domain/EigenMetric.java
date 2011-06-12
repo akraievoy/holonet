@@ -83,11 +83,11 @@ class EigenMetric {
           continue;
         }
         final int index = into * nodes + from; //	fortran-style memory addressing
-        laplacian[index] = -Math.pow(powers[from] * powers[into], -0.5);
+        laplacian[index] = -edgeData.get(from, into) * Math.pow(powers[from] * powers[into], -0.5);
       }
 
       final int index = from * nodes + from; //	fortran-style memory addressing
-      laplacian[index] = powers[from] > 0 ? 1 : 0;
+      laplacian[index] = powers[from] > 0 ? 1 - edgeData.get(from, from) / powers[from] : 0;
     }
 
     final intW lapackStatus = new intW(0);
