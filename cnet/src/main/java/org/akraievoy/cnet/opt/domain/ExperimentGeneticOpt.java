@@ -28,6 +28,7 @@ import org.akraievoy.base.runner.api.ContextInjectable;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.EntropySourceRandom;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelRenorm;
+import org.akraievoy.cnet.metrics.domain.EigenMetric;
 import org.akraievoy.cnet.opt.api.*;
 import org.akraievoy.gear.G4Stat;
 import org.slf4j.Logger;
@@ -182,18 +183,25 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
       final Ref<Breeder<Genome>> breeder = new RefSimple<Breeder<Genome>>(null);
       final Ref<Mutator<Genome>> mutator = new RefSimple<Mutator<Genome>>(null);
 
-      final Genome child;
-      if (generateCount >= missLimit || children.size() + eliteLimit >= specimenLimit) {
-        child = parents.get(fKeys[elitePointer++]);
-      } else {
-        child = generateChild(
-            state, fKeys,
-            breeder, mutator
-        );
-        generateCount++;
+      boolean valid = false;
+      Genome child = null;
+      try {
+        if (generateCount >= missLimit || children.size() + eliteLimit >= specimenLimit) {
+          child = parents.get(fKeys[elitePointer++]);
+        } else {
+          child = generateChild(
+              state, fKeys,
+              breeder, mutator
+          );
+          generateCount++;
+        }
+
+        valid = validate(child);
+      } catch (EigenMetric.EigenSolverException e) {
+        log.warn("IGNORING eigensolver failure: marking child as invalid", e);
       }
 
-      if (!validate(child)) {
+      if (!valid || child == null) {
         mutators.onFailure(mutator.getValue());
         breeders.onFailure(breeder.getValue());
         continue;

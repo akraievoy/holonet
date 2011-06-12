@@ -28,7 +28,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
-class EigenMetric {
+public class EigenMetric {
+  public static class EigenSolverException extends RuntimeException {
+    public EigenSolverException(String message) {
+      super(message);
+    }
+  }
+
   private static final Logger log = LoggerFactory.getLogger(EigenMetric.class);
 
   protected int cachedNodes;
@@ -112,6 +118,8 @@ class EigenMetric {
       );
     }
 
-    Die.ifFalse("lapackStatus == 0", lapackStatus.val == 0);
+    if (lapackStatus.val != 0) {
+      throw new EigenSolverException("lapackStatus == " + lapackStatus.val + ", which means eigenvalues are NOT ok");
+    }
   }
 }
