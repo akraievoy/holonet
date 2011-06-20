@@ -11,11 +11,11 @@
         <constraints border-constraint="Center"/>
         <properties>
           <continuousLayout value="false"/>
-          <dividerLocation value="275"/>
-          <dividerSize value="5"/>
+          <dividerLocation value="320"/>
+          <dividerSize value="6"/>
           <oneTouchExpandable value="true"/>
           <orientation value="0"/>
-          <resizeWeight value="0.5"/>
+          <resizeWeight value="0.85"/>
         </properties>
         <border type="none"/>
         <children>
@@ -42,110 +42,32 @@
               </component>
             </children>
           </scrollpane>
-          <splitpane id="9861f">
+          <splitpane id="6f6fb">
             <constraints>
               <splitpane position="left"/>
             </constraints>
             <properties>
-              <continuousLayout value="false"/>
-              <dividerLocation value="193"/>
-              <dividerSize value="5"/>
-              <oneTouchExpandable value="true"/>
-              <resizeWeight value="0.3"/>
+              <dividerLocation value="320"/>
             </properties>
             <border type="none"/>
             <children>
-              <splitpane id="23021">
+              <splitpane id="9861f">
                 <constraints>
-                  <splitpane position="right"/>
+                  <splitpane position="left"/>
                 </constraints>
                 <properties>
-                  <dividerLocation value="319"/>
+                  <continuousLayout value="false"/>
+                  <dividerLocation value="81"/>
                   <dividerSize value="5"/>
                   <oneTouchExpandable value="true"/>
-                  <preferredSize width="400" height="449"/>
-                  <resizeWeight value="0.9"/>
+                  <orientation value="0"/>
+                  <resizeWeight value="0.3"/>
                 </properties>
                 <border type="none"/>
                 <children>
-                  <grid id="115d7" layout-manager="GridBagLayout">
-                    <constraints>
-                      <splitpane position="right"/>
-                    </constraints>
-                    <properties/>
-                    <border type="none"/>
-                    <children>
-                      <scrollpane id="d4273" binding="axisScrollPane">
-                        <constraints>
-                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                          <gridbag top="2" left="2" bottom="1" right="1" weightx="0.2" weighty="1.0"/>
-                        </constraints>
-                        <properties/>
-                        <border type="none"/>
-                        <children>
-                          <component id="56daa" class="javax.swing.JTable" binding="axisTable">
-                            <constraints/>
-                            <properties/>
-                          </component>
-                        </children>
-                      </scrollpane>
-                      <scrollpane id="56b91" binding="keyScrollPane">
-                        <constraints>
-                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                          <gridbag top="2" left="1" bottom="1" right="1" weightx="0.2" weighty="1.0"/>
-                        </constraints>
-                        <properties/>
-                        <border type="none"/>
-                        <children>
-                          <component id="31285" class="javax.swing.JTable" binding="keyTable">
-                            <constraints/>
-                            <properties/>
-                          </component>
-                        </children>
-                      </scrollpane>
-                      <scrollpane id="c790e" binding="valueScrollPane">
-                        <constraints>
-                          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                          <gridbag top="2" left="1" bottom="1" right="2" weightx="0.4" weighty="1.0"/>
-                        </constraints>
-                        <properties/>
-                        <border type="none"/>
-                        <children>
-                          <component id="af472" class="javax.swing.JTable" binding="valueTable">
-                            <constraints/>
-                            <properties/>
-                          </component>
-                        </children>
-                      </scrollpane>
-                      <grid id="e92d" layout-manager="GridBagLayout">
-                        <constraints>
-                          <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                          <gridbag weightx="0.4" weighty="0.0"/>
-                        </constraints>
-                        <properties/>
-                        <border type="none"/>
-                        <children>
-                          <component id="580a7" class="javax.swing.JComboBox" binding="exportDestCombo">
-                            <constraints>
-                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="2" fill="1" indent="0" use-parent-layout="false"/>
-                              <gridbag top="2" left="2" bottom="2" right="2" weightx="1.0" weighty="0.0"/>
-                            </constraints>
-                            <properties/>
-                          </component>
-                          <component id="c7778" class="javax.swing.JComboBox" binding="exportFormatCombo">
-                            <constraints>
-                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="2" fill="1" indent="0" use-parent-layout="false"/>
-                              <gridbag top="2" left="2" bottom="2" right="2" weightx="0.5" weighty="0.0"/>
-                            </constraints>
-                            <properties/>
-                          </component>
-                        </children>
-                      </grid>
-                    </children>
-                  </grid>
                   <grid id="f5c56" layout-manager="GridBagLayout">
                     <constraints>
-                      <splitpane position="left"/>
+                      <splitpane position="right"/>
                     </constraints>
                     <properties/>
                     <border type="none"/>
@@ -180,7 +102,7 @@
                               <gridbag top="2" left="2" bottom="2" right="2" weightx="0.0" weighty="0.0"/>
                             </constraints>
                             <properties>
-                              <text value="Cache Chaning:"/>
+                              <text value="Chaning:"/>
                             </properties>
                           </component>
                           <component id="ea9a6" class="javax.swing.JTextField" binding="chainTextField">
@@ -195,8 +117,8 @@
                           </component>
                           <component id="47c05" class="javax.swing.JButton" binding="chainButton" default-binding="true">
                             <constraints>
-                              <grid row="1" column="2" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                              <gridbag top="2" left="2" bottom="2" right="2" weightx="0.5" weighty="0.0"/>
+                              <grid row="1" column="2" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                              <gridbag top="2" left="2" bottom="2" right="2" weightx="0.0" weighty="0.0"/>
                             </constraints>
                             <properties>
                               <text value="Chain"/>
@@ -214,24 +136,10 @@
                           </component>
                           <component id="32db1" class="javax.swing.JComboBox" binding="confCombo">
                             <constraints>
-                              <grid row="2" column="1" row-span="1" col-span="4" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                              <gridbag top="2" left="2" bottom="2" right="2" weightx="2.0" weighty="0.0"/>
+                              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                              <gridbag top="2" left="2" bottom="2" right="2" weightx="1.0" weighty="0.0"/>
                             </constraints>
                             <properties/>
-                          </component>
-                          <component id="491ac" class="javax.swing.JButton" binding="launchButton">
-                            <constraints>
-                              <grid row="3" column="1" row-span="1" col-span="4" vsize-policy="3" hsize-policy="3" anchor="6" fill="0" indent="0" use-parent-layout="false"/>
-                              <gridbag top="2" left="2" bottom="2" right="2" weightx="0.5" weighty="0.0"/>
-                            </constraints>
-                            <properties>
-                              <actionCommand value="launch"/>
-                              <enabled value="false"/>
-                              <font style="1"/>
-                              <label value="Launch"/>
-                              <text value="Launch"/>
-                              <toolTipText value="Launch the selected configuration"/>
-                            </properties>
                           </component>
                           <component id="7b9d5" class="javax.swing.JLabel">
                             <constraints>
@@ -254,23 +162,27 @@
                               <text value=" "/>
                             </properties>
                           </component>
+                          <component id="491ac" class="javax.swing.JButton" binding="launchButton">
+                            <constraints>
+                              <grid row="2" column="4" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                              <gridbag top="2" left="2" bottom="2" right="2" weightx="0.0" weighty="0.0"/>
+                            </constraints>
+                            <properties>
+                              <actionCommand value="launch"/>
+                              <enabled value="false"/>
+                              <font style="1"/>
+                              <label value="Launch"/>
+                              <text value="Launch"/>
+                              <toolTipText value="Launch the selected configuration"/>
+                            </properties>
+                          </component>
                         </children>
                       </grid>
                     </children>
                   </grid>
-                </children>
-              </splitpane>
-              <grid id="bc694" layout-manager="GridBagLayout">
-                <constraints>
-                  <splitpane position="left"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children>
                   <scrollpane id="b867b">
                     <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                      <gridbag weightx="1.0" weighty="1.0"/>
+                      <splitpane position="left"/>
                     </constraints>
                     <properties/>
                     <border type="none" title-justification="5" title-position="5">
@@ -285,6 +197,105 @@
                       </component>
                     </children>
                   </scrollpane>
+                </children>
+              </splitpane>
+              <grid id="115d7" layout-manager="GridBagLayout">
+                <constraints>
+                  <splitpane position="right"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <grid id="e92d" layout-manager="GridBagLayout">
+                    <constraints>
+                      <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                      <gridbag weightx="0.4" weighty="0.0"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <component id="580a7" class="javax.swing.JComboBox" binding="exportDestCombo">
+                        <constraints>
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="2" fill="1" indent="0" use-parent-layout="false"/>
+                          <gridbag top="2" left="2" bottom="2" right="2" weightx="1.0" weighty="0.0"/>
+                        </constraints>
+                        <properties/>
+                      </component>
+                      <component id="c7778" class="javax.swing.JComboBox" binding="exportFormatCombo">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="2" fill="1" indent="0" use-parent-layout="false"/>
+                          <gridbag top="2" left="2" bottom="2" right="2" weightx="0.5" weighty="0.0"/>
+                        </constraints>
+                        <properties/>
+                      </component>
+                    </children>
+                  </grid>
+                  <splitpane id="d21f5">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                        <preferred-size width="200" height="200"/>
+                      </grid>
+                      <gridbag weightx="1.0" weighty="1.0"/>
+                    </constraints>
+                    <properties>
+                      <dividerLocation value="126"/>
+                      <resizeWeight value="0.38"/>
+                    </properties>
+                    <border type="none"/>
+                    <children>
+                      <splitpane id="52102">
+                        <constraints>
+                          <splitpane position="left"/>
+                        </constraints>
+                        <properties>
+                          <dividerLocation value="60"/>
+                          <resizeWeight value="0.5"/>
+                        </properties>
+                        <border type="none"/>
+                        <children>
+                          <scrollpane id="d4273" binding="axisScrollPane">
+                            <constraints>
+                              <splitpane position="left"/>
+                            </constraints>
+                            <properties/>
+                            <border type="none"/>
+                            <children>
+                              <component id="56daa" class="javax.swing.JTable" binding="axisTable">
+                                <constraints/>
+                                <properties/>
+                              </component>
+                            </children>
+                          </scrollpane>
+                          <scrollpane id="56b91" binding="keyScrollPane">
+                            <constraints>
+                              <splitpane position="right"/>
+                            </constraints>
+                            <properties/>
+                            <border type="none"/>
+                            <children>
+                              <component id="31285" class="javax.swing.JTable" binding="keyTable">
+                                <constraints/>
+                                <properties/>
+                              </component>
+                            </children>
+                          </scrollpane>
+                        </children>
+                      </splitpane>
+                      <scrollpane id="c790e" binding="valueScrollPane">
+                        <constraints>
+                          <splitpane position="right"/>
+                        </constraints>
+                        <properties/>
+                        <border type="none"/>
+                        <children>
+                          <component id="af472" class="javax.swing.JTable" binding="valueTable">
+                            <constraints/>
+                            <properties/>
+                          </component>
+                        </children>
+                      </scrollpane>
+                    </children>
+                  </splitpane>
                 </children>
               </grid>
             </children>
