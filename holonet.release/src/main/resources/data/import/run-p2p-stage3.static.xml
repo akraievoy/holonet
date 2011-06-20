@@ -92,7 +92,7 @@
 
   <bean class="algores.holonet.testbench.Testbench" id="main">
     <property name="initSeedRef" ref="tbInitSeed"/>
-    <property name="runSeedRef" ref="tbInitSeed"/>
+    <property name="runSeedRef" ref="tbRunSeed"/>
 
     <property name="network">
       <bean class="algores.holonet.core.Network">
