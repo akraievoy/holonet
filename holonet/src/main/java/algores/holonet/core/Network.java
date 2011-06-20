@@ -62,6 +62,9 @@ public class Network {
     return eSource.randomElement(allNodes);
   }
 
+  public Env.Pair<Node> requestPair(EntropySource source) {
+    return env.requestPair(source);
+  }
   /**
    * Generate a node with random address, let it join the DHT, and save it in my hash table.
    *

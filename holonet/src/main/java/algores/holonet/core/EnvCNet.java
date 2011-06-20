@@ -28,6 +28,7 @@ import org.akraievoy.cnet.gen.vo.WeightedEventModelBase;
 import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.ref.RefVertexData;
 import org.akraievoy.cnet.net.vo.EdgeData;
+import org.akraievoy.cnet.net.vo.IndexCodec;
 import org.akraievoy.cnet.net.vo.VertexData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,11 +48,11 @@ public class EnvCNet implements Env {
   protected RefEdgeData req;
   protected RefEdgeData overlay;
 
-  protected WeightedEventModel nodeUse = new WeightedEventModelBase();
-  protected WeightedEventModel nodeSel = new WeightedEventModelBase();
+  protected WeightedEventModel nodeModel = new WeightedEventModelBase();
+  protected WeightedEventModel requestModel = new WeightedEventModelBase();
+  protected IndexCodec requestCodec = new IndexCodec(false);
 
-  protected List<Node> nodeIndex = new ArrayList<Node>();
-  protected Set<Node> nodes = new HashSet<Node>();
+  protected SortedMap<Integer, Node> nodeIndex = new TreeMap<Integer, Node>();
 
   protected EnvSimple fallback = null;
 
@@ -99,9 +100,20 @@ public class EnvCNet implements Env {
     final int size = density.getSize();
 
     for (int i = 0; i < size; i++) {
-      nodeUse.add(i, density.get(i));
-      nodeSel.add(i, density.get(i));
+      nodeModel.add(i, density.get(i));
     }
+    renewRequestModel();
+  }
+
+  protected void renewRequestModel() {
+    requestModel.clear();
+    req.getValue().visitNotNull(new EdgeData.EdgeVisitor() {
+      public void visit(int from, int into, double e) {
+        if (nodeIndex.containsKey(from) && nodeIndex.containsKey(into)) {
+          requestModel.add(requestCodec.fi2id(from, into), e);
+        }
+      }
+    });
   }
 
   public boolean isPreferred(Address localAddress, Address currentAddress, Address bestAddress) {
@@ -132,7 +144,7 @@ public class EnvCNet implements Env {
       return fallback.createNetworkAddress(eSource);
     }
 
-    final int nodeIdx = nodeSel.generate(eSource, true, null);
+    final int nodeIdx = nodeModel.generate(eSource, true, null);
 
     return new AddressCNet(nodeIdx);
   }
@@ -145,11 +157,15 @@ public class EnvCNet implements Env {
     final AddressCNet addrCNet = (AddressCNet) address;
     final int idx = addrCNet.getNodeIdx();
 
-    while (nodeIndex.size() <= idx) {
-      nodeIndex.add(null);
-    }
-
     return nodeIndex.get(idx);
+  }
+
+  public Pair<Node> requestPair(EntropySource eSource) {
+    final int pairIdx = requestModel.generate(eSource, false, null);
+    return new Pair<Node>(
+        nodeIndex.get(requestCodec.id2leading(pairIdx)),
+        nodeIndex.get(requestCodec.id2trailing(pairIdx))
+    );
   }
 
   public void putNode(Node newNode, Address address) {
@@ -162,12 +178,8 @@ public class EnvCNet implements Env {
 
     final int idx = addrCNet.getNodeIdx();
 
-    while (nodeIndex.size() <= idx) {
-      nodeIndex.add(null);
-    }
-    /*final Node oldNode = */
-    nodeIndex.set(idx, newNode);
-    nodes.add(newNode);
+    nodeIndex.put(idx, newNode);
+    renewRequestModel();
   }
 
   public void removeNode(Address address) {
@@ -177,15 +189,13 @@ public class EnvCNet implements Env {
     }
 
     final AddressCNet addrCNet = (AddressCNet) address;
-
     final int idx = addrCNet.getNodeIdx();
-
-    final Node prevNode = nodeIndex.set(idx, null);
-    nodes.remove(prevNode);
+    nodeIndex.remove(idx);
+    renewRequestModel();
 
     //	return this slot to event model
     final VertexData density = this.density.getValue();
-    nodeSel.add(idx, density.get(idx));
+    nodeModel.add(idx, density.get(idx));
   }
 
   public Collection<Node> getAllNodes() {
@@ -193,7 +203,7 @@ public class EnvCNet implements Env {
       return fallback.getAllNodes();
     }
 
-    return nodes;
+    return nodeIndex.values();
   }
 
   protected static final NumberFormat nf = createNumberFormat();

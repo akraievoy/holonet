@@ -52,6 +52,11 @@ public class EnvSimple implements Env {
     return addressToNode.values();
   }
 
+  public Pair<Node> requestPair(EntropySource eSource) {
+    final Collection<Node> nodes = getAllNodes();
+    return new Pair<Node>(eSource.randomElement(nodes), eSource.randomElement(nodes));
+  }
+
   public void initialize() {
     // nothing to do
   }

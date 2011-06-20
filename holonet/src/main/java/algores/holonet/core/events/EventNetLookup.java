@@ -19,6 +19,7 @@
 package algores.holonet.core.events;
 
 import algores.holonet.core.CommunicationException;
+import algores.holonet.core.Env;
 import algores.holonet.core.Network;
 import algores.holonet.core.Node;
 import algores.holonet.core.api.Address;
@@ -34,8 +35,9 @@ class EventNetLookup extends Event {
   protected int retries = 1;
 
   public EventComposite.Result executeInternal(final Network network, final EntropySource eSource) {
-    final Node lookupSource = network.getRandomNode(eSource);
-    final Node lookupTarget = network.getRandomNode(eSource);
+    final Env.Pair<Node> pair = network.requestPair(eSource);
+    final Node lookupSource = pair.source;
+    final Node lookupTarget = pair.target;
 
     final Set<Key> keySet = lookupTarget.getServices().getStorage().getDataEntries().keySet();
     if (keySet.isEmpty()) {

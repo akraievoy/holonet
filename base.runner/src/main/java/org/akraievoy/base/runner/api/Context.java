@@ -129,7 +129,7 @@ public class Context {
   }
 
   protected void putInternal(String path, Object attrValue, long psetIndex) {
-    log.debug(
+    log.trace(
         "{}[{}] <- {}: {}",
         new Object[]{path, psetIndex, attrValue.getClass().getSimpleName(), attrValue}
     );
