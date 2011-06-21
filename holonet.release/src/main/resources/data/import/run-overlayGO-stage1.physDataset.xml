@@ -36,20 +36,36 @@
       <hn:Param name="locationMetric.nodes" value="24"/>
       <hn:Param name="connPreference.alpha" value="1.5"/>
       <hn:Param name="connPreference.beta" value="2.75"/>
+      <hn:Param name="structure.baseDegree" value="3"/>
+    </hn:Config>
+    <hn:Config name="vis-sampling" description="Visual : Sampling (64 nodes, 9 seeds)">
+      <hn:Param name="locationMetric.nodes" value="64"/>
+      <hn:Param name="entropySource.seed" value="967436;684393;193875;869374;164305;689176;395730;208474;876353"/>
+      <hn:Param name="structure.baseDegree" value="2"/>
+    </hn:Config>
+    <hn:Config name="vis-byAlpha" description="Visual : By Alpha (64 nodes)">
+      <hn:Param name="locationMetric.nodes" value="64"/>
+      <hn:Param name="connPreference.alpha" value="-4;2;4"/>
+      <hn:Param name="structure.baseDegree" value="2"/>
+    </hn:Config>
+    <hn:Config name="vis-byBeta" description="Visual : By Beta (64 nodes)">
+      <hn:Param name="locationMetric.nodes" value="64"/>
+      <hn:Param name="connPreference.beta" value="-4;2;4"/>
+      <hn:Param name="structure.baseDegree" value="2"/>
     </hn:Config>
     <hn:Config name="med" description="Medium (128 nodes, 1 seed)">
       <hn:Param name="locationMetric.nodes" value="128"/>
     </hn:Config>
-    <hn:Config name="big" description="Medium (240 nodes, 1 seed)">
+    <hn:Config name="big" description="Big (240 nodes, 1 seed)">
       <hn:Param name="locationMetric.nodes" value="240"/>
     </hn:Config>
-    <hn:Config name="1k" description="Medium (1k nodes, 1 seed)">
+    <hn:Config name="big-1k" description="Big (1k nodes, 1 seed)">
       <hn:Param name="locationMetric.nodes" value="1024"/>
     </hn:Config>
-    <hn:Config name="2k" description="Medium (2k nodes, 1 seed)">
+    <hn:Config name="big-2k" description="Big (2k nodes, 1 seed)">
       <hn:Param name="locationMetric.nodes" value="2048"/>
     </hn:Config>
-    <hn:Config name="4k" description="Medium (4k nodes, 1 seed)">
+    <hn:Config name="big-4k" description="Big (4k nodes, 1 seed)">
       <hn:Param name="locationMetric.nodes" value="4096"/>
     </hn:Config>
   </hn:Experiment>

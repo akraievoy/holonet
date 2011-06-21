@@ -54,8 +54,8 @@
         <property name="source" ref="ref_default_vdata_density"/>
       </bean>
     </property>
-    <property name="min" value="2"/>
-    <property name="max" value="20"/>
+    <property name="min" value="3"/>
+    <property name="max" value="7"/>
   </bean>
 
   <bean class="org.akraievoy.cnet.export.domain.export.ExportPajek" id="main">
@@ -64,8 +64,8 @@
     <property name="VColorer">
       <bean class="org.akraievoy.cnet.export.domain.export.PajekColorer">
         <constructor-arg value="bw"/>
-        <property name="min" value="2"/>
-        <property name="max" value="20"/>
+        <property name="min" value="3"/>
+        <property name="max" value="7"/>
       </bean>
     </property>
     <property name="VColorSource" ref="ref_default_vdata_density_renorm"/>
