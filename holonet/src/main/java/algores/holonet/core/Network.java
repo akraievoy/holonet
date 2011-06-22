@@ -62,6 +62,10 @@ public class Network {
     return eSource.randomElement(allNodes);
   }
 
+  public void dispose() {
+    rpc.dispose();
+  }
+
   public Env.Pair<Node> requestPair(EntropySource source) {
     return env.requestPair(source);
   }
@@ -165,10 +169,6 @@ public class Network {
 
   public void setFactory(ServiceFactorySpring factory) {
     this.factory = factory;
-  }
-
-  public ServiceFactorySpring getFactory() {
-    return factory;
   }
 
   //	-----------------------

@@ -48,4 +48,8 @@ public class NetworkRpcBase implements NetworkRpc {
   public Call getCall() {
     return getRpcContext().getCall();
   }
+
+  public void dispose() {
+    context.set(null);
+  }
 }

@@ -32,4 +32,6 @@ public interface NetworkRpc {
   <E> E getProxy(Node node, Address calleeAddress, Class<E> service);
 
   Call getCall();
+
+  void dispose();
 }

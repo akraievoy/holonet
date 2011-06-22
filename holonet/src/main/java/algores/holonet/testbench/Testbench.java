@@ -95,26 +95,30 @@ public class Testbench implements Runnable, ContextInjectable {
   }
 
   public void run() {
-    network.getEnv().init();   
+    try {
+      network.getEnv().init();
 
-    this.initEntropySource.setSeed(initSeedRef.getValue());
-    this.runEntropySource.setSeed(runSeedRef.getValue());
+      this.initEntropySource.setSeed(initSeedRef.getValue());
+      this.runEntropySource.setSeed(runSeedRef.getValue());
 
-    initialEvent.execute(network, initEntropySource);
+      initialEvent.execute(network, initEntropySource);
 
-    startPeriod("run");
-    storeSnapshot("preRun_");
+      startPeriod("run");
+      storeSnapshot("preRun_");
 
-    runtimeEvent.execute(network, runEntropySource);
+      runtimeEvent.execute(network, runEntropySource);
 
-    stopCurrentPeriod();
-    storeSnapshot("postRun_");
+      stopCurrentPeriod();
+      storeSnapshot("postRun_");
 
-    for (Snapshot snap : snapshots) {
-      snap.store(ctx);
-    }
-    for (Metrics mtx : periodStats) {
-      mtx.store(ctx);
+      for (Snapshot snap : snapshots) {
+        snap.store(ctx);
+      }
+      for (Metrics mtx : periodStats) {
+        mtx.store(ctx);
+      }
+    } finally {
+      network.dispose();
     }
   }
 
