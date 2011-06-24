@@ -22,28 +22,54 @@ import org.akraievoy.base.ref.RefRO;
 import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.metrics.api.MetricRoutes;
+import org.akraievoy.cnet.metrics.domain.EigenMetric;
 import org.akraievoy.cnet.metrics.domain.MetricEDataRouteLen;
 import org.akraievoy.cnet.metrics.domain.MetricScalarEffectiveness;
 import org.akraievoy.cnet.metrics.domain.MetricScalarEigenGap;
 import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.opt.api.GeneticStrategy;
+import org.akraievoy.cnet.opt.domain.FitnessKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import java.util.Map;
+import java.util.SortedMap;
 
 public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
+  private static final Logger log = LoggerFactory.getLogger(GeneticStrategySoo.class);
+  
   protected final MetricScalarEigenGap metricScalarEigenGap;
 
   protected final MetricEDataRouteLen metricEDataRouteLen;
   protected final MetricScalarEffectiveness metricEff;
 
+  public static final String MODE_REGULAR = "R";
+
+  protected String modes = "" + MODE_REGULAR;
+
   //	connectivity upper limit
   protected double theta = 2;
-  //	regularity (vertex power) lower limit
-  protected double theta_tilde = 0;
-  //	eigengap lower limit
-  protected double lambda = .75;
-  protected double startLambda = .05;
+  public void setTheta(double theta) { this.theta = theta; }
 
-  protected int lambdaTargetGeneration = 10;
+  //	regularity (vertex power) lower limit
+  protected double thetaTilde = 0;
+  public void setThetaTilde(double thetaTilde) { this.thetaTilde = thetaTilde; }
+
+  //	effectiveness lower limit
+  protected double minEff = 0;
+  protected double minEffStart = 0;
+  protected double minEffTarget = -1;
+  public void setMinEff(double minEff) { this.minEff = minEff; }
+  public double minEff(int generationIndex) {
+    if (minEffTarget < 0 || minEffTarget <= generationIndex) {
+      return minEff;
+    }
+
+    return (minEffStart * (minEffTarget - generationIndex) + generationIndex * minEff) / minEffTarget;
+  }
+
   protected RefRO<EdgeData> distSource = new RefEdgeData();
   protected RefRO<EdgeData> requestSource = new RefEdgeData();
 
@@ -71,35 +97,26 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
     return requestSource;
   }
 
-  public void setTheta(double theta) {
-    this.theta = theta;
-  }
+  public void setSteps(int steps) { this.steps = steps; }
+  public int getSteps() { return steps; }
 
-  public void setLambda(double lambda) {
-    this.lambda = lambda;
-  }
+  public void setModes(@Nonnull String newModes) { this.modes = newModes.toUpperCase(); }
+  public boolean mode(@Nonnull String someMode) { return modes.contains(someMode); }
 
-  public void setTheta_tilde(double theta_tilde) {
-    this.theta_tilde = theta_tilde;
-  }
+  public void init(Context ctx, final String generationParam) {
+    final long generation = ctx.getEnumerator().getPos(generationParam);
 
-  public void setStartLambda(double startLambda) {
-    this.startLambda = startLambda;
-  }
+    if (generation == 0) {
+      return; // we have the values already set in the constructor
+    }
 
-  public void setLambdaTargetGeneration(int targetGeneration) {
-    this.lambdaTargetGeneration = targetGeneration;
-  }
+    final Map<String, Integer> backToSeed = Context.offset(
+        generationParam,
+        -(int) generation
+    );
 
-  public void setSteps(int steps) {
-    this.steps = steps;
-  }
-
-  public int getSteps() {
-    return steps;
-  }
-
-  public void init(Context ctx) {
+    minEffStart = ctx.get("minEffStart", Double.class, backToSeed);
+    minEffTarget = ctx.get("minEffTarget", Double.class, backToSeed);
   }
 
   protected int getTotalLinkUpperLimit() {
@@ -116,7 +133,7 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
   protected int getNodeLinkLowerLimit() {
     final int size = distSource.getValue().getSize();
 
-    final double thetaTildeVal = theta_tilde;
+    final double thetaTildeVal = thetaTilde;
     return getNodeLinkLowerLimit(size, thetaTildeVal);
   }
 
@@ -124,27 +141,42 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
     return (int) Math.floor(thetaTildeVal * Math.log(size) / Math.log(2));
   }
 
-  public double getMinLambda(int generationIndex) {
-    if (generationIndex >= lambdaTargetGeneration) {
-      return lambda;
-    }
-
-    return (startLambda * (lambdaTargetGeneration - generationIndex) + generationIndex * lambda) / lambdaTargetGeneration;
-  }
-
   public GenomeSoo createGenome() {
     return new GenomeSoo();
   }
 
+  public void initOnSeeds(Context ctx, String generationParam, SortedMap<FitnessKey, GenomeSoo> children) {
+    if (children.isEmpty()) {
+      return;
+    }
+
+    final double eff = computeEff(children.get(children.firstKey()));
+    if (eff < minEff) {
+      ctx.put("minEffStart", eff * 0.95);
+      ctx.put("minEffTarget", ctx.getCount(generationParam) * 0.4);
+    }
+  }
+
   public double computeFitness(GenomeSoo genome) {
+    metricScalarEigenGap.setSource(new RefEdgeData(genome.getSolution()));
+    try {
+      return (Double) MetricResultFetcher.fetch(metricScalarEigenGap);
+    } catch (EigenMetric.EigenSolverException e) {
+      log.warn("IGNORING eigensolver failure: marking child as invalid", e);
+      return Double.NaN;
+    }
+  }
+
+  public Double computeEff(GenomeSoo child) {
     metricEDataRouteLen.getRoutes().setDistSource(distSource);
-    metricEDataRouteLen.getRoutes().setSource(new RefEdgeData(genome.getSolution()));
+    metricEDataRouteLen.getRoutes().setSource(new RefEdgeData(child.getSolution()));
 
     final EdgeData lenEData = (EdgeData) MetricResultFetcher.fetch(metricEDataRouteLen);
 
     metricEff.setSource(new RefEdgeData(lenEData));
     metricEff.setWeightSource(requestSource);
 
-    return (Double) MetricResultFetcher.fetch(metricEff);
+    final Double eff = (Double) MetricResultFetcher.fetch(metricEff);
+    return eff;
   }
 }

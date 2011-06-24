@@ -129,10 +129,12 @@ public class Context {
   }
 
   protected void putInternal(String path, Object attrValue, long psetIndex) {
+/*
     log.trace(
         "{}[{}] <- {}: {}",
         new Object[]{path, psetIndex, attrValue.getClass().getSimpleName(), attrValue}
     );
+*/
 
     try {
       dao.insertCtxAttr(runContext.getRunId(), psetIndex, path, attrValue);

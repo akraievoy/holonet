@@ -92,7 +92,7 @@ public class FeedbackAppender extends AppenderSkeleton {
 
         try {
           final int lastTraceStart = traceStart;
-          if (lastTraceStart > 0) {
+          if (lastTraceStart > 0 && !Level.DEBUG.isGreaterOrEqual(event.getLevel())) {
             document.remove(lastTraceStart, document.getLength() - lastTraceStart);
             traceStart = -1;
           }
@@ -109,7 +109,7 @@ public class FeedbackAppender extends AppenderSkeleton {
               style.copyAttributes()
           );
 
-          if (Level.DEBUG.isGreaterOrEqual(event.getLevel())) {
+          if (Level.DEBUG.isGreaterOrEqual(event.getLevel()) && traceStart < 0) {
             traceStart = prevLength;
           }
         } catch (BadLocationException e) {

@@ -18,29 +18,21 @@
 
 package org.akraievoy.cnet.soo.domain;
 
-import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.opt.api.Condition;
 import org.akraievoy.cnet.opt.api.GeneticStrategy;
 
 import java.util.Collection;
 
-public class ConditionSooSpectre implements Condition<GenomeSoo> {
-  protected double minLambda;
+public class ConditionSooEffectiveness implements Condition<GenomeSoo> {
+  protected double minEff;
 
   public boolean isValid(GeneticStrategy strategy, GenomeSoo child, Collection<GenomeSoo> generation, int generationIndex) {
     final GeneticStrategySoo strategySoo = (GeneticStrategySoo) strategy;
 
-    strategySoo.metricScalarEigenGap.setSource(new RefEdgeData(child.getSolution()));
-    final Double eigenGap = (Double) MetricResultFetcher.fetch(strategySoo.metricScalarEigenGap);
-
-    minLambda = strategySoo.getMinLambda(generationIndex);
-    final boolean valid = eigenGap >= minLambda;
-    return valid;
+    return strategySoo.computeEff(child) >= (minEff = strategySoo.minEff(generationIndex));
   }
 
   public String toString() {
-    return "[ EigenGap >= " + minLambda + " ]";
+    return "[ Effectiveness >= " + minEff + " ]";
   }
-
 }

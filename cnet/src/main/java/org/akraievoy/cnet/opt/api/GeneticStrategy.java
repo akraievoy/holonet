@@ -19,16 +19,22 @@
 package org.akraievoy.cnet.opt.api;
 
 import org.akraievoy.base.runner.api.Context;
+import org.akraievoy.cnet.opt.domain.FitnessKey;
+
+import java.util.SortedMap;
 
 public interface GeneticStrategy<G extends Genome> {
   /**
    * Set up some static data, which shall be cached across the whole genetics experiment.
    *
    * @param ctx to load your data from
+   * @param generationParam the name of generation axis
    */
-  void init(Context ctx);
+  void init(Context ctx, String generationParam);
 
   double computeFitness(G genome);
 
   G createGenome();
+
+  void initOnSeeds(Context ctx, String generationParamName, SortedMap<FitnessKey, G> children);
 }

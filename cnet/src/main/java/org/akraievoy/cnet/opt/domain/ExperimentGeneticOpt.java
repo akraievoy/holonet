@@ -142,8 +142,11 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     initOnContext();
 
     if (generation == 0) {
+      //  LATER we don't have constraint validation on the seeds here
       final List<Genome> genomes = seedSource.getSeeds(strategy);
-      storeToPopulation(children, genomes);
+      final List<Genome> failed = storeToPopulation(children, genomes);
+      genomes.removeAll(failed);
+      strategy.initOnSeeds(ctx, generationParamName, children);
       storeToContext(ctx, children);
       log.info("Initialization complete; fitness = {}", fitnessReport(children));
       return;
@@ -186,12 +189,11 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
       boolean valid = false;
       Genome child = null;
       try {
-        if (generateCount >= missLimit || children.size() + eliteLimit >= specimenLimit) {
+        if (elitePointer < parents.size() && (generateCount >= missLimit || children.size() + eliteLimit >= specimenLimit) ) {
           child = parents.get(fKeys[elitePointer++]);
         } else {
           child = generateChild(
-              state, fKeys,
-              breeder, mutator
+              state, fKeys, breeder, mutator
           );
           generateCount++;
         }
@@ -201,13 +203,13 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
         log.warn("IGNORING eigensolver failure: marking child as invalid", e);
       }
 
-      if (!valid || child == null) {
-        mutators.onFailure(mutator.getValue());
-        breeders.onFailure(breeder.getValue());
+      final List<Genome> childList = Collections.singletonList(child);
+      if (valid && child != null && storeToPopulation(children, childList).isEmpty()) {
         continue;
       }
 
-      storeToPopulation(children, Collections.singletonList(child));
+      mutators.onFailure(mutator.getValue());
+      breeders.onFailure(breeder.getValue());
     }
 
     report(null);
@@ -218,14 +220,24 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     log.info("Generation #{} filled; fitness {}", generation, fitnessReport(children));
   }
 
-  public void storeToPopulation(final SortedMap<FitnessKey, Genome> population, List<Genome> genomes) {
+  public List<Genome> storeToPopulation(final SortedMap<FitnessKey, Genome> population, List<Genome> genomes) {
+    List<Genome> failedGenomes = null;
     for (Genome genome : genomes) {
       final double fitness = strategy.computeFitness(genome);
+      if (Double.isNaN(fitness)) {
+        if (failedGenomes == null) {
+          failedGenomes = new ArrayList<Genome>();
+        }
+        failedGenomes.add(genome);
+      }
+
       final FitnessKey fKey = new FitnessKey(population.size(), fitness);
 
       genome.setFitness(fitness);
       population.put(fKey, genome);
     }
+
+    return failedGenomes == null ? Collections.<Genome>emptyList() : failedGenomes;
   }
 
   protected void report(Ref<Long> lastReport) {
@@ -257,7 +269,7 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     //	assert iterated params are set to initial values
     Die.ifFalse("specimenIndex == 0", specimenIndex == 0);
 
-    strategy.init(ctx);
+    strategy.init(ctx, generationParamName);
 
     specimenLimit = ctx.getCount(specimenIndexParamName);
     eliteLimit = (int) Math.ceil(specimenLimit * eliteRatio);
