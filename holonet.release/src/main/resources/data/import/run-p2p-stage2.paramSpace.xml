@@ -39,6 +39,9 @@
       <hn:Param name="tbStabProb.value" value="0.01"/>
       <hn:Param name="tbAttackProb.value" value="0.01"/>
     </hn:Config>
+    <hn:Config name="extraLoops" description="extra loops">
+      <hn:Param name="tbLoop.value" value="256"/>
+    </hn:Config>
     <hn:Config name="stabProf" description="stabilize profiling">
       <hn:Param name="tbStabProb.value" value="0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64"/>
     </hn:Config>
