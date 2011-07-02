@@ -19,8 +19,8 @@
 
 <xs:schema
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns="https://github.com/akraievoy/holonet/runner/1.3.2"
-    targetNamespace="https://github.com/akraievoy/holonet/runner/1.3.2"
+    xmlns="https://github.com/akraievoy/holonet/runner/1.3.3"
+    targetNamespace="https://github.com/akraievoy/holonet/runner/1.3.3"
     elementFormDefault="qualified"
     attributeFormDefault="unqualified" >
 
@@ -54,6 +54,7 @@
   <xs:simpleType name="strategy">
     <xs:restriction base="xs:string">
       <xs:enumeration value="iterate"/>
+      <xs:enumeration value="spawn"/>
       <xs:enumeration value="use_first"/>
       <xs:enumeration value="use_last"/>
     </xs:restriction>
