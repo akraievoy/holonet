@@ -28,7 +28,9 @@
        default-destroy-method="stop">
   <hn:Experiment id="overlayGO-1-enum" depends="" description="Overlay GO [Stage 1] Enumerate feasible solutions">
     <hn:Config name="default" description="Up to 10 nodes">
-      <hn:Param name="entropySource.seed" value="308692"/>
+      <hn:Param
+          name="entropySource.seed" value="308692"
+          strategy="spawn" chainedStrategy="spawn"/>
       <hn:Param name="size.value" value="7;8;9;10"/>
       <hn:Param name="theta.value" value="1"/>
       <hn:Param name="thetaTilde.value" value="0.75"/>
@@ -43,9 +45,6 @@
     </hn:Config>
     <hn:Config name="upto16" description="Up to 16 nodes">
       <hn:Param name="size.value" value="7;8;9;10;11;12;13;14;15;16"/>
-    </hn:Config>
-    <hn:Config name="upto20" description="Up to 20 nodes (use --server and leave the node alone for a year)">
-      <hn:Param name="size.value" value="7;8;9;10;11;12;13;14;15;16;17;18;19;20"/>
     </hn:Config>
   </hn:Experiment>
 

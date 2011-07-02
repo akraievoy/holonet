@@ -32,26 +32,43 @@ public class ParamSetEnumerator {
   protected final Map<String, Parameter> strategies = new TreeMap<String, Parameter>();
   protected final List<Long> paramPoses = new ArrayList<Long>();
 
-  public boolean increment() {
-    int overflow = paramPoses.size();
-    while (overflow > 0 && hasOverflow(overflow - 1)) {
-      overflow--;
-      paramPoses.set(overflow, 0L);
+  public boolean increment(final boolean iterated, final boolean spawned) {
+    int incrementPos = paramPoses.size() - 1;
+    boolean overflow;
+    while (
+        incrementPos >= 0 && (
+            fixed(incrementPos, iterated, spawned) |
+            (overflow = overflow(incrementPos))
+        )
+    ) {
+      if (overflow) {
+        paramPoses.set(incrementPos, 0L);
+      }
+      incrementPos--;
     }
-    if (overflow == 0) {
+
+    if (incrementPos < 0) {
       return false;
     }
 
-    int increment = overflow - 1;
-    paramPoses.set(increment, paramPoses.get(increment) + 1);
+    //  we already zeroed all iterable and overflowed axes after this position 
+    paramPoses.set(incrementPos, paramPoses.get(incrementPos) + 1);
     return true;
   }
 
-  protected boolean hasOverflow(final int idx) {
-    final Parameter param = params.get(idx);
+  private boolean fixed(int idx, boolean iterated, boolean spawned) {
+    final Parameter.Strategy strategy = params.get(idx).getStrategy();
 
-    if (param.getStrategy() != Parameter.Strategy.ITERATE) {
-      return true;
+    return Parameter.Strategy.fixed(strategy) ||
+        iterated && Parameter.Strategy.ITERATE == strategy ||
+        spawned && Parameter.Strategy.SPAWN == strategy;
+
+  }
+
+  protected boolean overflow(int idx) {
+    final Parameter param = params.get(idx);
+    if (!Parameter.Strategy.full(param.getStrategy()))  {
+      return false;
     }
 
     final long pos = paramPoses.get(idx);
@@ -195,7 +212,7 @@ public class ParamSetEnumerator {
         continue;
       }
 
-      if (param.getStrategy() == Parameter.Strategy.ITERATE) {
+      if (Parameter.Strategy.full(param.getStrategy())) {
         result *= param.getValueCount();
       } else {
         fixed *= param.getValueCount();
@@ -223,7 +240,7 @@ public class ParamSetEnumerator {
     long pow = 1;
     for (int paramI = params.size() - 1; paramI >= 0; paramI--) {
       final Parameter param = params.get(paramI);
-      if (param.getStrategy() == Parameter.Strategy.ITERATE || !globFixed) {
+      if (Parameter.Strategy.full(param.getStrategy()) || !globFixed) {
         result += pow * paramPoses.get(paramI);
         pow *= param.getValueCount();
       } else {

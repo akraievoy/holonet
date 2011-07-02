@@ -30,8 +30,12 @@
       id="p2p-stage0-seed" depends=""
       description="P2P [stage0] Choose your seeds">
     <hn:Config name="default" description="single seeds">
-      <hn:Param name="tbInitSeed.value" value="1234567"/>
-      <hn:Param name="tbRunSeed.value" value="7654321"/>
+      <hn:Param
+          name="tbInitSeed.value" value="1234567"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="tbRunSeed.value" value="7654321"
+          strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
     <hn:Config name="perGeneration" description="Per-generation runs">
       <hn:Param name="ovlGenOpt.generation" value="*strategy*" chainedStrategy="iterate"/>

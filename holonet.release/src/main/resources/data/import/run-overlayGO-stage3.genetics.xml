@@ -30,16 +30,36 @@
       id="overlayGO-3-genetics" depends=""
       description="Overlay GO [stage3] Overlay Genetics">
     <hn:Config name="default" description="Default (101 generations / 91 specimens)">
-      <hn:Param name="ovlGenOpt.generation" value="0-100" chainedStrategy="use_last" />
-      <hn:Param name="ovlGenOpt.specimenIndex" value="0-90" chainedStrategy="use_first" strategy="use_first" />
-      <hn:Param name="ovlGenOpt.missLimitRatio" value="200"/>
-      <hn:Param name="geneticState.maxCrossover" value="0.25"/>
-      <hn:Param name="geneticState.maxElemFitPow" value="3"/>
-      <hn:Param name="geneticState.maxMutation" value="0.05"/>
-      <hn:Param name="geneticStrategy.theta" value="1.75"/>
-      <hn:Param name="geneticStrategy.thetaTilde" value="0.75"/>
-      <hn:Param name="geneticStrategy.steps" value="1"/>
-      <hn:Param name="geneticStrategy.minEff" value="1.2"/>
+      <hn:Param
+          name="ovlGenOpt.generation" value="0-100"
+          chainedStrategy="use_last" />
+      <hn:Param
+          name="ovlGenOpt.specimenIndex" value="0-90"
+          chainedStrategy="use_first" strategy="use_first" />
+      <hn:Param
+          name="ovlGenOpt.missLimitRatio" value="200"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="geneticState.maxCrossover" value="0.25"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="geneticState.maxElemFitPow" value="3"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="geneticState.maxMutation" value="0.05"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="geneticStrategy.theta" value="1.75"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="geneticStrategy.thetaTilde" value="0.75"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="geneticStrategy.steps" value="1"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="geneticStrategy.minEff" value="1.2"
+          strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
     <hn:Config name="minEff13" description="MinEff: 1.3">
       <hn:Param name="geneticStrategy.minEff" value="1.3"/>

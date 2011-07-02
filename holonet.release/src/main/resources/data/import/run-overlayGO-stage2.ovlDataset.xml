@@ -30,24 +30,35 @@
       id="overlayGO-2-ovlDataset" depends=""
       description="Overlay GO [stage2] Overlay Dataset">
     <hn:Config name="default" description="Default (select 25% of nodes)">
-      <hn:Param name="esOvl.seed" value="31013"/>
+      <hn:Param
+          name="esOvl.seed" value="31013"
+          strategy="spawn" chainedStrategy="spawn"/>
       <hn:Param
           name="onf.omega" value="-1"
+          strategy="spawn" chainedStrategy="spawn"
           description="degree-based preference (as power of degree) to elect physical node as host to a virtual"/>
       <hn:Param
           name="onf.nu" value="0.25"
+          strategy="spawn" chainedStrategy="spawn"
           description="fraction of physical nodes elected to host virtual nodes"/>
       <hn:Param
           name="ovlReq.phi" value="0.25"
+          strategy="spawn" chainedStrategy="spawn"
           description="degree-based preference (as power of population density) to emit requests from this node"/>
       <hn:Param
           name="ovlReq.psi" value="0.75"
+          strategy="spawn" chainedStrategy="spawn"
           description="degree-based preference (as power of population density) to emit requests to this node"/>
       <hn:Param
           name="ovlReq.sigma" value="0.03"
+          strategy="spawn" chainedStrategy="spawn"
           description="request amount deviation"/>
-      <hn:Param name="ovlReqThresh.minAbsValue" value="0.003"/>
-      <hn:Param name="ovlReqThresh.minToMaxRatio" value="0.001"/>
+      <hn:Param
+          name="ovlReqThresh.minAbsValue" value="0.003"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="ovlReqThresh.minToMaxRatio" value="0.001"
+          strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
     <hn:Config name="nu50" description="Default (select 50% of nodes)">
       <hn:Param name="onf.nu" value="0.5"/>

@@ -93,7 +93,7 @@ public class ValueTableModel extends AbstractTableModel implements KeyTableModel
           (int) (axisParams.isEmpty() ? 0 : (axisParams.size() - 1) + hPos),
           String.valueOf(viewedContext.get(selectedKey, null, reportPse.asOffsets(runParams)))
       );
-    } while (reportPse.increment());
+    } while (reportPse.increment(true, true));
 
     fireTableStructureChanged();
   }

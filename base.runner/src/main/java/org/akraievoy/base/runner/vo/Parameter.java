@@ -28,20 +28,32 @@ import java.util.Arrays;
 public class Parameter {
   public static enum Strategy {
     /**
-     * Use in current and propagate parameter to chained experiments.
+     * Use the axis fully while iterating over parameter space, no parallelization.
      */
     ITERATE,
     /**
-     * Use only the first value of parameter in current and chained experiments.
+     * Use the axis fully while iterating over parameter space, with possible parallelization.
+     */
+    SPAWN,
+    /**
+     * Use only the first value of axis while iterating over parameter space.
      */
     USE_FIRST,
     /**
-     * Use only the last value of parameter in current and chained experiments.
+     * Use only the last value of axis while iterating over parameter space.
      */
     USE_LAST;
 
     public static Strategy fromString(String str) {
       return Strings.isNullOrEmpty(str) ? ITERATE : valueOf(str.toUpperCase());
+    }
+
+    public static boolean full(Strategy strategy) {
+      return ITERATE == strategy || SPAWN == strategy;
+    }
+
+    public static boolean fixed(Strategy strategy) {
+      return !full(strategy);
     }
   }
 

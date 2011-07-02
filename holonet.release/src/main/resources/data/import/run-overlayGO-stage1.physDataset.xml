@@ -30,7 +30,9 @@
       id="overlayGO-1-physDataset" depends=""
       description="Overlay GO [stage1] Physical Dataset">
     <hn:Config name="default" description="Default (24 nodes, 1 seed)">
-      <hn:Param name="entropySourceLocGen.seed" value="234453"/>
+      <hn:Param
+          name="entropySourceLocGen.seed" value="234453"
+          strategy="spawn" chainedStrategy="spawn"/>
       <hn:Param name="entropySourceLocation.seed" value="634567"/>
       <hn:Param name="entropySource.seed" value="967436"/>
       <hn:Param name="locationMetric.nodes" value="24"/>

@@ -41,6 +41,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
+import java.util.concurrent.*;
 
 public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContextAware {
   protected ConfigurableApplicationContext applicationContext;
@@ -50,6 +51,25 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
 
   protected RunStateListener listener = RunStateListener.NOOP;
   protected long startMillis;
+
+  private final ThreadFactory threadFactory = new ThreadFactory() {
+    private int threadNum = 0;
+    public Thread newThread(Runnable target) {
+      final Thread newThread = new Thread(target, "ExperimentRunner #" + threadNum);
+      newThread.setPriority(Thread.MIN_PRIORITY);
+      threadNum += 1;
+
+      return newThread;
+    }
+  };
+  private final int processors = Runtime.getRuntime().availableProcessors();
+  private final LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(processors);
+  private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
+      processors, processors,
+      Long.MAX_VALUE, TimeUnit.SECONDS,
+      queue, threadFactory
+  );
+  private static final int SCHEDULE_MILLIS = 1000;
 
   public ExperimentRunnerImpl(RunnerDao dao, ExperimentRegistry expDao) {
     this.dao = dao;
@@ -98,7 +118,7 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     return paramSetEnumerator;
   }
 
-  protected void runIterative(Experiment exp, RunContext runContext) {
+  protected void runIterative(final Experiment exp, final RunContext runContext) {
     log.info("Starting {} with runId = {}", exp.getDesc(), runContext.getRunId());
     startMillis = System.currentTimeMillis();
 
@@ -106,16 +126,35 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
       final Context ctx = new Context(runContext, dao);
 
       do {
-        runForPoses(exp, runContext.getWideParams(), runContext.getRootParams(), ctx);
+        runParallel(exp, runContext, ctx);
 
         updateComplete(runContext.getRunId(), runContext.getWideParams().getIndex(true));
         listener.onPsetAdvance(runContext.getRunId(), runContext.getWideParams().getIndex(true));
-      } while (runContext.getWideParams().increment());
+      } while (runContext.getWideParams().increment(true, false));
 
       log.info("Completed experiment {}, runId = {}", exp.getDesc(), runContext.getRunId());
     } catch (Exception e) {
       log.error("Failed {} ", Throwables.getRootCause(e).toString());
       throw Throwables.propagate(e);
+    }
+  }
+
+  protected void runParallel(final Experiment exp, RunContext runContext, final Context ctx) throws InterruptedException {
+    do {
+      while (queue.size() >= processors) {
+        Thread.sleep(SCHEDULE_MILLIS);
+      }
+      final ParamSetEnumerator forkWideParams = runContext.getWideParams().dupe(null);
+      final ParamSetEnumerator forkRootParams = runContext.getRootParams().dupe(null);
+      executor.execute(new Runnable() {
+        public void run() {
+          runForPoses(exp, forkWideParams, forkRootParams, ctx);
+        }
+      });
+    } while (runContext.getWideParams().increment(false, true));
+
+    while (!queue.isEmpty() && executor.getActiveCount() > 0) {
+      Thread.sleep(SCHEDULE_MILLIS);
     }
   }
 

@@ -30,15 +30,29 @@
       id="physModel-1-generate" depends=""
       description="Physical network model [stage1] Generate">
     <hn:Config name="default" description="default">
-      <hn:Param name="entropySourceLocGen.seed" value="234453"/>
-      <hn:Param name="entropySourceLocation.seed" value="634567"/>
-      <hn:Param name="entropySource.seed" value="967436"/>
+      <hn:Param
+          name="entropySourceLocGen.seed" value="234453"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="entropySourceLocation.seed" value="634567"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="entropySource.seed" value="967436"
+          strategy="spawn" chainedStrategy="spawn"/>
 
-      <hn:Param name="structure.baseDegree" value="2"/>
-      <hn:Param name="locationMetric.nodes" value="128"/>
+      <hn:Param
+          name="structure.baseDegree" value="2"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="locationMetric.nodes" value="128"
+          strategy="spawn" chainedStrategy="spawn"/>
 
-      <hn:Param name="connPreference.alpha" value="1"/>
-      <hn:Param name="connPreference.beta" value="1"/>
+      <hn:Param
+          name="connPreference.alpha" value="1"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="connPreference.beta" value="1"
+          strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
     <hn:Config name="sizeProbe" description="size probes">
       <hn:Param name="locationMetric.nodes" value="128;256;512"/>

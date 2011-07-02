@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class FeedbackAppender extends AppenderSkeleton {
-  protected static final String PATTERN_DEFAULT = "%d{HH:mm:ss.SSS} %c{1} %m";
+  protected static final String PATTERN_DEFAULT = "%d{HH:mm:ss.SSS} %t %c{1} %m";
 
   protected final JTextPane outputPane;
   protected Map<Level, Style> styles = new HashMap<Level, Style>();

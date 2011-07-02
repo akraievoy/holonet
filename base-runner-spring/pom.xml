@@ -6,7 +6,7 @@
   <artifactId>base-runner-spring</artifactId>
   <packaging>jar</packaging>
   <name>base-runner-spring</name>
-  <version>1.3.2</version>
+  <version>1.3.3</version>
   <description>Pre-bundled configuration for spring embedded experiment configurations</description>
 
   <!-- Contact information -->

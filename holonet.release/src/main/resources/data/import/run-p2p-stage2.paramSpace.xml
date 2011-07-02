@@ -30,14 +30,28 @@
       id="p2p-stage2-paramSpace" depends=""
       description="P2P [stage2] Choose param space">
     <hn:Config name="default" description="48 nodes with 32 elements (each)">
-      <hn:Param name="tbNodes.value" value="60"/>
-      <hn:Param name="tbElems.value" value="32"/>
-      <hn:Param name="tbLoop.value" value="64"/>
+      <hn:Param
+          name="tbNodes.value" value="60"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="tbElems.value" value="32"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="tbLoop.value" value="64"
+          strategy="spawn" chainedStrategy="spawn"/>
 
-      <hn:Param name="tbFailProb.value" value="0.003"/>
-      <hn:Param name="tbJoinProb.value" value="0.01"/>
-      <hn:Param name="tbStabProb.value" value="0.01"/>
-      <hn:Param name="tbAttackProb.value" value="0.01"/>
+      <hn:Param
+          name="tbFailProb.value" value="0.003"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="tbJoinProb.value" value="0.01"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="tbStabProb.value" value="0.01"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="tbAttackProb.value" value="0.01"
+          strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
     <hn:Config name="extraLoops" description="extra loops">
       <hn:Param name="tbLoop.value" value="256"/>

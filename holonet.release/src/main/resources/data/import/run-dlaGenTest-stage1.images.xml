@@ -28,13 +28,21 @@
        default-destroy-method="stop">
   <hn:Experiment id="dlaGen-1-images" depends="" description="DLA density distribution [stage1] Images">
     <hn:Config name="default" description="Multiple dimensions">
-      <hn:Param name="entropySource.seed" value="13311331"/>
-      <hn:Param name="locationGenerator.gridSize" value="1024"/>
-      <hn:Param name="locationGenerator.dimensionRatio" value="1;1.25;1.5;1.75;2"/>
+      <hn:Param
+          name="entropySource.seed" value="13311331"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="locationGenerator.gridSize" value="1024"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="locationGenerator.dimensionRatio" value="1;1.25;1.5;1.75;2"
+          strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
     <hn:Config name="seeds" description="Multiple seeds">
-      <hn:Param name="entropySource.seed" value="13311331;31133113;53355335;35533553;51155115"/>
-      <hn:Param name="locationGenerator.dimensionRatio" value="1.5"/>
+      <hn:Param
+          name="entropySource.seed" value="13311331;31133113;53355335;35533553;51155115"/>
+      <hn:Param
+          name="locationGenerator.dimensionRatio" value="1.5"/>
     </hn:Config>
   </hn:Experiment>
 

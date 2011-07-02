@@ -31,7 +31,9 @@
       id="p2p-stage1-protoSet" depends=""
       description="P2P [stage1] Choose protocols">
     <hn:Config name="default" description="FaultTolerantChordServiceBase">
-      <hn:Param name="tbProtoClass.value" value="algores.holonet.protocols.chord.fault.FaultTolerantChordServiceBase"/>
+      <hn:Param
+          name="tbProtoClass.value" value="algores.holonet.protocols.chord.fault.FaultTolerantChordServiceBase"
+          strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
     <hn:Config name="full" description="4 protocols (from basic Ring to Latency-optimizing Chord)">
       <hn:Param name="tbProtoClass.value"
