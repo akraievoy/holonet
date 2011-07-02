@@ -351,7 +351,11 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
       } catch (Throwable t) {
         ExperimentRunner.log.warn("experiment failed", t);
       } finally {
-        onExperimentRunningChange(false);
+        SwingUtilities.invokeLater(new Runnable() {
+          public void run() {
+            onExperimentRunningChange(false);
+          }
+        });
       }
     }
   }

@@ -22,6 +22,8 @@ import com.google.common.base.Throwables;
 import org.akraievoy.base.Die;
 import org.akraievoy.base.Format;
 import org.akraievoy.base.ObjArrays;
+import org.akraievoy.base.ref.Ref;
+import org.akraievoy.base.ref.RefSimple;
 import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.base.runner.api.ContextInjectable;
 
@@ -41,6 +43,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.*;
 
 public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContextAware {
@@ -57,6 +60,7 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     public Thread newThread(Runnable target) {
       final Thread newThread = new Thread(target, "ExperimentRunner #" + threadNum);
       newThread.setPriority(Thread.MIN_PRIORITY);
+      newThread.setDaemon(true);
       threadNum += 1;
 
       return newThread;
@@ -119,17 +123,15 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
   }
 
   protected void runIterative(final Experiment exp, final RunContext runContext) {
-    log.info("Starting {} with runId = {}", exp.getDesc(), runContext.getRunId());
+    log.info(
+        "Starting {} with runId = {} ({} cores)",
+        new Object[] {exp.getDesc(), runContext.getRunId(), processors}
+    );
     startMillis = System.currentTimeMillis();
 
     try {
-      final Context ctx = new Context(runContext, dao);
-
       do {
-        runParallel(exp, runContext, ctx);
-
-        updateComplete(runContext.getRunId(), runContext.getWideParams().getIndex(true));
-        listener.onPsetAdvance(runContext.getRunId(), runContext.getWideParams().getIndex(true));
+        runParallel(exp, runContext);
       } while (runContext.getWideParams().increment(true, false));
 
       log.info("Completed experiment {}, runId = {}", exp.getDesc(), runContext.getRunId());
@@ -139,21 +141,29 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     }
   }
 
-  protected void runParallel(final Experiment exp, RunContext runContext, final Context ctx) throws InterruptedException {
+  protected void runParallel(final Experiment exp, final RunContext runContext) throws InterruptedException {
+    final Ref<Long> indexRef = new RefSimple<Long>(null);
+
     do {
       while (queue.size() >= processors) {
         Thread.sleep(SCHEDULE_MILLIS);
       }
-      final ParamSetEnumerator forkWideParams = runContext.getWideParams().dupe(null);
-      final ParamSetEnumerator forkRootParams = runContext.getRootParams().dupe(null);
+      final RunContext runContextLocal = runContext.dupe();
       executor.execute(new Runnable() {
         public void run() {
-          runForPoses(exp, forkWideParams, forkRootParams, ctx);
+          runForPoses(exp, new Context(runContextLocal, dao));
+
+          final long index = runContextLocal.getWideParams().getIndex(true);
+          if (indexRef.getValue() == null || indexRef.getValue() < index) {
+            indexRef.setValue(index);
+            updateComplete(runContext.getRunId(), index);
+            listener.onPsetAdvance(runContext.getRunId(), index);
+          }
         }
       });
     } while (runContext.getWideParams().increment(false, true));
 
-    while (!queue.isEmpty() && executor.getActiveCount() > 0) {
+    while (!queue.isEmpty() || executor.getActiveCount() > 0) {
       Thread.sleep(SCHEDULE_MILLIS);
     }
   }
@@ -166,10 +176,8 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     }
   }
 
-  protected void runForPoses(
-      Experiment exp, ParamSetEnumerator widened, ParamSetEnumerator root, Context ctx
-  ) {
-    final long paramSetCount = widened.getCount();
+  protected void runForPoses(Experiment exp, Context ctx) {
+    final long paramSetCount = ctx.getRunContext().getWideParams().getCount();
     final Runtime runtime = Runtime.getRuntime();
 
     final ConfigurableApplicationContext context = new StringXmlApplicationContext(
@@ -177,8 +185,9 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     );
 
     final PropertyOverrideConfigurer configurer = new PropertyOverrideConfigurer();
-    root.narrow(widened); //  LATER it's better to pass params via chain, not DB
-    configurer.setProperties(root.getProperties());
+    //  LATER it's better to pass params via chain, not DB
+    ctx.getRunContext().getRootParams().narrow(ctx.getRunContext().getWideParams());
+    configurer.setProperties(ctx.getRunContext().getRootParams().getProperties());
     context.addBeanFactoryPostProcessor(configurer);
 
     context.refresh();
@@ -201,7 +210,7 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     final long totalMem = runtime.totalMemory();
     final long freeMem = runtime.freeMemory();
     if (paramSetCount > 0) {
-      final long index = widened.getIndex(true);
+      final long index = ctx.getRunContext().getWideParams().getIndex(true);
       log.info("Parameter set {} / {}, mem used {} / {}, ETA: {} ",
           new Object[]{
               index, paramSetCount,
@@ -271,44 +280,45 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
 
   public class RunContextImpl implements RunContext {
     private final long confUid;
-    private final List<Long> chainedRunIds;
-    private SortedMap<Long, RunInfo> chainedRuns;
-    private ParamSetEnumerator rootParams;
-    private ParamSetEnumerator wideParams;
-    private boolean valid = false;
-    private long runId;
 
     public RunContextImpl(long confUid, final List<Long> chainedRunIds) {
       this.confUid = confUid;
       this.chainedRunIds = chainedRunIds;
     }
 
-    public SortedMap<Long, RunInfo> getChainedRuns() {
-      return chainedRuns;
-    }
-
-    public ParamSetEnumerator getRootParams() {
-      return rootParams;
-    }
-
-    public ParamSetEnumerator getWideParams() {
-      return wideParams;
-    }
-
-    public boolean isValid() {
-      return valid;
-    }
-
+    private final List<Long> chainedRunIds;
     public long[] getChainedRunIds() {
       return ObjArrays.unbox(getChainedRuns().keySet().toArray(new Long[getChainedRuns().size()]));
     }
 
-    public long getRunId() {
-      return runId;
-    }
+    private SortedMap<Long, RunInfo> chainedRuns;
+    public SortedMap<Long, RunInfo> getChainedRuns() { return chainedRuns; }
 
-    public void setRunId(long runId) {
-      this.runId = runId;
+    private ParamSetEnumerator rootParams;
+    public ParamSetEnumerator getRootParams() { return rootParams; }
+
+    private ParamSetEnumerator wideParams;
+    public ParamSetEnumerator getWideParams() { return wideParams; }
+
+    private boolean valid = false;
+    public boolean isValid() { return valid; }
+
+    private long runId;
+    public void setRunId(long runId) { this.runId = runId; }
+    public long getRunId() { return runId; }
+
+    public RunContext dupe() {
+      final RunContextImpl dupe = new RunContextImpl(confUid, chainedRunIds);
+
+      if (chainedRuns != null) {
+        dupe.chainedRuns = new TreeMap<Long, RunInfo>(chainedRuns);
+      }
+      dupe.rootParams = rootParams != null ? rootParams.dupe(null) : null;
+      dupe.wideParams = wideParams != null ? wideParams.dupe(null) : null;
+      dupe.valid = valid;
+      dupe.runId = runId;
+
+      return dupe;
     }
 
     public RunContextImpl invoke() {

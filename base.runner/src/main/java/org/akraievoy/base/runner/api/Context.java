@@ -78,7 +78,7 @@ public class Context {
       }
 
       for (RunInfo chained : runContext.getChainedRuns().values()) {
-        final long translated = runContext.getWideParams().translateIndex(chained.getEnumerator(), false);
+        final long translated = runContext.getWideParams().translateIndex(chained.getEnumerator());
 
         final boolean chainedValue = dao.findCtxAttrNoLoad(
             chained.getRun().getUid(),
@@ -108,7 +108,7 @@ public class Context {
       }
 
       for (RunInfo chained : runContext.getChainedRuns().values()) {
-        final long translated = widenedPse.translateIndex(chained.getEnumerator(), false);
+        final long translated = widenedPse.translateIndex(chained.getEnumerator());
 
         final Object chainedValue = dao.findCtxAttr(
             chained.getRun().getUid(),

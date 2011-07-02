@@ -47,5 +47,7 @@ public interface ExperimentRunner {
     long[] getChainedRunIds();
 
     long getRunId();
+
+    RunContext dupe();
   }
 }

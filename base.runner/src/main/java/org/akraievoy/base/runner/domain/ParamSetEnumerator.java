@@ -33,18 +33,20 @@ public class ParamSetEnumerator {
   protected final List<Long> paramPoses = new ArrayList<Long>();
 
   public boolean increment(final boolean iterated, final boolean spawned) {
-    int incrementPos = paramPoses.size() - 1;
-    boolean overflow;
-    while (
-        incrementPos >= 0 && (
-            fixed(incrementPos, iterated, spawned) |
-            (overflow = overflow(incrementPos))
-        )
-    ) {
-      if (overflow) {
-        paramPoses.set(incrementPos, 0L);
+    int incrementPos = paramPoses.size();
+    while (--incrementPos >= 0) {
+      boolean fixed = fixed(incrementPos, iterated, spawned);
+      boolean overflow = overflow(incrementPos);
+
+      if (fixed) {
+        continue;
       }
-      incrementPos--;
+
+      if (!overflow) {
+        break;  //  found a position for an increment
+      }
+
+      paramPoses.set(incrementPos, 0L);
     }
 
     if (incrementPos < 0) {
@@ -59,18 +61,14 @@ public class ParamSetEnumerator {
   private boolean fixed(int idx, boolean iterated, boolean spawned) {
     final Parameter.Strategy strategy = params.get(idx).getStrategy();
 
-    return Parameter.Strategy.fixed(strategy) ||
-        iterated && Parameter.Strategy.ITERATE == strategy ||
-        spawned && Parameter.Strategy.SPAWN == strategy;
+    return Parameter.Strategy.fixed(strategy) || 
+        !spawned && Parameter.Strategy.SPAWN == strategy ||
+        !iterated && Parameter.Strategy.ITERATE == strategy;
 
   }
 
-  protected boolean overflow(int idx) {
+  private boolean overflow(int idx) {
     final Parameter param = params.get(idx);
-    if (!Parameter.Strategy.full(param.getStrategy()))  {
-      return false;
-    }
-
     final long pos = paramPoses.get(idx);
     final boolean overflow = pos == param.getValueCount() - 1;
 
@@ -238,13 +236,32 @@ public class ParamSetEnumerator {
     long result = COUNT_EMPTY;
     long fixed = COUNT_EMPTY;
     long pow = 1;
-    for (int paramI = params.size() - 1; paramI >= 0; paramI--) {
-      final Parameter param = params.get(paramI);
-      if (Parameter.Strategy.full(param.getStrategy()) || !globFixed) {
+    if (!globFixed) {
+      //  calculate the strict index, all database operations should use that
+      for (int paramI = params.size() - 1; paramI >= 0; paramI--) {
+        final Parameter param = params.get(paramI);
         result += pow * paramPoses.get(paramI);
         pow *= param.getValueCount();
-      } else {
-        fixed *= param.getValueCount();
+      }
+    } else {
+      //  index for the ETA reporting is counted differently
+      //  first we take care of all the SPAWN parameters (as the ExperimentRunner does)
+      for (int paramI = params.size() - 1; paramI >= 0; paramI--) {
+        final Parameter param = params.get(paramI);
+        if (Parameter.Strategy.SPAWN == param.getStrategy()) {
+          result += pow * paramPoses.get(paramI);
+          pow *= param.getValueCount();
+        }
+      }
+      //  and then proceed with the all other parameters as usual
+      for (int paramI = params.size() - 1; paramI >= 0; paramI--) {
+        final Parameter param = params.get(paramI);
+        if (Parameter.Strategy.ITERATE == param.getStrategy()) {
+          result += pow * paramPoses.get(paramI);
+          pow *= param.getValueCount();
+        } else if (!Parameter.Strategy.full(param.getStrategy())) {
+          fixed *= param.getValueCount();
+        }
       }
     }
 
@@ -301,7 +318,7 @@ public class ParamSetEnumerator {
   }
 
   //  LATER simplify
-  public long translateIndex(ParamSetEnumerator chainedEnumerator, final boolean globFixed) {
+  public long translateIndex(ParamSetEnumerator chainedEnumerator) {
     if (params.size() == 0) {
       return 0;
     }
@@ -317,7 +334,7 @@ public class ParamSetEnumerator {
       chainedPoses.set(chainedIndex, paramPoses.get(i));
     }
 
-    return chainedEnumerator.getIndexForPos(chainedPoses, globFixed);
+    return chainedEnumerator.getIndexForPos(chainedPoses, false);
   }
 
   public int getParameterCount() {
