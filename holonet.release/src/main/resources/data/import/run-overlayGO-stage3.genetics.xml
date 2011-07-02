@@ -31,6 +31,9 @@
       description="Overlay GO [stage3] Overlay Genetics">
     <hn:Config name="default" description="Default (101 generations / 91 specimens)">
       <hn:Param
+          name="entropySourceGenetics.seed" value="42600-42602"
+          chainedStrategy="spawn" strategy="spawn"/>
+      <hn:Param
           name="ovlGenOpt.generation" value="0-100"
           chainedStrategy="use_last" />
       <hn:Param
@@ -82,9 +85,14 @@
     <hn:Config name="minEff21" description="MinEff: 2.1">
       <hn:Param name="geneticStrategy.minEff" value="2.1"/>
     </hn:Config>
-    <hn:Config name="minEff21x30" description="MinEff: 2.1 * 30 seeds">
+    <hn:Config name="minEff21x30x200" description="MinEff: 2.1 * 30 seeds * 200 gens">
       <hn:Param name="geneticStrategy.minEff" value="2.1"/>
-      <hn:Param name="entropySourceGenetics.seed" value="42600-42630"/>
+      <hn:Param 
+          name="entropySourceGenetics.seed" value="42600-42630"
+          chainedStrategy="spawn" strategy="spawn"/>
+      <hn:Param
+          name="ovlGenOpt.generation" value="0-200"
+          chainedStrategy="use_last" />
     </hn:Config>
     <hn:Config name="minEff215" description="MinEff: 2.15">
       <hn:Param name="geneticStrategy.minEff" value="2.15"/>
