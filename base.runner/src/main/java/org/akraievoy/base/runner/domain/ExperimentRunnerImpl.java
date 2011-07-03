@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContextAware {
   protected ConfigurableApplicationContext applicationContext;
@@ -68,11 +69,17 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
   };
   private final int processors = Runtime.getRuntime().availableProcessors();
   private final LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(processors);
+  private final AtomicInteger pendingJobs = new AtomicInteger(0);
   private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
       processors, processors,
       Long.MAX_VALUE, TimeUnit.SECONDS,
       queue, threadFactory
-  );
+  ) {
+    @Override
+    protected void afterExecute(Runnable r, Throwable t) {
+      pendingJobs.decrementAndGet();
+    }
+  };
   private static final int SCHEDULE_MILLIS = 1000;
 
   public ExperimentRunnerImpl(RunnerDao dao, ExperimentRegistry expDao) {
@@ -145,9 +152,13 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     final Ref<Long> indexRef = new RefSimple<Long>(null);
 
     do {
+      int waitsOnFull = 0;
       while (queue.size() >= processors) {
+        waitsOnFull += 1;
         Thread.sleep(SCHEDULE_MILLIS);
       }
+      final int currentPending = pendingJobs.incrementAndGet();
+      log.debug("parallel mode: spawning job #{}, waited on full queue for {} cycles", currentPending, waitsOnFull);
       final RunContext runContextLocal = runContext.dupe();
       executor.execute(new Runnable() {
         public void run() {
@@ -163,9 +174,12 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
       });
     } while (runContext.getWideParams().increment(false, true));
 
-    while (!queue.isEmpty() || executor.getActiveCount() > 0) {
+    int waitsOnBusy = 0;
+    while (!queue.isEmpty() || executor.getActiveCount() > 0 || pendingJobs.get() > 0) {
+      waitsOnBusy += 1;
       Thread.sleep(SCHEDULE_MILLIS);
     }
+    log.debug("parallel mode: complete, waited on busy executor for {} cycles", waitsOnBusy);
   }
 
   protected void updateComplete(long runId, final long index) {
