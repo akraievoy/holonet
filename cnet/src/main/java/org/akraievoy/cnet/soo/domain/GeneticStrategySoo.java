@@ -115,8 +115,11 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
         -(int) generation
     );
 
-    minEffStart = ctx.get("minEffStart", Double.class, backToSeed);
-    minEffTarget = ctx.get("minEffTarget", Double.class, backToSeed);
+    final Double minEffStartCtx = ctx.get("minEffStart", Double.class, backToSeed);
+    if (minEffStartCtx != null) {
+      minEffStart = minEffStartCtx;
+      minEffTarget = ctx.get("minEffTarget", Double.class, backToSeed);
+    }
   }
 
   protected int getTotalLinkUpperLimit() {
@@ -152,8 +155,8 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
 
     final double eff = computeEff(children.get(children.firstKey()));
     if (eff < minEff) {
-      ctx.put("minEffStart", eff * 0.95);
-      ctx.put("minEffTarget", ctx.getCount(generationParam) * 0.4);
+      ctx.put("minEffStart", eff * 0.975);
+      ctx.put("minEffTarget", ctx.getCount(generationParam) * 0.15);
     }
   }
 
