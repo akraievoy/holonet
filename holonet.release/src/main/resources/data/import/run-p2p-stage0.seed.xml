@@ -37,23 +37,24 @@
           name="tbRunSeed.value" value="7654321"
           strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
-    <hn:Config name="perGeneration" description="Per-generation runs">
-      <hn:Param name="ovlGenOpt.generation" value="*strategy*" chainedStrategy="iterate"/>
+    <hn:Config name="3x7" description="7 inits * 3 runs">
+      <hn:Param
+          name="tbInitSeed.value" value="7654321;91032843;8574829;1029389;9193782;74754832;68492834"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="tbRunSeed.value" value="1234567;1928483;9348492"
+          strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
-    <hn:Config name="perGeneration-3x7" description="Per-generation runs, 7 inits * 3 runs">
-      <hn:Param name="ovlGenOpt.generation" value="*strategy*" chainedStrategy="iterate"/>
-      <hn:Param name="tbInitSeed.value" value="7654321;91032843;8574829;1029389;9193782;74754832;68492834"/>
-      <hn:Param name="tbRunSeed.value" value="1234567;1928483;9348492"/>
-    </hn:Config>
-    <hn:Config name="perGeneration-1x7" description="Per-generation runs, 7 inits * 1 run">
-      <hn:Param name="ovlGenOpt.generation" value="*strategy*" chainedStrategy="iterate"/>
-      <hn:Param name="tbInitSeed.value" value="7654321;91032843;8574829;1029389;9193782;74754832;68492834"/>
-      <hn:Param name="tbRunSeed.value" value="1234567"/>
-    </hn:Config>
-    <hn:Config name="perGeneration-3x1" description="Per-generation runs, 1 init * 3 runs">
-      <hn:Param name="ovlGenOpt.generation" value="*strategy*" chainedStrategy="iterate"/>
-      <hn:Param name="tbInitSeed.value" value="7654321"/>
-      <hn:Param name="tbRunSeed.value" value="1234567;1928483;9348492"/>
+    <hn:Config name="perGeneration-3x7" description="7 inits * 3 runs (per GA generation!)">
+      <hn:Param
+          name="ovlGenOpt.generation" value="*strategy*"
+          chainedStrategy="spawn"/>
+      <hn:Param
+          name="tbInitSeed.value" value="7654321;91032843;8574829;1029389;9193782;74754832;68492834"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="tbRunSeed.value" value="1234567;1928483;9348492"
+          strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
   </hn:Experiment>
 
