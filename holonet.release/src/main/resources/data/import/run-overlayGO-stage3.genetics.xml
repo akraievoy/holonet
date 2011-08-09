@@ -85,22 +85,31 @@
     <hn:Config name="minEff21" description="MinEff: 2.1">
       <hn:Param name="geneticStrategy.minEff" value="2.1"/>
     </hn:Config>
-    <hn:Config name="minEff21x30x250" description="MinEff: 2.1 * 30 seeds * 250 gens">
-      <hn:Param name="geneticStrategy.minEff" value="2.1"/>
+    <hn:Config name="minEff21x50x256" description="MinEff: 1.9 * 50 seeds * 256 gens (sim corr study)">
+      <hn:Param name="geneticStrategy.minEff" value="1.9"/>
       <hn:Param 
-          name="entropySourceGenetics.seed" value="42600-42630"
+          name="entropySourceGenetics.seed" value="42600-42649"
           chainedStrategy="spawn" strategy="spawn"/>
       <hn:Param
-          name="ovlGenOpt.generation" value="0-250"
+          name="ovlGenOpt.generation" value="0-255"
           chainedStrategy="use_last" />
     </hn:Config>
-    <hn:Config name="minEff21x30x5" description="MinEff: 0.1 * 30 seeds * 5 gens">
-      <hn:Param name="geneticStrategy.minEff" value="0.1"/>
+    <hn:Config name="minEff21x50x768" description="MinEff: 1.9 * 50 seeds * 768 gens (full opt)">
+      <hn:Param name="geneticStrategy.minEff" value="1.9"/>
+      <hn:Param
+          name="entropySourceGenetics.seed" value="42600-42649"
+          chainedStrategy="spawn" strategy="spawn"/>
+      <hn:Param
+          name="ovlGenOpt.generation" value="0-767"
+          chainedStrategy="use_last" />
+    </hn:Config>
+    <hn:Config name="minEff.2x2x3" description="MinEff: 1.2 * 2 seeds * 3 gens (debug)">
+      <hn:Param name="geneticStrategy.minEff" value="1.2"/>
       <hn:Param
           name="entropySourceGenetics.seed" value="42600-42601"
           chainedStrategy="spawn" strategy="spawn"/>
       <hn:Param
-          name="ovlGenOpt.generation" value="0-5"
+          name="ovlGenOpt.generation" value="0-2"
           chainedStrategy="use_last" />
     </hn:Config>
     <hn:Config name="minEff215" description="MinEff: 2.15">
@@ -122,7 +131,7 @@
       <hn:Param name="geneticStrategy.minEff" value="1.2"/>
       <hn:Param name="entropySourceGenetics.seed" value="42600"/>
     </hn:Config>
-    <hn:Config name="stepsProfLite" description="Varyiing Steps - Lite">
+    <hn:Config name="stepsProfLite" description="Varying Steps - Lite">
       <hn:Param name="ovlGenOpt.generation" value="0-5" chainedStrategy="use_last" />
       <hn:Param name="ovlGenOpt.specimenIndex" value="0-12" chainedStrategy="use_first" strategy="use_first" />
       <hn:Param name="geneticStrategy.steps" value="1;2"/>
