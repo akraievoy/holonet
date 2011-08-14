@@ -63,6 +63,24 @@
     <hn:Config name="nu50" description="Default (select 50% of nodes)">
       <hn:Param name="onf.nu" value="0.5"/>
     </hn:Config>
+    <hn:Config name="nu20" description="Visual (select 20% of nodes)">
+      <hn:Param name="onf.nu" value="0.2"/>
+      <hn:Param
+          name="onf.omega" value="-4;2;4"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="ovlReq.phi" value="1"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="ovlReq.psi" value="1"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="ovlReqThresh.minAbsValue" value="0.05"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="ovlReqThresh.minToMaxRatio" value="0.05"
+          strategy="spawn" chainedStrategy="spawn"/>
+    </hn:Config>
   </hn:Experiment>
 
   <bean class="org.akraievoy.cnet.net.ref.RefEdgeData" id="ref_default_edata_structure">

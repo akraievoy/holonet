@@ -40,9 +40,8 @@
       <hn:Param name="connPreference.beta" value="2.75"/>
       <hn:Param name="structure.baseDegree" value="3"/>
     </hn:Config>
-    <hn:Config name="vis-sampling" description="Visual : Sampling (64 nodes, 9 seeds)">
+    <hn:Config name="vis-requests" description="Visual for Requests">
       <hn:Param name="locationMetric.nodes" value="64"/>
-      <hn:Param name="entropySource.seed" value="967436;684393;193875;869374;164305;689176;395730;208474;876353"/>
       <hn:Param name="structure.baseDegree" value="2"/>
     </hn:Config>
     <hn:Config name="vis-byAlpha" description="Visual : By Alpha (64 nodes)">

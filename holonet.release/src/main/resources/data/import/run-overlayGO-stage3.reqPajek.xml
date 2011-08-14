@@ -68,6 +68,16 @@
     <property name="max" value="20"/>
   </bean>
 
+  <bean class="org.akraievoy.cnet.metrics.domain.MetricVDataRenorm" id="ref_overlay_vdata_density_renorm">
+    <property name="source">
+      <bean class="org.akraievoy.cnet.metrics.domain.MetricVDataLogScale">
+        <property name="source" ref="ref_overlay_vdata_density"/>
+      </bean>
+    </property>
+    <property name="min" value="3"/>
+    <property name="max" value="7"/>
+  </bean>
+
   <bean class="org.akraievoy.cnet.export.domain.export.ExportPajek" id="main">
     <property name="targetDir" value="data/reports/pajek_ovl_requests"/>
 
@@ -86,9 +96,15 @@
     <property name="VLabelSource" ref="ref_overlay_vdata_index"/>
     <property name="VCoordXSource" ref="ref_overlay_vdata_location_x"/>
     <property name="VCoordYSource" ref="ref_overlay_vdata_location_y"/>
-    <property name="VRadiusSource" ref="overlay_vdata_requestsum"/>
+    <property name="VRadiusSource" ref="ref_overlay_vdata_density_renorm"/>
 
-    <property name="ESource" ref="ref_overlay_edata_requests"/>
+    <property name="ESource">
+      <bean class="org.akraievoy.cnet.metrics.domain.MetricEDataRenorm">
+        <property name="source" ref="ref_overlay_edata_requests"/>
+        <property name="min" value="0.75"/>
+        <property name="max" value="2.5"/>
+      </bean>
+    </property>
     <property name="ELabelSource" ref="ref_overlay_edata_requests"/>
     <property name="EColorSource">
       <bean class="org.akraievoy.cnet.metrics.domain.MetricEDataRenorm">
