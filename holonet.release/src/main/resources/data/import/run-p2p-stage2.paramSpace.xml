@@ -29,7 +29,7 @@
   <hn:Experiment
       id="p2p-stage2-paramSpace" depends=""
       description="P2P [stage2] Choose param space">
-    <hn:Config name="default" description="48 nodes with 32 elements (each)">
+    <hn:Config name="default" description="60 nodes with 32 elements (each)">
       <hn:Param
           name="tbNodes.value" value="60"
           strategy="spawn" chainedStrategy="spawn"/>
@@ -55,6 +55,11 @@
     </hn:Config>
     <hn:Config name="extraLoops" description="extra loops">
       <hn:Param name="tbLoop.value" value="256"/>
+    </hn:Config>
+    <hn:Config name="Default 24" description="default - 24 nodes">
+     <hn:Param
+          name="tbNodes.value" value="24"
+          strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
     <hn:Config name="stabProf" description="stabilize profiling">
       <hn:Param name="tbStabProb.value" value="0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64"/>
