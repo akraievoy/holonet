@@ -34,6 +34,17 @@
     <property name="connectionMaxNum" value="1"/>
     <property name="connectionTimeout" value="60"/>
   </bean>
+  
+  <bean id="couch" class="org.akraievoy.couch.CouchDao">
+    <property name="couchUrl" value="http://localhost:5984/"/>
+    <property name="dbName" value="hn"/>
+    <property name="username" value="supercow"/>
+    <property name="password" value="typical"/>
+  </bean>
+
+  <bean class="org.akraievoy.db.CouchDb" id="couchDb">
+	<constructor-arg ref="couch" />
+  </bean>
 
   <bean class="org.akraievoy.db.QueryRegistry" id="queryRegistry">
     <constructor-arg value="/org/akraievoy/base/runner/persist/queries.properties"/>
