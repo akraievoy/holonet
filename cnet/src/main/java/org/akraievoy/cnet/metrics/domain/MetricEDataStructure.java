@@ -60,8 +60,9 @@ public class MetricEDataStructure extends MetricEData {
     final EdgeData structure = structureSource.getValue();
     final WeightedEventModel eventModel = new WeightedEventModelBase();
 
+    double[] powers = new double[size];
     int startNode = 0;
-    while (startNode < size && structure.power(startNode) > 0) {
+    while (startNode < size && (powers[startNode] = structure.power(startNode)) > 0) {
       startNode++;
     }
 
@@ -69,7 +70,7 @@ public class MetricEDataStructure extends MetricEData {
       eventModel.clear();
 
       for (int j = 0; j < i; j++) {
-        final double degreeJ = structure.power(j);
+        final double degreeJ = powers[j];
         final double distIJ = dist.get(i, j);
 
         eventModel.add(j, preference.getPreference(degreeJ, distIJ));
@@ -78,6 +79,8 @@ public class MetricEDataStructure extends MetricEData {
       for (int k = 0; eventModel.getSize() > 0 && k < baseDegree; k++) {
         final Integer conn = eventModel.generate(eSource, true, null);
         structure.set(i, conn, 1.0);
+        powers[i] += 1;
+        powers[conn] += 1;
       }
     }
 

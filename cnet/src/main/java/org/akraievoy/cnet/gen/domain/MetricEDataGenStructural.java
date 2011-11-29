@@ -33,6 +33,7 @@ public class MetricEDataGenStructural extends MetricEData {
   public static final String TYPE_CYCLE = "cycle";
   public static final String TYPE_EMPTY = "empty";
   public static final String TYPE_FULL = "full";
+  public static final String TYPE_CONSTANT = "constant";
   public static final String TYPE_PALEY = "paley";
   public static final String TYPE_MARGULIS = "margulis";
 
@@ -78,6 +79,8 @@ public class MetricEDataGenStructural extends MetricEData {
       target.setValue(empty(netNodeNum));
     } else if (TYPE_FULL.equals(type)) {
       target.setValue(full(netNodeNum));
+    } else if (TYPE_CONSTANT.equals(type)) {
+      target.setValue(EdgeDataFactory.constant(netNodeNum, 1.0));
     } else if (TYPE_PALEY.equals(type)) {
       target.setValue(paley(netNodeNum));
     } else if (TYPE_MARGULIS.equals(type)) {
@@ -124,15 +127,11 @@ public class MetricEDataGenStructural extends MetricEData {
   }
 
   public static EdgeData full(int netSize) {
-    final EdgeData result = empty(netSize);
+    final EdgeData structure = EdgeDataFactory.sparse(true, 1.0);
 
-    for (int from = 0; from < netSize - 1; from++) {
-      for (int into = from + 1; into < netSize; into++) {
-        result.set(from, into, 1.0);
-      }
-    }
+    structure.setSize(netSize);
 
-    return result;
+    return structure;
   }
 
   public static EdgeData paley(final int netSize) {

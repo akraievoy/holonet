@@ -46,6 +46,10 @@ import java.util.List;
 
 public class ExportPajek implements Runnable, ContextInjectable, SkipTrigger {
   private static final Logger log = LoggerFactory.getLogger(ExportPajek.class);
+  protected static final double DEF_VERTEX_RADIUS = 3.0;
+  protected static final double DEF_VERTEX_COLOR = 1.0;
+  protected static final double DEF_EDGE_WIDTH = 1.0;
+  protected static final double DEF_EDGE_COLOR = 1.0;
 
   protected final String newLine = "\r\n";
 
@@ -63,13 +67,13 @@ public class ExportPajek implements Runnable, ContextInjectable, SkipTrigger {
   protected RefRO<VertexData> vCoordXSource = new RefVertexData();
   protected RefRO<VertexData> vCoordYSource = new RefVertexData();
   protected RefRO<VertexData> vCoordZSource = new MetricVDataFiller(0.0);
-  protected RefRO<VertexData> vRadiusSource = new MetricVDataFiller(3.0);
-  protected RefRO<VertexData> vColorSource = new MetricVDataFiller(1.0);
+  protected RefRO<VertexData> vRadiusSource = new MetricVDataFiller(DEF_VERTEX_RADIUS);
+  protected RefRO<VertexData> vColorSource = new MetricVDataFiller(DEF_VERTEX_COLOR);
 
   protected RefRO<EdgeData> eSource = new RefEdgeData();
   protected RefRO<EdgeData> eLabelSource = new RefEdgeData();
-  protected RefRO<EdgeData> eWidthSource = new MetricEDataFiller(1.0);
-  protected RefRO<EdgeData> eColorSource = new MetricEDataFiller(1.0);
+  protected RefRO<EdgeData> eWidthSource = new MetricEDataFiller(DEF_EDGE_WIDTH);
+  protected RefRO<EdgeData> eColorSource = new MetricEDataFiller(DEF_EDGE_COLOR);
 
   protected PajekColorer vColorer = new PajekColorer();
   protected PajekColorer eColorer = new PajekColorer("blue");
@@ -194,12 +198,12 @@ public class ExportPajek implements Runnable, ContextInjectable, SkipTrigger {
         fw.print("" +
             (1 + i) + " " +
             "\"" + label + "\" " +
-            vCoordX.get(i) + " " +
-            vCoordY.get(i) + " " +
-            vCoordZ.get(i) + " " +
-            "x_fact " + Math.round(vRadius.get(i)) + " " +
-            "y_fact " + Math.round(vRadius.get(i)) + " " +
-            "ic " + vColorer.getName(vColor.get(i))
+            (vCoordX == null ? i : vCoordX.get(i)) + " " +
+            (vCoordY == null ? i : vCoordY.get(i)) + " " +
+            (vCoordZ == null ? i : vCoordZ.get(i)) + " " +
+            "x_fact " + Math.round(vRadius == null ? DEF_VERTEX_RADIUS : vRadius.get(i)) + " " +
+            "y_fact " + Math.round(vRadius == null ? DEF_VERTEX_RADIUS : vRadius.get(i)) + " " +
+            "ic " + vColorer.getName(vColor == null ? DEF_VERTEX_COLOR : vColor.get(i))
         );
         fw.print(newLine);
       }
@@ -212,15 +216,15 @@ public class ExportPajek implements Runnable, ContextInjectable, SkipTrigger {
           public void visit(int from, int into, double e) {
             final String label;
             if (eLabel == null) {
-              label = String.valueOf(from + 1) + "->" + String.valueOf(from + 1);
+              label = String.valueOf(from + 1) + "->" + String.valueOf(into + 1);
             } else {
               label = Format.format4(eLabel.get(from, into));
             }
 
             fw.print("" +
                 (1 + from) + " " + (1 + into) + " " + e + " " +
-                "w " + eWidth.get(from, into) + " " +
-                "c " + eColorer.getName(eColor.get(from, into)) + " " +
+                "w " + (eWidth == null ? DEF_EDGE_WIDTH : eWidth.get(from, into)) + " " +
+                "c " + eColorer.getName(eColor == null ? DEF_EDGE_COLOR : eColor.get(from, into)) + " " +
                 "l \"" + label + "\""
             );
             fw.print(newLine);
