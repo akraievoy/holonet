@@ -205,7 +205,8 @@
                       <gridbag weightx="1.0" weighty="1.0"/>
                     </constraints>
                     <properties>
-                      <dividerLocation value="125"/>
+                      <dividerLocation value="360"/>
+                      <oneTouchExpandable value="true"/>
                       <resizeWeight value="0.38"/>
                     </properties>
                     <border type="none"/>
@@ -215,7 +216,7 @@
                           <splitpane position="left"/>
                         </constraints>
                         <properties>
-                          <dividerLocation value="60"/>
+                          <dividerLocation value="177"/>
                           <resizeWeight value="0.5"/>
                         </properties>
                         <border type="none"/>
@@ -256,12 +257,15 @@
                         <constraints>
                           <splitpane position="right"/>
                         </constraints>
-                        <properties/>
+                        <properties>
+                          <horizontalScrollBarPolicy value="32"/>
+                        </properties>
                         <border type="none"/>
                         <children>
                           <component id="af472" class="javax.swing.JTable" binding="valueTable">
                             <constraints/>
                             <properties>
+                              <autoResizeMode value="0"/>
                               <preferredScrollableViewportSize width="320" height="400"/>
                             </properties>
                           </component>

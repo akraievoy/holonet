@@ -272,7 +272,8 @@ public class ExperimentChooserPanel {
     gbc.insets = new Insets(2, 2, 2, 2);
     panel5.add(exportFormatCombo, gbc);
     final JSplitPane splitPane1 = new JSplitPane();
-    splitPane1.setDividerLocation(125);
+    splitPane1.setDividerLocation(360);
+    splitPane1.setOneTouchExpandable(true);
     splitPane1.setResizeWeight(0.38);
     gbc = new GridBagConstraints();
     gbc.gridx = 0;
@@ -283,7 +284,7 @@ public class ExperimentChooserPanel {
     gbc.fill = GridBagConstraints.BOTH;
     panel4.add(splitPane1, gbc);
     final JSplitPane splitPane2 = new JSplitPane();
-    splitPane2.setDividerLocation(60);
+    splitPane2.setDividerLocation(177);
     splitPane2.setResizeWeight(0.5);
     splitPane1.setLeftComponent(splitPane2);
     axisScrollPane = new JScrollPane();
@@ -297,8 +298,10 @@ public class ExperimentChooserPanel {
     keyTable.setPreferredScrollableViewportSize(new Dimension(180, 400));
     keyScrollPane.setViewportView(keyTable);
     valueScrollPane = new JScrollPane();
+    valueScrollPane.setHorizontalScrollBarPolicy(32);
     splitPane1.setRightComponent(valueScrollPane);
     valueTable = new JTable();
+    valueTable.setAutoResizeMode(0);
     valueTable.setPreferredScrollableViewportSize(new Dimension(320, 400));
     valueScrollPane.setViewportView(valueTable);
     final JToolBar toolBar1 = new JToolBar();

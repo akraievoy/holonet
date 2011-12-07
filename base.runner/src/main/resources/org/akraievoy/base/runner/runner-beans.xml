@@ -24,6 +24,7 @@
        default-init-method="start"
        default-destroy-method="stop">
   <import resource="runner-main.xml"/>
+
   <bean class="org.akraievoy.base.runner.persist.ImportRunnable" id="experimentImporter">
     <constructor-arg ref="runnerDao"/>
   </bean>

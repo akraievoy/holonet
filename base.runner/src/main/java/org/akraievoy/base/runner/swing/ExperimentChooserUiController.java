@@ -55,7 +55,7 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
   protected final RunTableModel runTableModel;
   protected final AxisTableModel axisTableModel = new AxisTableModel();
   protected final KeyTableModel keyTableModel = new KeyTableModel();
-  protected final ValueTableModel valueTableModel = new ValueTableModel();
+  protected final ValueTableModel valueTableModel;
   protected final ExecutorService executor;
   protected final ExperimentRunner experimentRunner;
   protected final RunnerDao runnerDao;
@@ -85,14 +85,16 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
     this.experimentRunner = experimentRunner;
     this.runnerDao = runnerDao;
     this.importRunnable = importRunnable;
+    this.valueTableModel = new ValueTableModel(executor);
   }
 
   public void start() {
     experimentChooserFrame.setup();
     experimentTableModel.setCallback(this);
     keyTableModel.setParent(axisTableModel);
-    axisTableModel.addCallback(keyTableModel);
-    keyTableModel.addCallback(valueTableModel);
+    axisTableModel.setCallback(keyTableModel);
+    keyTableModel.setCallback(valueTableModel);
+    valueTableModel.setCallback(new ReportProgressCallback());
 
     experimentChooserFrame.addWindowListener(new WindowAdapter());
     experimentChooserFrame.getLaunchButton().setAction(launchAction);
@@ -141,7 +143,6 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
     TableColumnModelShrinker.setup(experimentChooserFrame.getRunsTable());
     TableColumnModelShrinker.setup(experimentChooserFrame.getAxisTable());
     TableColumnModelShrinker.setup(experimentChooserFrame.getKeyTable());
-    TableColumnModelShrinker.setup(experimentChooserFrame.getValueTable());
   }
 
   public void stop() {
@@ -222,6 +223,34 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
 
   protected boolean isExperimentSelected() {
     return experimentChooserFrame.getExperimentTable().getSelectedRow() >= 0;
+  }
+
+  private class ReportProgressCallback implements ValueTableModel.ReportProgressCallback {
+    public void notify(long runId, long index, long count) {
+      final JProgressBar progressReport =
+          experimentChooserFrame.getProgressReport();
+
+      final BoundedRangeModel reportModel =
+          progressReport.getModel();
+
+      final Run run;
+      try {
+        run = runnerDao.findRun(runId);
+      } catch (SQLException e) {
+        log.warn("failed to setup report progress", e);
+        reportModel.setMaximum(0);
+        reportModel.setMinimum(0);
+        reportModel.setValue(0);
+        return;
+      }
+
+      reportModel.setMinimum(0);
+      reportModel.setMaximum((int) count);
+      reportModel.setValue((int) index + 1);
+
+      progressReport.setString(run.getExpDesc() + " / " + run.getConfDesc());
+
+    }
   }
 
   class WindowAdapter extends java.awt.event.WindowAdapter {

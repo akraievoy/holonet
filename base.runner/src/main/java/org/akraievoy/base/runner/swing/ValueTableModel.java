@@ -22,80 +22,51 @@ import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.base.runner.domain.ParamSetEnumerator;
 import org.akraievoy.base.runner.vo.Parameter;
 
+import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Numeric export, reimplemented as a TableModel
  */
-public class ValueTableModel extends AbstractTableModel implements KeyTableModel.Callback{
+public class ValueTableModel extends AbstractTableModel implements KeyTableModel.Callback {
+  public static interface ReportProgressCallback {
+    void notify(long runId, long index, long count);
+  }
+
+  final Object dataMonitor = new Object();
+  //  writes to both of the below are protected by the monitor above
   final SortedMap<Integer, SortedMap<Integer, String>> rowMap =
       new TreeMap<Integer, SortedMap<Integer, String>>();
+  private Runnable lastReport = null;
 
-  public void keySelected(Context viewedContext, List<String> axisNames, String selectedKey) {
-    for (Integer row: rowMap.keySet()) {
-      rowMap.get(row).clear();
+  private final ExecutorService executor;
+  private ReportProgressCallback callback = new ReportProgressCallback() {
+    public void notify(long runId, long index, long count) {
+      //  nothing to do here
+    }
+  };
+
+  public ValueTableModel(ExecutorService executor) {
+    this.executor = executor;
+  }
+
+  public void setCallback(ReportProgressCallback callback) {
+    this.callback = callback;
+  }
+
+  public void keySelected(final Context viewedContext, final List<String> axisNames, final String selectedKey) {
+    final Runnable runnableBuildReport = new RunnableBuildReport(viewedContext, selectedKey, axisNames);
+
+    //  this effectively cancels all other active jobs
+    //    as they all bail as soon as this reference holds
+    //    something other than respective local this
+    synchronized (dataMonitor) {
+      lastReport = runnableBuildReport;
     }
 
-    if (viewedContext == null) {
-      head(0, "Status");
-      cell(0, 0, "Select a run");
-      fireTableStructureChanged();
-      return;
-    }
-
-    if (selectedKey == null) {
-      head(0, "Status");
-      cell(0, 0, "Select a key");
-      fireTableStructureChanged();
-      return;
-    }
-
-    final ParamSetEnumerator runParams = viewedContext.getRunContext().getWideParams();
-    final List<Parameter> axisParams = new ArrayList<Parameter>();
-    for (String name : axisNames) {
-      final Parameter parameter = runParams.getParameter(name).copy();
-      parameter.setStrategyCurrent(Parameter.Strategy.ITERATE);
-      axisParams.add(parameter);
-    }
-    final Parameter hParam = axisParams.isEmpty() ? null : axisParams.get(axisParams.size() - 1);
-
-    for (int i = 0, len = axisParams.size(); i < len - 1; i++) {
-      head(i, axisParams.get(i).getName());
-    }
-
-    int row;
-    if (hParam != null) {
-      for (int c = 0; c < hParam.getValueCount(); c++) {
-        head(axisParams.size() + c - 1, hParam.getName());
-        cell(0, axisParams.size() + c - 1, hParam.getValue(c));
-      }
-      row = 0;
-    } else {
-      head(axisParams.size(), selectedKey);
-      row = -1;
-    }
-
-    final ParamSetEnumerator reportPse = new ParamSetEnumerator();
-    reportPse.load(axisParams, -1);
-    do {
-      long hPos = 0;
-      if (hParam == null || (hPos = reportPse.getPos(hParam.getName())) == 0) {
-        row++;
-        for (int i = 0, len = axisParams.size(); i < len - 1; i++) {
-          final Parameter param = axisParams.get(i);
-          cell(row, i, param.getValue(reportPse.getPos(param.getName())));
-        }
-      }
-
-      cell(
-          row,
-          (int) (axisParams.isEmpty() ? 0 : (axisParams.size() - 1) + hPos),
-          String.valueOf(viewedContext.get(selectedKey, null, reportPse.asOffsets(runParams)))
-      );
-    } while (reportPse.increment(true, true));
-
-    fireTableStructureChanged();
+    executor.submit(runnableBuildReport);
   }
 
   protected void head(int colIndex, String value) {
@@ -149,5 +120,142 @@ public class ValueTableModel extends AbstractTableModel implements KeyTableModel
     }
 
     return row.get(columnIndex);
+  }
+
+  private class RunnableBuildReport implements Runnable {
+    private final Context viewedContext;
+    private final String selectedKey;
+    private final List<String> axisNames;
+
+    public RunnableBuildReport(Context viewedContext, String selectedKey, List<String> axisNames) {
+      this.viewedContext = viewedContext;
+      this.selectedKey = selectedKey;
+      this.axisNames = axisNames;
+    }
+
+    public void run() {
+      //  clear the data map, leaving the allocated rows intact
+      synchronized (dataMonitor) {
+        if (this != lastReport) {
+          return;
+        }
+
+        for (Integer row : rowMap.keySet()) {
+          rowMap.get(row).clear();
+        }
+      }
+
+      //  handle not-yet-all-defined cases separately
+      synchronized (dataMonitor) {
+        if (this != lastReport) {
+          return;
+        }
+
+        if (viewedContext == null) {
+          head(0, "Status");
+          cell(0, 0, "Select a run on History tab");
+          SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+              fireTableStructureChanged();
+            }
+          });
+          return;
+        }
+
+        if (axisNames == null || axisNames.isEmpty()) {
+          head(0, "Status");
+          cell(0, 0, "Select an axis");
+          SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+              fireTableStructureChanged();
+            }
+          });
+          return;
+        }
+
+        if (selectedKey == null) {
+          head(0, "Status");
+          cell(0, 0, "Select a key");
+          SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+              fireTableStructureChanged();
+            }
+          });
+          return;
+        }
+      }
+
+      //  set up report-specific pse instance
+      final ParamSetEnumerator runParams = viewedContext.getRunContext().getWideParams();
+      final List<Parameter> axisParams = new ArrayList<Parameter>();
+      for (String name : axisNames) {
+        final Parameter parameter = runParams.getParameter(name).copy();
+        parameter.setChained(false);
+        parameter.setStrategyCurrent(Parameter.Strategy.ITERATE);
+        axisParams.add(parameter);
+      }
+
+      final Parameter hParam = axisParams.get(axisParams.size() - 1);
+
+      //  generate the header areas
+      synchronized (dataMonitor) {
+        if (this != lastReport) {
+          return;
+        }
+
+        for (int i = 0, len = axisParams.size(); i < len - 1; i++) {
+          head(i, axisParams.get(i).getName());
+        }
+
+        for (int c = 0; c < hParam.getValueCount(); c++) {
+          head(axisParams.size() + c - 1, hParam.getName());
+          cell(0, axisParams.size() + c - 1, hParam.getValue(c));
+        }
+      }
+
+      final ParamSetEnumerator reportPse = new ParamSetEnumerator();
+      reportPse.load(axisParams, -1);
+      int row = 0;
+      do {
+        long hPos;
+        if ((hPos = reportPse.getPos(hParam.getName())) == 0) {
+          row++;
+          for (int i = 0, len = axisParams.size(); i < len - 1; i++) {
+            final Parameter param = axisParams.get(i);
+            synchronized (dataMonitor) {
+              if (this != lastReport) {
+                return;
+              }
+              cell(row, i, param.getValue(reportPse.getPos(param.getName())));
+            }
+          }
+        }
+
+        synchronized (dataMonitor) {
+          if (this != lastReport) {
+            return;
+          }
+          cell(
+              row,
+              (int) (axisParams.isEmpty() ? 0 : (axisParams.size() - 1) + hPos),
+              String.valueOf(viewedContext.get(selectedKey, null, reportPse.asOffsets(runParams)))
+          );
+        }
+
+        final long index = reportPse.getIndex(false);
+        final long count = reportPse.getCount();
+        SwingUtilities.invokeLater(new Runnable() {
+          public void run() {
+            callback.notify(viewedContext.getRunContext().getRunId(), index, count);
+          }
+        });
+      } while (reportPse.increment(true, true));
+
+      SwingUtilities.invokeLater(new Runnable() {
+        public void run() {
+          fireTableStructureChanged();
+        }
+      });
+    }
   }
 }

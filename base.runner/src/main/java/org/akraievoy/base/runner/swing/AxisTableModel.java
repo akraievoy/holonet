@@ -18,7 +18,6 @@
 
 package org.akraievoy.base.runner.swing;
 
-import org.akraievoy.base.eventBroadcast.EventBroadcast;
 import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.base.runner.domain.ParamSetEnumerator;
 import org.akraievoy.base.runner.vo.Parameter;
@@ -45,18 +44,21 @@ public class AxisTableModel extends AbstractTableModel {
   private List<Parameter> axisRows = new ArrayList<Parameter>();
   private List<String> used = new ArrayList<String>();
 
-  private final EventBroadcast<Callback> broadcast = new EventBroadcast<Callback>();
-  private final Callback callback = broadcast.getBroadcast(Callback.class);
+  private Callback callback = new Callback() {
+    public void contextSwitched(Context viewedContext, List<String> axisNames) {
+      //  nothing to do
+    }
+
+    public void axisSelectionChanged(Context viewedContext, List<String> axisNames) {
+      //  nothing to do
+    }
+  };
 
   public AxisTableModel() {
   }
 
-  public void addCallback(Callback impl) {
-    broadcast.add(impl);
-  }
-
-  public void removeCallback(Callback impl) {
-    broadcast.remove(impl);
+  public void setCallback(Callback impl) {
+    callback = impl;
   }
 
   public void setViewedContext(Context viewedContext) {

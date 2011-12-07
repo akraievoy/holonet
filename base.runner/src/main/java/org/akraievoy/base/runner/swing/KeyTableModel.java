@@ -19,7 +19,6 @@
 package org.akraievoy.base.runner.swing;
 
 import com.google.common.base.Objects;
-import org.akraievoy.base.eventBroadcast.EventBroadcast;
 import org.akraievoy.base.runner.api.Context;
 
 import javax.swing.table.AbstractTableModel;
@@ -42,8 +41,11 @@ public class KeyTableModel extends AbstractTableModel implements AxisTableModel.
   private KeyRow[] keyRows = new KeyRow[0];
   private String selectedKey = null;
 
-  private final EventBroadcast<Callback> broadcast = new EventBroadcast<Callback>();
-  private final Callback callback = broadcast.getBroadcast(Callback.class);
+  private Callback callback = new Callback() {
+    public void keySelected(Context viewedContext, List<String> axisNames, String selectedKey) {
+      //  nothing to do
+    }
+  };
 
   public KeyTableModel() {
   }
@@ -52,12 +54,8 @@ public class KeyTableModel extends AbstractTableModel implements AxisTableModel.
     this.parent = parent;
   }
 
-  public void addCallback(Callback impl) {
-    broadcast.add(impl);
-  }
-
-  public void removeCallback(Callback impl) {
-    broadcast.remove(impl);
+  public void setCallback(Callback impl) {
+    callback = impl;
   }
 
   public void axisSelectionChanged(Context viewedContext, List<String> axisNames) {
