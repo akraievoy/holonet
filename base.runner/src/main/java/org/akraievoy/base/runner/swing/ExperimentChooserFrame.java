@@ -98,4 +98,16 @@ public class ExperimentChooserFrame extends JFrame {
   public JTable getValueTable() {
     return rootPanel.getValueTable();
   }
+
+  public JProgressBar getProgressRun() {
+    return rootPanel.getProgressRun();
+  }
+
+  public JProgressBar getProgressReport() {
+    return rootPanel.getProgressReport();
+  }
+
+  public JTabbedPane getTabbedPane() {
+    return rootPanel.getTabbedPane();
+  }
 }

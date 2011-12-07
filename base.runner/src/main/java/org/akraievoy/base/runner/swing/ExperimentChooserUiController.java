@@ -363,12 +363,42 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
       final int runRow = runTableModel.findRunRow(runId);
       if (runRow >= 0) {
         runTableModel.fireTableRowsUpdated(runRow, runRow);
+
+        final BoundedRangeModel execModel =
+            experimentChooserFrame.getProgressRun().getModel();
+
+        if (execModel.getMaximum() > 0 && execModel.getValue() < index) {
+          execModel.setValue((int) index);
+        }
       }
     }
 
     public void onRunCreation(long runId) {
       final int rowCount = runTableModel.getRowCount();
       runTableModel.fireTableRowsInserted(rowCount, rowCount);
+
+      final JProgressBar progressExec =
+          experimentChooserFrame.getProgressRun();
+
+      final BoundedRangeModel execModel =
+          progressExec.getModel();
+
+      final Run run;
+      try {
+        run = runnerDao.findRun(runId);
+      } catch (SQLException e) {
+        log.warn("failed to setup execution progress", e);
+        execModel.setMaximum(0);
+        execModel.setMinimum(0);
+        execModel.setValue(0);
+        return;
+      }
+
+      execModel.setMinimum(0);
+      execModel.setMaximum((int) run.getPsetCount());
+      execModel.setValue(0);
+
+      progressExec.setString(run.getExpDesc() + " / " + run.getConfDesc());
     }
   }
 
