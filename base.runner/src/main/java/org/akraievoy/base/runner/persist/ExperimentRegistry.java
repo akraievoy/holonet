@@ -32,11 +32,14 @@ public interface ExperimentRegistry {
 
   List<IdName> listConfs(long expUid) throws SQLException;
 
-  Conf findConfByName(long expUid, long confUid) throws SQLException;
+  Conf findConfByUid(long expUid, long confUid) throws SQLException;
+
+  Conf findConfByPath(long expUid, String confPath) throws SQLException;
 
   long insertConf(long expUid, String confName,
                   String confDesc) throws SQLException;
 
+  //  TODO remove this method in favor of findConfByUid
   Conf findConfById(long id) throws SQLException;
 
   List<Parameter> listParametersForConf(long confUid) throws SQLException;

@@ -67,6 +67,7 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
       return newThread;
     }
   };
+
   private final int processors = Runtime.getRuntime().availableProcessors();
   private final LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(processors);
   private final AtomicInteger pendingJobs = new AtomicInteger(0);
@@ -87,24 +88,28 @@ public class ExperimentRunnerImpl implements ExperimentRunner, ApplicationContex
     this.expDao = expDao;
   }
 
-  public void run(Experiment info, final long confUid, final List<Long> chainedRunIds) {
+  public Long run(Experiment info, final long confUid, final List<Long> chainedRunIds) {
     RunContextImpl runContext = loadRunContext(null, confUid, chainedRunIds);
     if (!runContext.isValid()) {
-      return;
+      return null;
     }
 
+    final long runId;
     try {
-      runContext.setRunId(dao.insertRun(
+      runId = dao.insertRun(
           confUid,
           runContext.getChainedRunIds(),
           runContext.getWideParams().getCount()
-      ));
+      );
+      runContext.setRunId(runId);
     } catch (SQLException e) {
       throw Throwables.propagate(e);
     }
 
     listener.onRunCreation(runContext.getRunId());
     runIterative(info, runContext);
+
+    return runId;
   }
 
   public RunContextImpl loadRunContext(final Long runUid, long confUid, final List<Long> chainedRunIds) {

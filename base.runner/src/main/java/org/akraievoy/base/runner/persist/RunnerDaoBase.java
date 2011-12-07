@@ -304,11 +304,22 @@ public class RunnerDaoBase implements RunnerDao {
     return result;
   }
 
-  public Conf findConfByName(final long expUid, long confUid) throws SQLException {
+  public Conf findConfByUid(final long expUid, long confUid) throws SQLException {
     final Conf conf = (Conf) getCtx().getQueryRunner().query(
         getCtx().getConn(),
-        q.getQuery("conf.findByUId"),
+        q.getQuery("conf.findByExpAndUid"),
         new Object[]{expUid, confUid},
+        new BeanHandler(ConfBean.class, new ConfRowProcessor())
+    );
+
+    return conf;
+  }
+
+  public Conf findConfByPath(long expUid, String confPath) throws SQLException {
+    final Conf conf = (Conf) getCtx().getQueryRunner().query(
+        getCtx().getConn(),
+        q.getQuery("conf.findByExpAndName"),
+        new Object[]{expUid, confPath},
         new BeanHandler(ConfBean.class, new ConfRowProcessor())
     );
 

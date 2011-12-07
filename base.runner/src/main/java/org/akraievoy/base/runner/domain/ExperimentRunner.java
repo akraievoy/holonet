@@ -29,7 +29,7 @@ import java.util.SortedMap;
 public interface ExperimentRunner {
   Logger log = LoggerFactory.getLogger(ExperimentRunner.class);
 
-  void run(Experiment info, final long confUid, final List<Long> chainedRunIds);
+  Long run(Experiment info, final long confUid, final List<Long> chainedRunIds);
 
   void setListener(RunStateListener listener);
 

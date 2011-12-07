@@ -44,8 +44,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.sql.SQLException;
-import java.util.*;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 public class ExperimentChooserUiController implements Startable, ExperimentTableModel.SelectionCallback {
@@ -303,7 +301,7 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
 
       Conf conf;
       try {
-        conf = runnerDao.findConfByName(exp.getUid(), selectedConfUid);
+        conf = runnerDao.findConfByUid(exp.getUid(), selectedConfUid);
       } catch (SQLException sqlE) {
         log.warn("failed to lookup conf: {}", Throwables.getRootCause(sqlE).toString());
         return;

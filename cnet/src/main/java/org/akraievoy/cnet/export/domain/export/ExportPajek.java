@@ -44,6 +44,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+//  TODO move this and sibling classes two packages upper
 public class ExportPajek implements Runnable, ContextInjectable, SkipTrigger {
   private static final Logger log = LoggerFactory.getLogger(ExportPajek.class);
   protected static final double DEF_VERTEX_RADIUS = 3.0;
