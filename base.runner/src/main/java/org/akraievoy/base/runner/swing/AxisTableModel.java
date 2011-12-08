@@ -36,9 +36,12 @@ public class AxisTableModel extends AbstractTableModel {
   protected static final String COL_SPEC = "Spec";
   protected static final String COL_COUNT = "Count";
   protected static final String COL_STRATEGY = "Strategy";
+  protected static final String COL_STRATEGY_CURR = "Str. Curr.";
+  protected static final String COL_STRATEGY_CHAIN = "Str. Chain.";
   protected static final String COL_USE = "Use";
 
-  protected static final String[] COL = {COL_USE, COL_NAME, COL_SPEC, COL_COUNT, COL_STRATEGY};
+  protected static final String[] COL =
+      {COL_USE, COL_NAME, COL_SPEC, COL_COUNT, COL_STRATEGY, COL_STRATEGY_CURR, COL_STRATEGY_CHAIN};
 
   private Context viewedContext;
   private List<Parameter> axisRows = new ArrayList<Parameter>();
@@ -149,7 +152,9 @@ public class AxisTableModel extends AbstractTableModel {
   }
 
   protected static boolean iterated(Parameter row) {
-    return row.getStrategyCurrent() == Parameter.Strategy.ITERATE && row.getValueCount() > 1;
+    return
+        !Parameter.Strategy.fixed(row.getStrategy()) &&
+        row.getValueCount() > 1;
   }
 
   public Object getValueAt(int rowIndex, int columnIndex) {
@@ -173,7 +178,13 @@ public class AxisTableModel extends AbstractTableModel {
       return row.getValueCount();
     }
     if (COL_STRATEGY.equals(colName)) {
+      return row.getStrategy();
+    }
+    if (COL_STRATEGY_CURR.equals(colName)) {
       return row.getStrategyCurrent();
+    }
+    if (COL_STRATEGY_CHAIN.equals(colName)) {
+      return row.getStrategyChained();
     }
 
     return "";  //	ooops, actually

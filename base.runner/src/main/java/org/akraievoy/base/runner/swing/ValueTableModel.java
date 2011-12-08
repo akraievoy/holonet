@@ -190,12 +190,13 @@ public class ValueTableModel extends AbstractTableModel implements KeyTableModel
       final List<Parameter> axisParams = new ArrayList<Parameter>();
       for (String name : axisNames) {
         final Parameter parameter = runParams.getParameter(name).copy();
-        parameter.setChained(false);
-        parameter.setStrategyCurrent(Parameter.Strategy.ITERATE);
         axisParams.add(parameter);
       }
 
       final Parameter hParam = axisParams.get(axisParams.size() - 1);
+
+      final ParamSetEnumerator reportPse = new ParamSetEnumerator();
+      reportPse.load(axisParams, -1);
 
       //  generate the header areas
       synchronized (dataMonitor) {
@@ -207,18 +208,37 @@ public class ValueTableModel extends AbstractTableModel implements KeyTableModel
           head(i, axisParams.get(i).getName());
         }
 
-        for (int c = 0; c < hParam.getValueCount(); c++) {
-          head(axisParams.size() + c - 1, hParam.getName());
-          cell(0, axisParams.size() + c - 1, hParam.getValue(c));
+        //  the last parameter may be as well fixed,
+        //    so that we have to use only one value of its range
+        if (Parameter.Strategy.fixed(hParam.getStrategy())) {
+          final long hParamPos = reportPse.getPos(hParam.getName());
+          head(axisParams.size() - 1, hParam.getName());
+          cell(0, axisParams.size() - 1, hParam.getValue(hParamPos));
+        } else {
+          for (int c = 0; c < hParam.getValueCount(); c++) {
+            head(axisParams.size() + c - 1, hParam.getName());
+            cell(0, axisParams.size() + c - 1, hParam.getValue(c));
+          }
         }
       }
 
-      final ParamSetEnumerator reportPse = new ParamSetEnumerator();
-      reportPse.load(axisParams, -1);
       int row = 0;
       do {
-        long hPos;
-        if ((hPos = reportPse.getPos(hParam.getName())) == 0) {
+        final long hPos;
+        final boolean newLine;
+
+        if (Parameter.Strategy.fixed(hParam.getStrategy())) {
+          //  we fill a row each printout, if hParam is fixed
+          newLine = true;
+          hPos = 0;
+        } else {
+          //  this happens only on start and per-row roll-over
+          //    of the parameter
+          hPos = reportPse.getPos(hParam.getName());
+          newLine = hPos == 0;
+        }
+
+        if (newLine) {
           row++;
           for (int i = 0, len = axisParams.size(); i < len - 1; i++) {
             final Parameter param = axisParams.get(i);
@@ -242,7 +262,7 @@ public class ValueTableModel extends AbstractTableModel implements KeyTableModel
           );
         }
 
-        final long index = reportPse.getIndex(false);
+        final long index = reportPse.getIndex(true);
         final long count = reportPse.getCount();
         SwingUtilities.invokeLater(new Runnable() {
           public void run() {
