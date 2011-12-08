@@ -405,7 +405,7 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
 
     public void onRunCreation(long runId) {
       final int rowCount = runTableModel.getRowCount();
-      runTableModel.fireTableRowsInserted(rowCount, rowCount);
+      runTableModel.fireTableRowsInserted(0, 0);
 
       final JProgressBar progressExec =
           experimentChooserFrame.getProgressRun();
