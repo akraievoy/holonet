@@ -32,7 +32,7 @@ import java.util.concurrent.ExecutorService;
  */
 public class ValueTableModel extends AbstractTableModel implements KeyTableModel.Callback {
   public static interface ReportProgressCallback {
-    void notify(long runId, long index, long count);
+    void notify(long runId, long index, long count, final String message);
   }
 
   final Object dataMonitor = new Object();
@@ -43,7 +43,7 @@ public class ValueTableModel extends AbstractTableModel implements KeyTableModel
 
   private final ExecutorService executor;
   private ReportProgressCallback callback = new ReportProgressCallback() {
-    public void notify(long runId, long index, long count) {
+    public void notify(long runId, long index, long count, final String message) {
       //  nothing to do here
     }
   };
@@ -156,6 +156,7 @@ public class ValueTableModel extends AbstractTableModel implements KeyTableModel
           cell(0, 0, "Select a run on History tab");
           SwingUtilities.invokeLater(new Runnable() {
             public void run() {
+              callback.notify(-1, -1, 0, "-- no run selected --");
               fireTableStructureChanged();
             }
           });
@@ -167,6 +168,7 @@ public class ValueTableModel extends AbstractTableModel implements KeyTableModel
           cell(0, 0, "Select an axis");
           SwingUtilities.invokeLater(new Runnable() {
             public void run() {
+              callback.notify(-1, -1, 0, "-- axis selection incomplete --");
               fireTableStructureChanged();
             }
           });
@@ -178,6 +180,7 @@ public class ValueTableModel extends AbstractTableModel implements KeyTableModel
           cell(0, 0, "Select a key");
           SwingUtilities.invokeLater(new Runnable() {
             public void run() {
+              callback.notify(-1, -1, 0, "-- key not selected --");
               fireTableStructureChanged();
             }
           });
@@ -266,7 +269,7 @@ public class ValueTableModel extends AbstractTableModel implements KeyTableModel
         final long count = reportPse.getCount();
         SwingUtilities.invokeLater(new Runnable() {
           public void run() {
-            callback.notify(viewedContext.getRunContext().getRunId(), index, count);
+            callback.notify(viewedContext.getRunContext().getRunId(), index, count, null);
           }
         });
       } while (reportPse.increment(true, true));

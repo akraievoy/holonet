@@ -18,6 +18,7 @@
 
 package org.akraievoy.base.runner.swing;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
 import org.akraievoy.base.Format;
 import org.akraievoy.base.runner.persist.RunRegistry;
@@ -25,30 +26,77 @@ import org.akraievoy.base.runner.vo.Run;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.swing.table.AbstractTableModel;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 public class RunTableModel extends AbstractTableModel {
   private static final Logger log = LoggerFactory.getLogger(RunTableModel.class);
 
   protected final RunRegistry registry;
 
+  public static interface SelectionCallback {
+    void runSelected(@Nullable Run run);
+  }
+  public static interface ChainSelectionCallback {
+    void chainSelectionChanged(@Nonnull List<Run> run);
+  }
+
+  protected static final String COL_SELECT = "*";
+  protected static final String COL_SELECT_CHAIN = "Chain";
   protected static final String COL_ID = "ID";
   protected static final String COL_STAMP = "Stamp";
   protected static final String COL_PSET_COUNT = "Param Sets";
   protected static final String COL_PSET_COMPLETE = "Complete Sets";
   protected static final String COL_COMPLETE = " + ";
-  protected static final String COL_CHAIN = "Chain";
+  protected static final String COL_CHAIN = "Chained";
   protected static final String COL_EXP_ID = "Exp.ID";
   protected static final String COL_EXP_NAME = "Experiment";
   protected static final String COL_CONF_ID = "Conf.ID";
   protected static final String COL_CONF_NAME = "Conf";
 
-  protected static final String[] COL = {COL_ID, COL_STAMP, COL_EXP_ID, COL_EXP_NAME, COL_CONF_ID, COL_CONF_NAME, COL_PSET_COUNT, COL_PSET_COMPLETE, COL_COMPLETE, COL_CHAIN};
+  protected static final String[] COL =
+      {
+          COL_SELECT, COL_SELECT_CHAIN,
+          COL_ID, COL_STAMP,
+          COL_EXP_ID, COL_EXP_NAME,
+          COL_CONF_ID, COL_CONF_NAME,
+          COL_PSET_COUNT, COL_PSET_COMPLETE, COL_COMPLETE,
+          COL_CHAIN
+      };
+  protected static final List<String> COL_BOOL =
+      Arrays.asList(COL_SELECT, COL_SELECT_CHAIN, COL_COMPLETE);
+
+  protected final List<Run> chainSelection =
+      new ArrayList<Run>();
+  protected Run selectedRun = null;
+
+  protected SelectionCallback selectionCallback = new SelectionCallback() {
+    public void runSelected(@Nullable Run run) {
+      //  nothing to do here
+    }
+  };
+  protected ChainSelectionCallback chainSelectionCallback = new ChainSelectionCallback() {
+    public void chainSelectionChanged(@Nonnull List<Run> run) {
+      //  nothing to do here
+    }
+  };
 
   public RunTableModel(RunRegistry registry) {
     this.registry = registry;
+  }
+
+  public void setChainSelectionCallback(ChainSelectionCallback chainSelectionCallback) {
+    this.chainSelectionCallback = chainSelectionCallback;
+  }
+
+  public void setSelectionCallback(SelectionCallback selectionCallback) {
+    this.selectionCallback = selectionCallback;
   }
 
   public int getRowCount() {
@@ -77,7 +125,7 @@ public class RunTableModel extends AbstractTableModel {
   }
 
   public Class<?> getColumnClass(int columnIndex) {
-    return COL_COMPLETE.equals(getColumnName(columnIndex)) ? Boolean.class : String.class;
+    return COL_BOOL.contains(getColumnName(columnIndex)) ? Boolean.class : String.class;
   }
 
   public Object getValueAt(int rowIndex, int columnIndex) {
@@ -88,6 +136,12 @@ public class RunTableModel extends AbstractTableModel {
     }
 
     final String colName = getColumnName(columnIndex);
+    if (COL_SELECT.equals(colName)) {
+      return run.equals(selectedRun);
+    }
+    if (COL_SELECT_CHAIN.equals(colName)) {
+      return chainSelection.contains(run);
+    }
     if (COL_CHAIN.equals(colName)) {
       return Format.format(run.getChain(), " ");
     }
@@ -120,6 +174,47 @@ public class RunTableModel extends AbstractTableModel {
     }
 
     return "";  //	ooops, actually
+  }
+
+  @Override
+  public boolean isCellEditable(int rowIndex, int columnIndex) {
+    final String colName = getColumnName(columnIndex);
+    return COL_SELECT.equals(colName) || COL_SELECT_CHAIN.equals(colName);
+  }
+
+  @Override
+  public void setValueAt(Object aValue, int row, int col) {
+    final String colName = getColumnName(col);
+
+    if (COL_SELECT.equals(colName)) {
+      final Run newSelectedRun =
+          Boolean.TRUE.equals(aValue) ? getRun(row) : null;
+      final boolean fireCallback = !Objects.equal(selectedRun, newSelectedRun);
+
+      final int prevRow = selectedRun == null ? -1 : findRunRow(selectedRun.getUid());
+      selectedRun = newSelectedRun;
+      if (fireCallback) {
+        selectionCallback.runSelected(selectedRun);
+        if (prevRow >= 0) {
+          //  NOTE: if you ever fire that event for the -1th row you'll loose TableColumnModel
+          fireTableCellUpdated(prevRow, col);
+        }
+        fireTableCellUpdated(row, col);
+      }
+    }
+
+    if (COL_SELECT_CHAIN.equals(colName)) {
+      final Run toggledRun = getRun(row);
+      final boolean added = Boolean.TRUE.equals(aValue);
+
+      if (added) {
+        chainSelection.add(toggledRun);
+      } else {
+        chainSelection.remove(toggledRun);
+      }
+      chainSelectionCallback.chainSelectionChanged(chainSelection);
+      fireTableCellUpdated(row, col);
+    }
   }
 
   public Run getRun(int rowIndex) {

@@ -63,10 +63,6 @@ public class ExperimentChooserFrame extends JFrame {
     return rootPanel.getConfCombo();
   }
 
-  public JButton getChainButton() {
-    return rootPanel.getChainButton();
-  }
-
   public JTextField getChainTextField() {
     return rootPanel.getChainTextField();
   }
@@ -109,5 +105,9 @@ public class ExperimentChooserFrame extends JFrame {
 
   public JTabbedPane getTabbedPane() {
     return rootPanel.getTabbedPane();
+  }
+
+  public JLabel getRunNameLabel() {
+    return rootPanel.getRunNameLabel();
   }
 }

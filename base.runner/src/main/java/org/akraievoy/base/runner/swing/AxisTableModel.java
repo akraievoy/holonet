@@ -22,13 +22,14 @@ import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.base.runner.domain.ParamSetEnumerator;
 import org.akraievoy.base.runner.vo.Parameter;
 
+import javax.annotation.Nullable;
 import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AxisTableModel extends AbstractTableModel {
   public static interface Callback {
-    void contextSwitched(final Context viewedContext, final List<String> axisNames);
+    void contextSwitched(@Nullable final Context viewedContext, final List<String> axisNames);
     void axisSelectionChanged(final Context viewedContext, final List<String> axisNames);
   }
 
@@ -48,7 +49,7 @@ public class AxisTableModel extends AbstractTableModel {
   private List<String> used = new ArrayList<String>();
 
   private Callback callback = new Callback() {
-    public void contextSwitched(Context viewedContext, List<String> axisNames) {
+    public void contextSwitched(@Nullable Context viewedContext, List<String> axisNames) {
       //  nothing to do
     }
 
@@ -64,7 +65,7 @@ public class AxisTableModel extends AbstractTableModel {
     callback = impl;
   }
 
-  public void setViewedContext(Context viewedContext) {
+  public void setViewedContext(@Nullable Context viewedContext) {
     this.viewedContext = viewedContext;
     this.axisRows.clear();
     this.used.clear();

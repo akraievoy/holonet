@@ -33,6 +33,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.swing.*;
 import javax.swing.event.*;
@@ -44,6 +45,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 public class ExperimentChooserUiController implements Startable, ExperimentTableModel.SelectionCallback {
@@ -63,7 +66,6 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
 
   protected final DefaultComboBoxModel emptyModel = new DefaultComboBoxModel(new Object[0]);
   protected final LaunchAction launchAction = new LaunchAction();
-  protected final ChainAction chainAction = new ChainAction();
 
   protected boolean experimentRunning = false;
 
@@ -96,14 +98,17 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
     keyTableModel.setCallback(valueTableModel);
     valueTableModel.setCallback(new ReportProgressCallback());
 
+    final RunSelectionCallback runSelectionCallback = new RunSelectionCallback();
+    runTableModel.setSelectionCallback(runSelectionCallback);
+    final ChainSelectionCallback chainSelectionCallback = new ChainSelectionCallback();
+    runTableModel.setChainSelectionCallback(chainSelectionCallback);
+
     experimentChooserFrame.addWindowListener(new WindowAdapter());
     experimentChooserFrame.getLaunchButton().setAction(launchAction);
-    experimentChooserFrame.getChainButton().setAction(chainAction);
 
     experimentChooserFrame.getExperimentTable().setModel(experimentTableModel);
 
     experimentChooserFrame.getRunsTable().setModel(runTableModel);
-    experimentChooserFrame.getRunsTable().getSelectionModel().addListSelectionListener(new RunSelectionListener());
 
     experimentChooserFrame.getConfCombo().setModel(emptyModel);
 
@@ -113,7 +118,8 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
 
     setupColumns();
 
-    onRunSelectionChange(-1);
+    runSelectionCallback.runSelected(null);
+    chainSelectionCallback.chainSelectionChanged(Collections.<Run>emptyList());
     experimentSelected(null);
     axisTableModel.setViewedContext(null);
     experimentChooserFrame.onStart();
@@ -149,39 +155,62 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
     experimentChooserFrame.dispose();
   }
 
-  protected void onRunSelectionChange(final int runRow) {
-    chainAction.setEnabled(runRow >= 0);
+  protected class RunSelectionCallback implements RunTableModel.SelectionCallback {
+    public void runSelected(@Nullable final Run run) {
+      experimentChooserFrame.getRunNameLabel().setText(
+          renderRun(run, "-- no run selected --")
+      );
+      executor.execute(new Runnable() {
+        public void run() {
+          if (run != null) {
+            try {
+              final Conf conf = runnerDao.findConfById(run.getConfUid());
+              final ExperimentRunner.RunContext runContext = experimentRunner.loadRunContext(
+                  run.getUid(), conf.getUid(), run.getChain()
+              );
+              final Context viewedContext = new Context(runContext, runnerDao);
 
-    executor.execute(new Runnable() {
-      public void run() {
-        if (runRow >= 0) {
-
-          try {
-            final Run run = runTableModel.getRun(runRow);
-            final Conf conf = runnerDao.findConfById(run.getConfUid());
-            final ExperimentRunner.RunContext runContext = experimentRunner.loadRunContext(
-                run.getUid(), conf.getUid(), run.getChain()
-            );
-            final Context viewedContext = new Context(runContext, runnerDao);
-
+              SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                  axisTableModel.setViewedContext(viewedContext);
+                }
+              });
+            } catch (SQLException e) {
+              log.warn("failed to fetch run data: ", String.valueOf(e));
+              log.debug("exception details", e);
+            }
+          } else {
             SwingUtilities.invokeLater(new Runnable() {
               public void run() {
-                axisTableModel.setViewedContext(viewedContext);
+                axisTableModel.setViewedContext(null);
               }
             });
-          } catch (SQLException e) {
-            log.warn("failed to fetch experiment data: ", String.valueOf(e));
-            log.debug("exception details", e);
           }
-        } else {
-          SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-              axisTableModel.setViewedContext(null);
-            }
-          });
         }
+      });
+    }
+  }
+
+  protected static String renderRun(Run run, final String nothing) {
+    if (run == null) {
+      return nothing;
+    }
+    return run.getExpDesc() + " / " + run.getConfDesc() + " (" + run.getUid() + ")";
+  }
+
+  protected class ChainSelectionCallback implements RunTableModel.ChainSelectionCallback {
+    public void chainSelectionChanged(@Nonnull List<Run> runs) {
+      final StringBuilder builder = new StringBuilder();
+
+      for (Run run : runs) {
+        if (builder.length() > 0) {
+          builder.append(" ");
+        }
+        builder.append(run.getUid());
       }
-    });
+
+      experimentChooserFrame.getChainTextField().setText(builder.toString());
+    }
   }
 
   protected void onExperimentRunningChange(boolean newExperimentRunning) {
@@ -216,7 +245,7 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
       experimentChooserFrame.getConfCombo().setEnabled(enabled && confComboModel.getSize() > 0);
     } else {
       launchAction.setEnabled(false);
-      experimentChooserFrame.getExpNameLabel().setText("< none selected yet >");
+      experimentChooserFrame.getExpNameLabel().setText("-- no experiment selected --");
       experimentChooserFrame.getConfCombo().setEnabled(false);
     }
   }
@@ -226,7 +255,7 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
   }
 
   private class ReportProgressCallback implements ValueTableModel.ReportProgressCallback {
-    public void notify(long runId, long index, long count) {
+    public void notify(long runId, long index, long count, final String message) {
       final JProgressBar progressReport =
           experimentChooserFrame.getProgressReport();
 
@@ -248,8 +277,12 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
       reportModel.setMaximum((int) count);
       reportModel.setValue((int) index + 1);
 
-      progressReport.setString(run.getExpDesc() + " / " + run.getConfDesc());
-
+      progressReport.setString(
+          renderRun(
+            run,
+            message == null ? "-- no report configured --" : message
+          )
+      );
     }
   }
 
@@ -280,27 +313,6 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
       if (!experimentRunning) {
         executor.execute(importRunnable);
       }
-    }
-  }
-
-  class ChainAction extends AbstractAction {
-    ChainAction() {
-      super("Chain");
-    }
-
-    public void actionPerformed(ActionEvent e) {
-      final int selectedRow = experimentChooserFrame.getRunsTable().getSelectedRow();
-
-      final Run run = runTableModel.getRun(selectedRow);
-
-      if (run == null) {
-        return;
-      }
-
-      final JTextField chainTF = experimentChooserFrame.getChainTextField();
-      final String oriChainText = chainTF.getText();
-      final String newText = oriChainText.trim() + " " + run.getUid();
-      chainTF.setText(newText.trim());
     }
   }
 
@@ -347,17 +359,6 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
 
       experimentChooserFrame.getChainTextField().setText(safeChainStr);
       return safeChainStr;
-    }
-  }
-
-  class RunSelectionListener implements ListSelectionListener {
-    public void valueChanged(ListSelectionEvent e) {
-      if (e.getValueIsAdjusting()) {
-        return;
-      }
-
-      final int selectedRow = experimentChooserFrame.getRunsTable().getSelectedRow();
-      onRunSelectionChange(selectedRow);
     }
   }
 
@@ -427,7 +428,7 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
       execModel.setMaximum((int) run.getPsetCount());
       execModel.setValue(0);
 
-      progressExec.setString(run.getExpDesc() + " / " + run.getConfDesc());
+      progressExec.setString(renderRun(run, "-- no experiments is running --"));
     }
   }
 

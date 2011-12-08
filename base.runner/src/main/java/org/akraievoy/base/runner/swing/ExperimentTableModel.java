@@ -59,7 +59,9 @@ public class ExperimentTableModel extends AbstractTableModel {
   protected static final String COL_PATH = "Path";
   protected static final String COL_KEY = "Key";
 
-  protected static final String[] COL = {COL_SELECTED, COL_ID, COL_STAMP, COL_NAME, COL_KEY, COL_PATH};
+  protected static final String[] COL = {
+      COL_SELECTED, COL_ID, COL_STAMP, COL_NAME, COL_KEY, COL_PATH
+  };
 
   public ExperimentTableModel(ExperimentRegistry registry) {
     this.registry = registry;

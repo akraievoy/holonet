@@ -104,6 +104,20 @@ public class RunBean implements Run {
     return "[" + uid + ":" + expUid + "@" + confUid + "] ('" + expDesc + "'@'" + confDesc + "')";
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    RunBean runBean = (RunBean) o;
+    return uid == runBean.uid;
+  }
+
+  @Override
+  public int hashCode() {
+    return (int) (uid ^ (uid >>> 32));
+  }
+
   public static List<Long> parseChainSpec(String safeChainStr) {
     final List<Long> runIds =
         new ArrayList<Long>(Arrays.asList(Parse.longs(safeChainStr.split(" "), null)));

@@ -21,6 +21,7 @@ package org.akraievoy.base.runner.swing;
 import com.google.common.base.Objects;
 import org.akraievoy.base.runner.api.Context;
 
+import javax.annotation.Nullable;
 import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +63,7 @@ public class KeyTableModel extends AbstractTableModel implements AxisTableModel.
     callback.keySelected(viewedContext, axisNames, selectedKey);
   }
 
-  public void contextSwitched(Context viewedContext, List<String> axisNames) {
+  public void contextSwitched(@Nullable Context viewedContext, List<String> axisNames) {
     keyRows = new KeyRow[0];
 
     if (viewedContext == null) {
