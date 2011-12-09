@@ -110,4 +110,16 @@ public class ExperimentChooserFrame extends JFrame {
   public JLabel getRunNameLabel() {
     return rootPanel.getRunNameLabel();
   }
+
+  public JTable getTableBatch() {
+    return rootPanel.getTableBatch();
+  }
+
+  public JProgressBar getProgressBatch() {
+    return rootPanel.getProgressBatch();
+  }
+
+  public JButton getButtonBatch() {
+    return rootPanel.getButtonBatch();
+  }
 }

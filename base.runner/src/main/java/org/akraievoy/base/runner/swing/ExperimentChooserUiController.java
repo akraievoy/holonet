@@ -56,6 +56,7 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
   protected final ContainerStopper stopper;
   protected final ExperimentTableModel experimentTableModel;
   protected final RunTableModel runTableModel;
+  protected final BatchTableModel modelBatch;
   protected final AxisTableModel axisTableModel = new AxisTableModel();
   protected final KeyTableModel keyTableModel = new KeyTableModel();
   protected final ValueTableModel valueTableModel;
@@ -88,6 +89,7 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
     this.runnerDao = runnerDao;
     this.importRunnable = importRunnable;
     this.valueTableModel = new ValueTableModel(executor);
+    this.modelBatch = new BatchTableModel();
   }
 
   public void start() {
@@ -115,6 +117,8 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
     experimentChooserFrame.getAxisTable().setModel(axisTableModel);
     experimentChooserFrame.getKeyTable().setModel(keyTableModel);
     experimentChooserFrame.getValueTable().setModel(valueTableModel);
+
+    experimentChooserFrame.getTableBatch().setModel(modelBatch);
 
     setupColumns();
 
@@ -149,6 +153,7 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
     TableColumnModelShrinker.setup(experimentChooserFrame.getRunsTable());
     TableColumnModelShrinker.setup(experimentChooserFrame.getAxisTable());
     TableColumnModelShrinker.setup(experimentChooserFrame.getKeyTable());
+    TableColumnModelShrinker.setup(experimentChooserFrame.getTableBatch());
   }
 
   public void stop() {
@@ -291,7 +296,7 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
       if (
           !experimentRunning ||
           JOptionPane.showConfirmDialog(
-              experimentChooserFrame, 
+              experimentChooserFrame,
               "Experiment is running, really close?",
               "Confirm Exit",
               JOptionPane.OK_CANCEL_OPTION
