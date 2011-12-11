@@ -18,282 +18,451 @@
 
 package org.akraievoy.base.runner.domain;
 
+import org.akraievoy.base.runner.domain.spring.StringXmlApplicationContext;
+//  FIXME this import smells
+import org.akraievoy.base.runner.swing.BatchTableModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.akraievoy.base.runner.persist.RunnerDao;
 import org.akraievoy.base.runner.vo.Conf;
 import org.akraievoy.base.runner.vo.Experiment;
 import org.akraievoy.base.soft.Soft;
 import org.akraievoy.db.CouchDb;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ConfigurableApplicationContext;
+
+import javax.annotation.Nullable;
+import javax.swing.*;
 
 /**
  * Run several experiments, some of them being chained with previous ones,
  * and also issue assertions over results we see in the database after some of
  * experiments.
  */
-public class BatchRunner implements ApplicationContextAware {
-  public static interface ValueProcessor {
+public interface BatchRunner {
+  static interface ValueProcessor {
     void processValue(Object attr, String attrSpec);
   }
 
-  public static final Logger log = LoggerFactory.getLogger(BatchRunner.class);
+  interface Callback {
+    void batchAdvanced(
+        final BatchTableModel.BatchDef def,
+        final int pos,
+        final int count,
+        boolean success
+    );
 
-  //  those are set at bean initialization
-  protected ApplicationContext applicationContext;
-  protected CouchDb couch;
-  protected RunnerDao runnerDao;
-  protected ExperimentRunner experimentRunner;
+    void batchChanged(
+        @Nullable BatchTableModel.BatchDef def,
+        @Nullable Batch batch,
+        boolean success);
 
-  //  those are set during the batch run itself
-  protected final Map<String, Long> prevRuns = new TreeMap<String, Long>();
+    Callback NOOP = new Callback() {
+      public void batchAdvanced(
+          BatchTableModel.BatchDef def,
+          int pos,
+          int count,
+          boolean success
+      ) {
+        //  nothing to do here
+      }
 
-
-  public BatchRunner() {
-    //  nothing to do here
+      public void batchChanged(
+          @Nullable BatchTableModel.BatchDef def,
+          @Nullable Batch batch,
+          boolean success) {
+        //  nothing to do here
+      }
+    };
   }
+  
+  static class Batch {
+    private final List<BatchComponent> components =
+        new ArrayList<BatchComponent>();
+    private final Map<String, Long> prevRuns = new TreeMap<String, Long>();
+    private Callback callback = Callback.NOOP;
 
-  public void setApplicationContext(
-      ApplicationContext applicationContext
-  ) throws BeansException {
-    //  this context should have at least those
-    //    beans which are defined in the file
-    //      runner-main.xml
-    this.applicationContext = applicationContext;
+    public Batch(final List<BatchComponent> myComponents) {
+      this.components.addAll(myComponents);
+    }
 
-    //  so we may go a step further and resolve any beans we would need
-    //    for the tasks of this batch runner we implement here
+    public void setCallback(Callback callback) {
+      this.callback = callback;
+    }
 
-    //  persistence
-    couch = (CouchDb) applicationContext.getBean(
-        "couchDb",
-        CouchDb.class
-    );
-    runnerDao = (RunnerDao) applicationContext.getBean(
-        "runnerDao"
-    );
+    public void registerRun(Long runId, String path) {
+      prevRuns.put(path, runId);
+    }
 
-    //  the runner bean
-    experimentRunner = (ExperimentRunner) applicationContext.getBean(
-        "experimentRunner"
-    );
-  }
-
-  public Runnable experiment(
-      final String path,
-      final String confPath,
-      final String[] chainedPaths
-  ) {
-    return new Runnable() {
-      public void run() {
-        final Experiment expByPath;
-        final long expUid;
-        try {
-          expByPath = runnerDao.findExperimentByPath(path);
-          if (expByPath == null) {
-            throw new IllegalStateException(
-                "experiment not found: " +
-                    "'"+path +"' " +
-                    "(path)"
-            );
-          }
-          expUid = expByPath.getUid();
-        } catch (SQLException e) {
-          throw new RuntimeException(
-              "find experiment failed: " +
-                  "'" + path + "' " +
-                  "(path)", e
-          );
-        }
-
-        final Conf confByPath;
-        try {
-          confByPath = runnerDao.findConfByPath(expUid, confPath);
-        } catch (SQLException e) {
-          throw new RuntimeException(
-              "find config failed: " +
-                  "'" + path + "'/'" + confPath + "' " +
-                  "(path/confPath)",
-              e
-          );
-        }
-
-        if (confByPath == null) {
-          throw new IllegalStateException(
-              "conf not found: " +
-                  "'"+ path +"'/'" + confPath + "' " +
-                  "(path/confPath)"
-          );
-        }
-
-
-        final ArrayList<Long> chainedRunIds = new ArrayList<Long>();
-
-        for (String chainedPath : chainedPaths) {
-          final Long prevRunId = prevRuns.get(chainedPath);
-          if (prevRunId == null) {
-            throw new IllegalStateException(
-                "no prev. run: " +
-                    "'" + chainedPath + "'->'" + path + "' " +
-                    "(chained->path)"
-            );
-          }
-          chainedRunIds.add(prevRunId);
-        }
-
-        final Long runId = experimentRunner.run(
-            expByPath,
-            confByPath.getUid(),
-            chainedRunIds
+    public Long resolve(String expPath) {
+      final Long runId = prevRuns.get(expPath);
+      if (runId == null) {
+        throw new IllegalStateException(
+            "experiment not run before assert: '" + expPath + "'"
         );
+      }
+      return runId;
+    }
 
-        if (runId == null) {
+    public ArrayList<Long> resolvePaths(String[] chainedPaths, String path) {
+      final ArrayList<Long> chainedRunIds = new ArrayList<Long>();
+      for (String chainedPath : chainedPaths) {
+        final Long prevRunId = getPrevRuns().get(chainedPath);
+        if (prevRunId == null) {
           throw new IllegalStateException(
-              "runner bean refused to run: " +
-                  "'"+ path +"'/'" + confPath + "' " +
-                  "(path/confPath)"
+              "no prev. run: " +
+                  "'" + chainedPath + "'->'" + path + "' " +
+                  "(chained->path)"
           );
         }
-
-        prevRuns.put(path, runId);
+        chainedRunIds.add(prevRunId);
       }
-    };
-  }
+      return chainedRunIds;
+    }
 
-  public Runnable chain(
-      final List<Runnable> runnables
-  ) {
-    return new Runnable() {
-      public void run() {
-        try {
-          for (Runnable runnable : runnables) {
-            runnable.run();
+    public void run(final BatchTableModel.BatchDef def) {
+      try {
+        final int count = components.size();
+        SwingUtilities.invokeLater(new Runnable() {
+          public void run() {
+            callback.batchAdvanced(def, 0, count, true);
           }
-        } finally {
-          prevRuns.clear();
+        });
+        for (int pos = 0; pos < count; pos++) {
+          BatchComponent comp = components.get(pos);
+          boolean success = false;
+          try {
+            comp.run(this);
+            success = true;
+          } finally {
+            //  I have to finalize the values before passing
+            //    them to to callback
+            final int callbackPos = pos + 1;
+            final boolean callbackSuccess = success;
+            SwingUtilities.invokeLater(new Runnable() {
+              public void run() {
+                callback.batchAdvanced(
+                    def, callbackPos, count, callbackSuccess
+                );
+              }
+            });
+          }
         }
+      } finally {
+        prevRuns.clear();
       }
-    };
+    }
+
+    public Map<String, Long> getPrevRuns() {
+      return Collections.unmodifiableMap(prevRuns);
+    }
+
+    public List<BatchComponent> getComponents() {
+      return Collections.unmodifiableList(components);
+    }
   }
 
-  public Runnable assertPresent(
-      final String expPath,
-      final long index,
-      final String ctxPath
-  ) {
-    return new Runnable() {
-      public void run() {
-        final Long runId = prevRuns.get(expPath);
-        if (runId == null) {
-          throw new IllegalStateException(
-              "experiment not run before assert: '" + expPath + "'"
-          );
-        }
+  static interface BatchComponent {
+    public void run(Batch batch);
+  }
+  
+  public static interface ComponentFactory {
+    BatchComponent experiment(
+        String path, String confPath, String[] chainedPaths
+    );
 
-        final String attrSpec = attrSpec(runId, expPath, ctxPath);
-        try {
-          if (!runnerDao.findCtxAttrNoLoad(runId, index, ctxPath)) {
-            throw new IllegalStateException(
-                "attr should be present: " + attrSpec
+    BatchComponent assertPresent(
+        String expPath, long index, String ctxPath
+    );
+
+    BatchComponent printNumber(
+        String expPath, long index, String ctxPath
+    );
+
+    BatchComponent assertNumberEqual(
+        String expPath, long index, String ctxPath, Double value
+    );
+
+    BatchComponent process(
+        String expPath, long index, String ctxPath, ValueProcessor processor
+    );
+  }
+
+  Logger log = LoggerFactory.getLogger(BatchRunner.class);
+
+  void setCallback(Callback callback);
+
+  Batch getRunningBatch();
+
+  void runBatch(
+      ExecutorService executor,
+      BatchTableModel.BatchDef batchDef
+  );
+
+  static class Impl
+      implements BatchRunner, ComponentFactory, ApplicationContextAware {
+
+    protected AtomicReference<Batch> runningBatch =
+        new AtomicReference<Batch>();
+
+    public Impl() {
+      //  nothing to do here
+    }
+
+    protected ConfigurableApplicationContext applicationContext;
+    public void setApplicationContext(ApplicationContext appContext)
+        throws BeansException {
+      this.applicationContext = (ConfigurableApplicationContext) appContext;
+    }
+
+    protected CouchDb couch;
+    public void setCouch(CouchDb couch) { this.couch = couch; }
+
+    protected RunnerDao runnerDao;
+    public void setRunnerDao(RunnerDao runnerDao) { this.runnerDao = runnerDao; }
+
+    protected ExperimentRunner experimentRunner;
+    public void setExperimentRunner(
+        ExperimentRunner experimentRunner
+    ) {
+      this.experimentRunner = experimentRunner;
+    }
+
+    protected Callback callback = Callback.NOOP;
+    public void setCallback(Callback callback) { this.callback = callback; }
+
+    public void start() {
+      if (experimentRunner == null) {
+        throw new IllegalStateException("experimentRunner should be wired in");
+      }
+      if (couch == null) {
+        throw new IllegalStateException("couch should be wired in");
+      }
+      if (runnerDao == null) {
+        throw new IllegalStateException("runnerDao should be wired in");
+      }
+    }
+
+    public Batch getRunningBatch() {
+      return runningBatch.get();
+    }
+
+    public void runBatch(
+        final ExecutorService executor,
+        final BatchTableModel.BatchDef batchDef
+    ) {
+      executor.submit(new Runnable() {
+        public void run() {
+          boolean success = false;
+          try {
+            final StringXmlApplicationContext context =
+                new StringXmlApplicationContext(
+                    batchDef.getXml(), false, applicationContext
+                );
+            context.refresh();
+            final Batch batch = (Batch) context.getBean("batch");
+            batch.setCallback(callback);
+            runningBatch.set(batch);
+            SwingUtilities.invokeLater(new Runnable() {
+              public void run() {
+                callback.batchChanged(batchDef, batch, true);
+              }
+            });
+
+            batch.run(batchDef);
+            success = true;
+          } catch (Exception e) {
+            log.warn("batch failed", e);
+          } finally {
+            runningBatch.set(null);
+            //  have to finalize this for the inner class
+            final boolean callbackSuccess = success;
+            SwingUtilities.invokeLater(new Runnable() {
+              public void run() {
+                callback.batchChanged(null, null, callbackSuccess);
+              }
+            });
+          }
+        }
+      });
+    }
+
+    public BatchComponent experiment(
+        final String path,
+        final String confPath,
+        final String[] chainedPaths
+    ) {
+      return new BatchComponent() {
+        public void run(final Batch batch) {
+          final Experiment expByPath;
+          final long expUid;
+          try {
+            expByPath = runnerDao.findExperimentByPath(path);
+            if (expByPath == null) {
+              throw new IllegalStateException(
+                  "experiment not found: " +
+                      "'"+path +"' " +
+                      "(path)"
+              );
+            }
+            expUid = expByPath.getUid();
+          } catch (SQLException e) {
+            throw new RuntimeException(
+                "find experiment failed: " +
+                    "'" + path + "' " +
+                    "(path)", e
             );
           }
-        } catch (SQLException e) {
-          throw new IllegalStateException(
-              "attr presence check failed: " + attrSpec
-          );
-        }
-      }
-    };
-  }
 
-  public Runnable process(
-      final String expPath,
-      final long index,
-      final String ctxPath, final ValueProcessor processor
-  ) {
-    return new Runnable() {
-      public void run() {
-        final Long runId = prevRuns.get(expPath);
-        if (runId == null) {
-          throw new IllegalStateException(
-              "experiment not run before assert: " +
-                  "'" + expPath + "'"
-          );
-        }
-
-        final String attrSpec = attrSpec(runId, expPath, ctxPath);
-        try {
-          final Object attr = runnerDao.findCtxAttr(runId, index, ctxPath);
-
-          if (attr == null) {
-            throw new IllegalStateException(
-                "should be defined: " + attrSpec
+          final Conf confByPath;
+          try {
+            confByPath = runnerDao.findConfByPath(expUid, confPath);
+          } catch (SQLException e) {
+            throw new RuntimeException(
+                "find config failed: " +
+                    "'" + path + "'/'" + confPath + "' " +
+                    "(path/confPath)",
+                e
             );
           }
 
-          processor.processValue(attr, attrSpec);
-        } catch (SQLException e) {
-          throw new IllegalStateException(
-              "attr load failed: " + attrSpec
+          if (confByPath == null) {
+            throw new IllegalStateException(
+                "conf not found: " +
+                    "'"+ path +"'/'" + confPath + "' " +
+                    "(path/confPath)"
+            );
+          }
+
+
+          final ArrayList<Long> chainedRunIds =
+              batch.resolvePaths(chainedPaths, path);
+
+          final Long runId = experimentRunner.run(
+              expByPath,
+              confByPath.getUid(),
+              chainedRunIds
           );
+
+          if (runId == null) {
+            throw new IllegalStateException(
+                "runner bean refused to run: " +
+                    "'"+ path +"'/'" + confPath + "' " +
+                    "(path/confPath)"
+            );
+          }
+
+          batch.registerRun(runId, path);
         }
-      }
-    };
-  }
+      };
+    }
 
-  public Runnable printNumber(
-      final String expPath,
-      final long index,
-      final String ctxPath
-  ) {
-    return process(expPath, index, ctxPath, new ValueProcessor() {
-      public void processValue(Object attr, String attrSpec) {
-        if (!(attr instanceof Number)) {
-          throw new IllegalStateException(
-              "should be a Number: " + attrSpec
-          );
+    public BatchComponent assertPresent(
+        final String expPath,
+        final long index,
+        final String ctxPath
+    ) {
+      return new BatchComponent() {
+        public void run(final Batch batch) {
+          final Long runId = batch.resolve(expPath);
+          final String attrSpec = attrSpec(runId, expPath, ctxPath);
+          try {
+            if (!runnerDao.findCtxAttrNoLoad(runId, index, ctxPath)) {
+              throw new IllegalStateException(
+                  "attr should be present: " + attrSpec
+              );
+            }
+          } catch (SQLException e) {
+            throw new IllegalStateException(
+                "attr presence check failed: " + attrSpec
+            );
+          }
         }
+      };
+    }
 
-        log.info("retrieved " + ((Number) attr).doubleValue() + ": " + attrSpec);
-      }
-    });
-  }
+    public BatchComponent process(
+        final String expPath,
+        final long index,
+        final String ctxPath,
+        final ValueProcessor processor
+    ) {
+      return new BatchComponent() {
+        public void run(final Batch batch) {
+          final Long runId = batch.resolve(expPath);
+          final String attrSpec = attrSpec(runId, expPath, ctxPath);
+          try {
+            final Object attr = runnerDao.findCtxAttr(runId, index, ctxPath);
 
-  public Runnable assertNumberEqual(
-      final String expPath,
-      final long index,
-      final String ctxPath,
-      final Double value
-  ) {
-    return process(expPath, index, ctxPath, new ValueProcessor() {
-      public void processValue(Object attr, String attrSpec) {
-        if (!(attr instanceof Number)) {
-          throw new IllegalStateException(
-              "should be a Number: " + attrSpec
-          );
+            if (attr == null) {
+              throw new IllegalStateException(
+                  "should be defined: " + attrSpec
+              );
+            }
+
+            processor.processValue(attr, attrSpec);
+          } catch (SQLException e) {
+            throw new IllegalStateException(
+                "attr load failed: " + attrSpec
+            );
+          }
         }
+      };
+    }
 
-        final Number numAttr = (Number) attr;
-        if (!(Soft.MICRO.equal(numAttr.doubleValue(), value))) {
-          throw new IllegalStateException(
-              "expected: " + value + " actual: " + numAttr.doubleValue() + ": " + attrSpec
-          );
+    public BatchComponent printNumber(
+        final String expPath,
+        final long index,
+        final String ctxPath
+    ) {
+      return process(expPath, index, ctxPath, new ValueProcessor() {
+        public void processValue(Object attr, String attrSpec) {
+          if (!(attr instanceof Number)) {
+            throw new IllegalStateException(
+                "should be a Number: " + attrSpec
+            );
+          }
+
+          log.info("retrieved " + ((Number) attr).doubleValue() + ": " + attrSpec);
         }
-      }
-    });
-  }
+      });
+    }
 
-  protected static String attrSpec(Long runId, String expPath, String ctxPath) {
-    return "'" + expPath + "'/(" + runId + ")/'" + ctxPath + "'";
+    public BatchComponent assertNumberEqual(
+        final String expPath,
+        final long index,
+        final String ctxPath,
+        final Double value
+    ) {
+      return process(expPath, index, ctxPath, new ValueProcessor() {
+        public void processValue(Object attr, String attrSpec) {
+          if (!(attr instanceof Number)) {
+            throw new IllegalStateException(
+                "should be a Number: " + attrSpec
+            );
+          }
+
+          final Number numAttr = (Number) attr;
+          if (!(Soft.MICRO.equal(numAttr.doubleValue(), value))) {
+            throw new IllegalStateException(
+                "expected: " + value + " actual: " + numAttr.doubleValue() +
+                    ": " + attrSpec
+            );
+          }
+        }
+      });
+    }
+
+    protected static String attrSpec(Long runId, String expPath, String ctxPath) {
+      return "'" + expPath + "'/(" + runId + ")/'" + ctxPath + "'";
+    }
   }
 }

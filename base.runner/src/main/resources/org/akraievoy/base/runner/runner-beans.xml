@@ -51,5 +51,6 @@
     <constructor-arg ref="experimentRunner"/>
     <constructor-arg ref="runnerDao"/>
     <constructor-arg ref="experimentImporter"/>
+    <constructor-arg ref="batchRunner"/>
   </bean>
 </beans>

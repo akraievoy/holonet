@@ -91,11 +91,9 @@ public class BatchTableModel extends AbstractTableModel {
   protected static final String COL_PATH = "Path";
   protected static final String COL_STAMP = "Stamp";
 
-  protected static final String[] COL =
-      {
-          COL_SELECT,
-          COL_PATH, COL_STAMP
-      };
+  protected static final String[] COL = {
+      COL_SELECT, COL_PATH, COL_STAMP
+  };
   protected static final List<String> COL_BOOL =
       Arrays.asList(COL_SELECT);
 
@@ -113,6 +111,10 @@ public class BatchTableModel extends AbstractTableModel {
 
   public void setSelectionCallback(SelectionCallback selectionCallback) {
     this.selectionCallback = selectionCallback;
+  }
+
+  public BatchDef getSelectedBatch() {
+    return selectedBatch;
   }
 
   public int getRowCount() {

@@ -252,7 +252,7 @@ public class ExperimentChooserPanel {
     gbc.gridx = 0;
     gbc.gridy = 0;
     gbc.anchor = GridBagConstraints.EAST;
-    gbc.insets = new Insets(2, 2, 2, 2);
+    gbc.insets = new Insets(2, 4, 2, 2);
     panel6.add(label1, gbc);
     progressBatch = new JProgressBar();
     progressBatch.setString("--");
@@ -270,6 +270,7 @@ public class ExperimentChooserPanel {
     gbc.gridx = 2;
     gbc.gridy = 0;
     gbc.fill = GridBagConstraints.HORIZONTAL;
+    gbc.insets = new Insets(2, 2, 2, 4);
     panel6.add(buttonBatch, gbc);
     final JPanel panel7 = new JPanel();
     panel7.setLayout(new GridBagLayout());
@@ -280,7 +281,7 @@ public class ExperimentChooserPanel {
     gbc.gridx = 0;
     gbc.gridy = 2;
     gbc.anchor = GridBagConstraints.EAST;
-    gbc.insets = new Insets(2, 2, 2, 2);
+    gbc.insets = new Insets(2, 4, 2, 2);
     panel7.add(label2, gbc);
     chainTextField = new JTextField();
     chainTextField.setColumns(12);
@@ -337,7 +338,7 @@ public class ExperimentChooserPanel {
     gbc.gridx = 0;
     gbc.gridy = 4;
     gbc.anchor = GridBagConstraints.EAST;
-    gbc.insets = new Insets(2, 2, 2, 2);
+    gbc.insets = new Insets(2, 4, 2, 2);
     panel7.add(label5, gbc);
     runNameLabel = new JLabel();
     runNameLabel.setText("");
@@ -384,7 +385,7 @@ public class ExperimentChooserPanel {
     gbc.gridx = 4;
     gbc.gridy = 3;
     gbc.fill = GridBagConstraints.HORIZONTAL;
-    gbc.insets = new Insets(2, 2, 2, 2);
+    gbc.insets = new Insets(2, 2, 2, 4);
     panel7.add(launchButton, gbc);
   }
 

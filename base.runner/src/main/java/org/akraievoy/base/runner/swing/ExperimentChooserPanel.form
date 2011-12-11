@@ -214,7 +214,7 @@
                       <component id="ceecb" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
-                          <gridbag top="2" left="2" bottom="2" right="2" weightx="0.0" weighty="0.0"/>
+                          <gridbag top="2" left="4" bottom="2" right="2" weightx="0.0" weighty="0.0"/>
                         </constraints>
                         <properties>
                           <text value="Batch:"/>
@@ -233,7 +233,7 @@
                       <component id="1d88b" class="javax.swing.JButton" binding="buttonBatch">
                         <constraints>
                           <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                          <gridbag weightx="0.0" weighty="0.0"/>
+                          <gridbag top="2" left="2" bottom="2" right="4" weightx="0.0" weighty="0.0"/>
                         </constraints>
                         <properties>
                           <text value="Run Batch"/>
@@ -253,7 +253,7 @@
               <component id="35147" class="javax.swing.JLabel">
                 <constraints>
                   <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
-                  <gridbag top="2" left="2" bottom="2" right="2" weightx="0.0" weighty="0.0"/>
+                  <gridbag top="2" left="4" bottom="2" right="2" weightx="0.0" weighty="0.0"/>
                 </constraints>
                 <properties>
                   <text value="Chaning:"/>
@@ -311,7 +311,7 @@
               <component id="6edec" class="javax.swing.JLabel">
                 <constraints>
                   <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
-                  <gridbag top="2" left="2" bottom="2" right="2" weightx="0.0" weighty="0.0"/>
+                  <gridbag top="2" left="4" bottom="2" right="2" weightx="0.0" weighty="0.0"/>
                 </constraints>
                 <properties>
                   <text value="Run:"/>
@@ -351,7 +351,7 @@
               <component id="491ac" class="javax.swing.JButton" binding="launchButton">
                 <constraints>
                   <grid row="3" column="4" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                  <gridbag top="2" left="2" bottom="2" right="2" weightx="0.0" weighty="0.0"/>
+                  <gridbag top="2" left="2" bottom="2" right="4" weightx="0.0" weighty="0.0"/>
                 </constraints>
                 <properties>
                   <actionCommand value="launch"/>

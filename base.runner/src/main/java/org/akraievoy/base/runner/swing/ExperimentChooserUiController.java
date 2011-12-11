@@ -24,6 +24,7 @@ import org.akraievoy.base.Startable;
 import org.akraievoy.base.Util;
 import org.akraievoy.base.runner.ContainerStopper;
 import org.akraievoy.base.runner.api.Context;
+import org.akraievoy.base.runner.domain.BatchRunner;
 import org.akraievoy.base.runner.domain.ExperimentRunner;
 import org.akraievoy.base.runner.domain.RunStateListener;
 import org.akraievoy.base.runner.persist.ImportRunnable;
@@ -43,6 +44,7 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -64,6 +66,7 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
   protected final ExperimentRunner experimentRunner;
   protected final RunnerDao runnerDao;
   protected final ImportRunnable importRunnable;
+  protected final BatchRunner batchRunner;
 
   protected final DefaultComboBoxModel emptyModel = new DefaultComboBoxModel(new Object[0]);
   protected final LaunchAction launchAction = new LaunchAction();
@@ -78,7 +81,8 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
       final ExecutorService executor,
       final ExperimentRunner experimentRunner,
       final RunnerDao runnerDao,
-      final ImportRunnable importRunnable
+      final ImportRunnable importRunnable,
+      final BatchRunner batchRunner
   ) throws HeadlessException {
     this.experimentChooserFrame = experimentChooserFrame;
     this.stopper = stopper;
@@ -88,6 +92,7 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
     this.experimentRunner = experimentRunner;
     this.runnerDao = runnerDao;
     this.importRunnable = importRunnable;
+    this.batchRunner = batchRunner;
     this.valueTableModel = new ValueTableModel(executor);
     this.modelBatch = new BatchTableModel();
   }
@@ -119,9 +124,22 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
     experimentChooserFrame.getValueTable().setModel(valueTableModel);
 
     experimentChooserFrame.getTableBatch().setModel(modelBatch);
+    final BatchSelectionCallback batchSelectionCallback =
+        new BatchSelectionCallback(
+            experimentChooserFrame.getProgressBatch().getBackground()
+        );
+    modelBatch.setSelectionCallback(batchSelectionCallback);
+
+    BatchRunner.Callback batchRunnerCallback = new BatchRunnerCallback();
+    batchRunner.setCallback(batchRunnerCallback);
+    experimentChooserFrame.getButtonBatch().addActionListener(
+        new BatchActionListener()
+    );
 
     setupColumns();
 
+    batchRunnerCallback.batchChanged(null, null, true);
+    batchSelectionCallback.batchSelected(null);
     runSelectionCallback.runSelected(null);
     chainSelectionCallback.chainSelectionChanged(Collections.<Run>emptyList());
     experimentSelected(null);
@@ -158,6 +176,97 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
 
   public void stop() {
     experimentChooserFrame.dispose();
+  }
+
+  protected class BatchActionListener implements ActionListener {
+    public void actionPerformed(ActionEvent e) {
+      final BatchTableModel.BatchDef selected = modelBatch.getSelectedBatch();
+      final BatchRunner.Batch running = batchRunner.getRunningBatch();
+      if (selected != null && running == null) {
+        batchRunner.runBatch(executor, selected);
+        experimentChooserFrame.getButtonBatch().setEnabled(false);
+      }
+    }
+  }
+
+  protected class BatchRunnerCallback implements BatchRunner.Callback {
+    private final Color colorPassing = Color.GREEN.darker().darker();
+    private final Color colorFailing = Color.ORANGE.darker().darker();
+
+    public BatchRunnerCallback() {
+    }
+
+    public void batchAdvanced(
+        BatchTableModel.BatchDef def, 
+        int pos, 
+        int count, 
+        boolean success) {
+      final JProgressBar progress = experimentChooserFrame.getProgressBatch();
+      final BoundedRangeModel model = progress.getModel();
+
+      model.setMinimum(0);
+      model.setMaximum(count);
+      model.setValue(pos);
+
+      progress.setBackground(success ? colorPassing : colorFailing);
+      progress.setString(def.getPath());
+    }
+
+    public void batchChanged(
+        @Nullable BatchTableModel.BatchDef def,
+        @Nullable BatchRunner.Batch batch,
+        boolean success) {
+      final JProgressBar progress = experimentChooserFrame.getProgressBatch();
+      final BoundedRangeModel model = progress.getModel();
+      if (def == null || batch == null) {
+        model.setMinimum(0);
+        model.setMaximum(0);
+        model.setValue(0);
+
+        onBatchSelectionChange(modelBatch.getSelectedBatch(), batch);
+        progress.setBackground(success ? colorPassing : colorFailing);
+      } else {
+        model.setMinimum(0);
+        model.setMaximum(batch.getComponents().size());
+        model.setValue(0);
+
+        progress.setBackground(success ? colorPassing : colorFailing);
+        progress.setString(def.getPath());
+      }
+    }
+  }
+
+  protected class BatchSelectionCallback implements BatchTableModel.SelectionCallback {
+    private final Color colorDef;
+
+    public BatchSelectionCallback(Color colorDef) {
+      this.colorDef = colorDef;
+    }
+
+    public void batchSelected(@Nullable BatchTableModel.BatchDef selected) {
+      final BatchRunner.Batch running = batchRunner.getRunningBatch();
+      final boolean enabled = selected != null && running == null;
+      experimentChooserFrame.getButtonBatch().setEnabled(enabled);
+
+      onBatchSelectionChange(selected, running);
+      experimentChooserFrame.getProgressBatch().setBackground(colorDef);
+
+    }
+  }
+
+  private void onBatchSelectionChange(
+      BatchTableModel.BatchDef selected, 
+      BatchRunner.Batch running
+  ) {
+    if (running == null) {
+      final String progressStr;
+      if (selected == null) {
+        progressStr = "-- no batch selected --";
+      } else {
+        progressStr = "-- run selected batch --";
+      }
+      experimentChooserFrame.getProgressBatch().setString(progressStr);
+    }
   }
 
   protected class RunSelectionCallback implements RunTableModel.SelectionCallback {
@@ -409,7 +518,6 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
     }
 
     public void onRunCreation(long runId) {
-      final int rowCount = runTableModel.getRowCount();
       runTableModel.fireTableRowsInserted(0, 0);
 
       final JProgressBar progressExec =

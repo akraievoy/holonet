@@ -80,4 +80,10 @@
   </bean>
 
   <bean class="org.akraievoy.base.runner.ContainerStopperImpl" id="containerStopper"/>
+
+  <bean class="org.akraievoy.base.runner.domain.BatchRunner$Impl" id="batchRunner">
+    <property name="couch" ref="couchDb"/>
+    <property name="runnerDao" ref="runnerDao"/>
+    <property name="experimentRunner" ref="experimentRunner"/>
+  </bean>
 </beans>
