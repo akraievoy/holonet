@@ -124,13 +124,14 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
     experimentChooserFrame.getValueTable().setModel(valueTableModel);
 
     experimentChooserFrame.getTableBatch().setModel(modelBatch);
+    Color progressBg = experimentChooserFrame.getProgressBatch().getBackground();
+    Color progressFg = experimentChooserFrame.getProgressBatch().getForeground();
     final BatchSelectionCallback batchSelectionCallback =
-        new BatchSelectionCallback(
-            experimentChooserFrame.getProgressBatch().getBackground()
-        );
+        new BatchSelectionCallback(progressBg, progressFg);
     modelBatch.setSelectionCallback(batchSelectionCallback);
 
-    BatchRunner.Callback batchRunnerCallback = new BatchRunnerCallback();
+    BatchRunner.Callback batchRunnerCallback =
+        new BatchRunnerCallback(progressBg, progressFg);
     batchRunner.setCallback(batchRunnerCallback);
     experimentChooserFrame.getButtonBatch().addActionListener(
         new BatchActionListener()
@@ -190,10 +191,34 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
   }
 
   protected class BatchRunnerCallback implements BatchRunner.Callback {
-    private final Color colorPassing = Color.GREEN.darker().darker();
-    private final Color colorFailing = Color.ORANGE.darker().darker();
+    private final Color bgPassing;
+    private final Color bgFailing;
+    private final Color fgPassing;
+    private final Color fgFailing;
 
-    public BatchRunnerCallback() {
+    public BatchRunnerCallback(Color progressBg, Color progressFg) {
+      Color progressBgBrighter = progressBg.brighter();
+      Color progressFgBrighter = progressFg.brighter();
+      bgPassing = new Color(
+          progressBg.getRed(),
+          progressBgBrighter.getGreen(),
+          progressBg.getBlue()
+      );
+      fgPassing = new Color(
+          progressFg.getRed(),
+          progressFgBrighter.getGreen(),
+          progressFg.getBlue()
+      );
+      bgFailing = new Color(
+          progressBgBrighter.getRed(),
+          progressBg.getGreen(),
+          progressBg.getBlue()
+      );
+      fgFailing = new Color(
+          progressFgBrighter.getRed(),
+          progressFg.getGreen(),
+          progressFg.getBlue()
+      );
     }
 
     public void batchAdvanced(
@@ -208,7 +233,11 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
       model.setMaximum(count);
       model.setValue(pos);
 
-      progress.setBackground(success ? colorPassing : colorFailing);
+      progressState(
+          progress,
+          success ? bgPassing : bgFailing,
+          success ? fgPassing : fgFailing
+      );
       progress.setString(def.getPath());
     }
 
@@ -218,29 +247,38 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
         boolean success) {
       final JProgressBar progress = experimentChooserFrame.getProgressBatch();
       final BoundedRangeModel model = progress.getModel();
+      Color bg = success ? bgPassing : bgFailing;
+      Color fg = success ? fgPassing : fgFailing;
       if (def == null || batch == null) {
-        model.setMinimum(0);
-        model.setMaximum(0);
-        model.setValue(0);
-
-        onBatchSelectionChange(modelBatch.getSelectedBatch(), batch);
-        progress.setBackground(success ? colorPassing : colorFailing);
+        onBatchSelectionChange(modelBatch.getSelectedBatch(), batch, false);
+        progressState(progress, bg, fg);
       } else {
         model.setMinimum(0);
         model.setMaximum(batch.getComponents().size());
         model.setValue(0);
 
-        progress.setBackground(success ? colorPassing : colorFailing);
+        progressState(progress, bg, fg);
         progress.setString(def.getPath());
       }
     }
   }
 
-  protected class BatchSelectionCallback implements BatchTableModel.SelectionCallback {
-    private final Color colorDef;
+  protected static void progressState(
+      JProgressBar progress,
+      Color bg,
+      Color fg
+  ) {
+    progress.setBackground(bg);
+    progress.setForeground(fg);
+  }
 
-    public BatchSelectionCallback(Color colorDef) {
-      this.colorDef = colorDef;
+  protected class BatchSelectionCallback implements BatchTableModel.SelectionCallback {
+    private final Color bgDef;
+    private final Color fgDef;
+
+    public BatchSelectionCallback(Color bgDef, Color fgDef) {
+      this.bgDef = bgDef;
+      this.fgDef = fgDef;
     }
 
     public void batchSelected(@Nullable BatchTableModel.BatchDef selected) {
@@ -248,24 +286,32 @@ public class ExperimentChooserUiController implements Startable, ExperimentTable
       final boolean enabled = selected != null && running == null;
       experimentChooserFrame.getButtonBatch().setEnabled(enabled);
 
-      onBatchSelectionChange(selected, running);
-      experimentChooserFrame.getProgressBatch().setBackground(colorDef);
-
+      onBatchSelectionChange(selected, running, running == null);
+      if (running == null) {
+        progressState(
+            experimentChooserFrame.getProgressBatch(),
+            bgDef,
+            fgDef
+        );
+      }
     }
   }
 
   private void onBatchSelectionChange(
-      BatchTableModel.BatchDef selected, 
-      BatchRunner.Batch running
+      BatchTableModel.BatchDef selected,
+      BatchRunner.Batch running,
+      final boolean updateProgressStr
   ) {
     if (running == null) {
-      final String progressStr;
-      if (selected == null) {
-        progressStr = "-- no batch selected --";
-      } else {
-        progressStr = "-- run selected batch --";
+      boolean selectedSome = selected != null;
+      experimentChooserFrame.getButtonBatch().setEnabled(selectedSome);
+      if (updateProgressStr) {
+        final String progressStr =
+            selectedSome ?
+                "-- run selected batch --" :
+                "-- no batch selected --";
+        experimentChooserFrame.getProgressBatch().setString(progressStr);
       }
-      experimentChooserFrame.getProgressBatch().setString(progressStr);
     }
   }
 
