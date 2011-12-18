@@ -1,10 +1,13 @@
-Package: holonet
-Copyright/Maintenance 2011 Anton Kraievoy akraievoy@gmail.com
+# General
+
+*Package*: holonet
+*Copyright/Maintenance* 2011 Anton Kraievoy akraievoy@gmail.com
 
 Project issues are tracked in Pivotal Tracker:
   https://www.pivotaltracker.com/projects/279361
 
-Features of this project:
+# Features of this project:
+
  - an API for complex networks, aiming to be performant, but not yet profiled/compared with competition;
  - several metrics implemented over the former API, most notable are EigenGap/EigenVector metrics;
  - several random models to generate complex networks;
@@ -19,11 +22,15 @@ Features of this project:
  - a simple framework to run Genetic Optimization over a network with metric-based constraints;
  
 Let me know if:
+
  * you want to use the code (I'll gladly add javadocs to unclear sites, revise your feature requests or whatsoever);
  * you think I've missed you or someone else in the copyright notices;
  * you want to re-license this code under any other terms. 
 
-Sample of license header.
+# Trivia
+
+## Sample of license headers
+
     /*
         This file is part of holonet.
 
@@ -42,11 +49,15 @@ Sample of license header.
     */
 
 Sample of copyright header.
+
     /*
         Copyright ${year} ${author} ${email}
     */
 
+#Intro
+
 ## Description of the modules:
+
  * base-runner: loader for Spring defitions of experiments and runner for them
  * base-runner-spring: small container project for custom Spring handlers
  * base-db: custom jdbs wrapper which should be removed
