@@ -161,6 +161,10 @@ public class EnvCNet implements Env {
   }
 
   public Pair<Node> requestPair(EntropySource eSource) {
+    if (fallback != null) {
+      return fallback.requestPair(eSource);
+    }
+
     final int pairIdx = requestModel.generate(eSource, false, null);
     return new Pair<Node>(
         nodeIndex.get(requestCodec.id2leading(pairIdx)),
