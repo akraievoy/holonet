@@ -42,7 +42,8 @@ public class Metrics implements NetworkInterceptor {
   private long totalHopCount;
   private long totalRequests;
   private double totalLatency;
-  private double totalLatencyRatios;
+  private double lookupVsDirectTotal;
+  private long lookupVsDirectCount;
 
   public double getMeanLatency() {
     return totalLatency / totalRequests;
@@ -56,14 +57,21 @@ public class Metrics implements NetworkInterceptor {
     return totalRequests;
   }
 
-  public double getMeanLatencyRatio() {
-    return totalLatencyRatios / totalRequests;
+  public double getLookupVsDirectRatioAvg() {
+    return lookupVsDirectTotal / lookupVsDirectCount;
+  }
+
+  public long getLookupVsDirectCount() {
+    return lookupVsDirectCount;
   }
 
   public void registerLookup(final double latency, final long hopCount, final double directLatency) {
     totalLatency += latency;
     totalHopCount += hopCount;
-    totalLatencyRatios = directLatency > 1.0e-9 ? latency / directLatency : 1;
+    if (hopCount > 0 && directLatency > 1.0e-3) {
+      lookupVsDirectTotal += latency / directLatency;
+      lookupVsDirectCount++; 
+    }
     totalRequests++;
   }
 
@@ -182,7 +190,8 @@ public class Metrics implements NetworkInterceptor {
     ctx.put(periodName + "_lookupCount", getTotalRequests());
     ctx.put(periodName + "_lookupHopAvg", getMeanPathLength());
     ctx.put(periodName + "_lookupDelayAvg", getMeanLatency());
-    ctx.put(periodName + "_lookupVsDirectAvg", getMeanLatencyRatio());
+    ctx.put(periodName + "_lookupVsDirectRatioAvg", getLookupVsDirectRatioAvg());
+    ctx.put(periodName + "_lookupVsDirectCount", getLookupVsDirectCount());
     ctx.put(periodName + "_lookupSuccessRatio", getLookupSuccessRatio());
     ctx.put(periodName + "_lookupCorrectRatio", getLookupConsistency());
 
