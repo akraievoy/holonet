@@ -104,12 +104,12 @@ public class Testbench implements Runnable, ContextInjectable {
       initialEvent.execute(network, initEntropySource);
 
       startPeriod("run");
-      storeSnapshot("preRun_");
+      storeSnapshot("preRun");
 
       runtimeEvent.execute(network, runEntropySource);
 
       stopCurrentPeriod();
-      storeSnapshot("postRun_");
+      storeSnapshot("postRun");
 
       for (Snapshot snap : snapshots) {
         snap.store(ctx);
