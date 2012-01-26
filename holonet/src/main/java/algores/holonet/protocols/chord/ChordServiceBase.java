@@ -103,6 +103,13 @@ public class ChordServiceBase extends RingService implements ChordService {
     for (int power = 0; power < Key.BITNESS; power++) {
       try {
         final Address address = owner.getServices().getLookup().lookup(ownerKey.next(power), false);
+
+        //  it's possible that finger ends up pointing to the same node
+        //    especially this is true for initial stages
+        if (address.equals(owner.getAddress())) {
+          continue;
+        }
+
         final RoutingEntry entry = rpcToRouting(address).getOwnRoute();
         getRouting().update(entry, Event.HEART_BEAT);
       } catch (CommunicationException nfe) {
