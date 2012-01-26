@@ -243,10 +243,10 @@ public class Network {
 
   public void registerSuccess(final double lookupStartTime, final Stack<Address> route) {
     final double latency = getElapsedTime() - lookupStartTime;
-    final double directLatency = route.get(0).getDistance(route.peek().getAddress());
+    final double directLatency = 2 * route.get(0).getDistance(route.peek());
 
     final NetworkInterceptor interceptor = getInterceptor();
-    interceptor.registerLookup(latency, route.size(), directLatency);
+    interceptor.registerLookup(latency, route.size() - 1, directLatency);
     interceptor.registerLookupSuccess(true);
   }
 }
