@@ -165,7 +165,7 @@ class KeyBase implements Key {
   }
 
   public BigInteger distance(Key target) {
-    return toNumber().subtract(target.toNumber()).abs();
+    return UPPERLIMIT.add(target.toNumber()).subtract(toNumber()).mod(UPPERLIMIT);
   }
 
   public KeyBase getKey() {
