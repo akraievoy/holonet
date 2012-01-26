@@ -215,7 +215,7 @@ public class Network {
 
       final Address responsibleAddress = getRandomNode(eSource).getServices().getLookup().lookup(key, false);
       final Node owner = env.getNode(responsibleAddress);
-      owner.getServices().getStorage().put(key, bytes);
+      owner.getServices().getStorage().put(key, bytes.clone());
     }
   }
 
