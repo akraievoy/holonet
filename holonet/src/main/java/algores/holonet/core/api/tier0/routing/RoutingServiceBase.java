@@ -86,14 +86,14 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   protected void localLookupInternal(Key key, List<RoutingEntry> result) {
     final RoutingPreference pref = getRoutingPreference();
     final Comparator<RoutingEntry> comparator = preferenceComparator(key, pref);
-    final TreeSet<RoutingEntry> entries = new TreeSet<RoutingEntry>(comparator);
 
-    for (RoutingEntry re : result) {
-      entries.add(re);
-    }
+    Collections.sort(
+        result,
+        comparator
+    );
 
-    result.clear();
-    result.addAll(entries);
+    //  most preferred are at the tail, as comparator assigns them more weight
+    Collections.reverse(result);
   }
 
   protected void filterSafeRoutes(List<RoutingEntry> result) {
@@ -166,6 +166,9 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     }
 
     Collections.sort(result, preferenceComparator(key, getRoutingPreference()));
+
+    //  most preferred are at the tail, as comparator assigns them more weight
+    Collections.reverse(result);
 
     return result;
   }
@@ -402,11 +405,11 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
         }
 
         if (preference.isPreferred(localAddress, key, r1.getAddress(), bestR1, r2.getAddress(), bestR2)) {
-          return -1;
+          return 1;
         }
 
         if (preference.isPreferred(localAddress, key, r2.getAddress(), bestR2, r1.getAddress(), bestR1)) {
-          return 1;
+          return -1;
         }
 
         return 0;

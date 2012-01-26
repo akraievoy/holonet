@@ -76,10 +76,23 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
 
     final Address ownerAddress = getOwner().getAddress();
     traversed.push(ownerAddress);
+    
+    //  LATER expand this to chain of routing state snapshots at each hop
+    //  also, P-Grid does not presume fixed mapping : address -> node rank-0 key
+    //    so this debug thingy would not be as useful
+/*
+    final List<String> routeForDebug = new ArrayList<String>();
+    for (Address addr : traversed) {
+      routeForDebug.add(addr.toString());
+      routeForDebug.add(addr.getKey().toString());
+    }
+    routeForDebug.size(); // here you add a breakpoint with message: key.toString() + ": " + routeForDebug.toString()
+*/
 
     if (getOwner().getServices().getStorage().getKeys().contains(key)) {
       return ownerAddress;
     }
+    //  LATER !mustExist looks like a redundant/misleading check
     if (!mustExist && owner.getServices().getRouting().getOwnRoute().isReplicaFor(key, (byte) 0)) {
       return ownerAddress;
     }
@@ -126,12 +139,23 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     return null;
   }
 
-  protected static int addNewRoutes(List<RoutingEntry> pending, List<RoutingEntry> routingEntries) {
-    routingEntries.removeAll(pending);
-    int addedCount = routingEntries.size();
-    pending.addAll(routingEntries);
+  protected static int addNewRoutes(
+      List<RoutingEntry> globalQueue, 
+      List<RoutingEntry> localRoutes
+  ) {
+    int globalQueueSizeBefore = globalQueue.size();
 
-    return addedCount;
+    //  remove any stale dupes:
+    //    global queue is more likely to be stale, as localized
+    //    overlay data/structure tends to be more up-to-date
+    globalQueue.removeAll(localRoutes);
+
+    //  we need to add fresh recommendations to the head of the pending list
+    //    otherwise convergence of the search degrades to Ring instead of Chord
+    //    as stale global routing choices obscure more efficient local ones
+    globalQueue.subList(0,0).addAll(localRoutes);
+
+    return globalQueue.size() - globalQueueSizeBefore;
   }
 
   public List<RoutingEntry> lookupRoutes(Key key) throws CommunicationException {
