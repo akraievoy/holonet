@@ -18,6 +18,9 @@
 
 package algores.holonet.core.api;
 
+import algores.holonet.core.Env;
+import algores.holonet.core.EnvMappings;
+import algores.holonet.core.Network;
 import algores.holonet.core.Node;
 
 public abstract class LocalServiceBase implements LocalService {
@@ -29,5 +32,17 @@ public abstract class LocalServiceBase implements LocalService {
 
   public Node getOwner() {
     return owner;
+  }
+  
+  protected Network getNetwork() {
+    return owner.getNetwork();
+  }
+
+  protected Env getEnv() {
+    return getNetwork().getEnv();
+  }
+
+  protected EnvMappings getMappings() {
+    return getEnv().getMappings();
   }
 }

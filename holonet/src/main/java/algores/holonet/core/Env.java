@@ -23,6 +23,9 @@ import org.akraievoy.cnet.gen.vo.EntropySource;
 
 import java.util.Collection;
 
+/**
+ * Network environment.
+ */
 public interface Env {
   Address createNetworkAddress(EntropySource eSource);
 
@@ -34,8 +37,6 @@ public interface Env {
 
   Collection<Node> getAllNodes();
 
-  Pair<Node> requestPair(EntropySource eSource);
-
   /**
    * Beware: init checks lots of context injectables, which are not set up if Spring calls it as a start-method.
    */
@@ -43,11 +44,5 @@ public interface Env {
 
   boolean isPreferred(Address localAddress, Address currentAddress, Address bestAddress);
 
-  class Pair<Elem> {
-    public final Elem source, target;
-    public Pair(Elem source, Elem target) {
-      this.source = source;
-      this.target = target;
-    }
-  }
+  EnvMappings getMappings();
 }

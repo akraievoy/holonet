@@ -77,7 +77,7 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     final Address ownerAddress = getOwner().getAddress();
     traversed.push(ownerAddress);
 
-    if (getOwner().getServices().getStorage().get(key) != null) {
+    if (getOwner().getServices().getStorage().getKeys().contains(key)) {
       return ownerAddress;
     }
     if (!mustExist && owner.getServices().getRouting().getOwnRoute().isReplicaFor(key, (byte) 0)) {

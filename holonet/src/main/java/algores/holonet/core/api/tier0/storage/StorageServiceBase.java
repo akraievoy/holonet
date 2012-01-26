@@ -40,10 +40,16 @@ public class StorageServiceBase extends LocalServiceBase implements StorageServi
 
   public void put(Key key, Object value) {
     dataEntries.put(key, value);
+
+    getMappings().register(key, value, getOwner());
   }
 
   public void putAll(final Map<Key, Object> newDataEntries) {
     dataEntries.putAll(newDataEntries);
+
+    for (Map.Entry<Key, Object> entry : newDataEntries.entrySet()) {
+      getMappings().register(entry.getKey(), entry.getValue(), getOwner());
+    }
   }
 
   public Map<Key, Object> getDataEntries() {
@@ -68,14 +74,17 @@ public class StorageServiceBase extends LocalServiceBase implements StorageServi
   }
 
   public Map<Key, Object> filter(KeySource min, boolean includeMin, KeySource max, boolean includeMax) {
-    Map<Key, Object> migratingEntries = new HashMap<Key, Object>();
+    final Map<Key, Object> migratingEntries = new HashMap<Key, Object>();
 
     for (Iterator entryIt = dataEntries.keySet().iterator(); entryIt.hasNext();) {
-      Key key = (Key) entryIt.next();
+      final Key key = (Key) entryIt.next();
 
       if (KeySpace.isInRange(min, includeMin, max, includeMax, key)) {
-        migratingEntries.put(key, dataEntries.get(key));
+        final Object value = dataEntries.get(key);
+        migratingEntries.put(key, value);
         entryIt.remove();
+
+        getMappings().deregister(key, getOwner(), false);
       }
     }
 
@@ -100,6 +109,12 @@ public class StorageServiceBase extends LocalServiceBase implements StorageServi
 
     if (remove) {
       dataEntries.keySet().removeAll(dest.keySet());
+
+      for (Map.Entry<Key, Object> entry : dest.entrySet()) {
+        getMappings().deregister(
+            entry.getKey(), getOwner(), false
+        );
+      }
     }
 
     return dest;

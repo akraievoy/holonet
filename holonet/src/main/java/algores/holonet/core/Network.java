@@ -27,6 +27,7 @@ import org.akraievoy.base.Stopwatch;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -66,9 +67,10 @@ public class Network {
     rpc.dispose();
   }
 
-  public Env.Pair<Node> requestPair(EntropySource source) {
-    return env.requestPair(source);
+  public Map.Entry<Key, Object> selectMapping(EntropySource source) {
+    return env.getMappings().select(source);
   }
+
   /**
    * Generate a node with random address, let it join the DHT, and save it in my hash table.
    *
@@ -122,6 +124,7 @@ public class Network {
    * @throws CommunicationException if normal departure will be denied due to network failure.
    */
   public void removeNode(Node nodeToRemove, final boolean forceFailure) throws CommunicationException {
+    Collection<Key> keys = nodeToRemove.getServices().getStorage().getKeys();
     if (!forceFailure) {
       getInterceptor().registerNodeDepartures(1);
       nodeToRemove.getServices().getOverlay().leave();
@@ -130,6 +133,9 @@ public class Network {
     }
 
     env.removeNode(nodeToRemove.getAddress());
+    for (Key key : keys) {
+      env.getMappings().deregister(key, nodeToRemove, false);
+    }
   }
 
   public Collection<Node> getAllNodes() {
@@ -208,7 +214,8 @@ public class Network {
       final Key key = API.createKey(bytes);
 
       final Address responsibleAddress = getRandomNode(eSource).getServices().getLookup().lookup(key, false);
-      env.getNode(responsibleAddress).getServices().getStorage().put(key, key);
+      final Node owner = env.getNode(responsibleAddress);
+      owner.getServices().getStorage().put(key, bytes);
     }
   }
 

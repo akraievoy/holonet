@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 
 public class EntropySourceRandom implements EntropySource {
@@ -98,6 +99,12 @@ public class EntropySourceRandom implements EntropySource {
     }
 
     final int targetIndex = nextInt(size);
+
+    if (elements instanceof List) {
+      final List<E> elemList = (List<E>) elements;
+      return elemList.get(targetIndex);
+    }
+
     int index = 0;
     for (Iterator<E> iterator = elements.iterator(); iterator.hasNext(); index++) {
       E target = iterator.next();

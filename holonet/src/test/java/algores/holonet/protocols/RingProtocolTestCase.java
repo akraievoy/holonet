@@ -97,7 +97,7 @@ public class RingProtocolTestCase extends TestCase {
   }
 
   public void testLeave() throws SimulatorException {
-    if (System.getProperty("proto.test") == null) {
+    if (System.getProperty("proto.test") != null) {
       return;
     }
 
@@ -148,7 +148,7 @@ public class RingProtocolTestCase extends TestCase {
   }
 
   public void testJoin() throws SimulatorException {
-    if (System.getProperty("proto.test") == null) {
+    if (System.getProperty("proto.test") != null) {
       return;
     }
 
@@ -183,7 +183,7 @@ public class RingProtocolTestCase extends TestCase {
   }
 
   public void testStabilize() throws SimulatorException {
-    if (System.getProperty("proto.test") == null) {
+    if (System.getProperty("proto.test") != null) {
       return;
     }
 

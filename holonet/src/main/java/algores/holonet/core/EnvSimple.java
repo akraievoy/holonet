@@ -27,6 +27,7 @@ import java.util.Map;
 
 public class EnvSimple implements Env {
   protected final Map<Address, Node> addressToNode = new HashMap<Address, Node>();
+  protected final EnvMappings mappings = new EnvMappings();
 
   public Address createNetworkAddress(EntropySource eSource) {
     final Address address = new PlanarAddress();
@@ -52,11 +53,6 @@ public class EnvSimple implements Env {
     return addressToNode.values();
   }
 
-  public Pair<Node> requestPair(EntropySource eSource) {
-    final Collection<Node> nodes = getAllNodes();
-    return new Pair<Node>(eSource.randomElement(nodes), eSource.randomElement(nodes));
-  }
-
   public void initialize() {
     // nothing to do
   }
@@ -67,5 +63,9 @@ public class EnvSimple implements Env {
 
   public boolean isPreferred(Address localAddress, Address currentAddress, Address bestAddress) {
     return false;
+  }
+
+  public EnvMappings getMappings() {
+    return mappings;
   }
 }

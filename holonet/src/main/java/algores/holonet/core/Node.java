@@ -31,7 +31,7 @@ import algores.holonet.core.api.tier0.rpc.ServiceRegistryBase;
  * Relies on implementation of Protocol class.
  */
 
-public class Node implements KeySource, AddressSource {
+public class Node implements KeySource, AddressSource, Comparable<Node> {
   protected Network network;
   protected Address address;
   protected ServiceRegistryBase serviceRegistry;
@@ -63,5 +63,9 @@ public class Node implements KeySource, AddressSource {
 
   public ServiceRegistry getServices() {
     return serviceRegistry;
+  }
+
+  public int compareTo(Node o) {
+    return address.compareTo(o.address);
   }
 }

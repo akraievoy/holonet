@@ -53,6 +53,7 @@ public class EnvCNet implements Env {
   protected IndexCodec requestCodec = new IndexCodec(false);
 
   protected SortedMap<Integer, Node> nodeIndex = new TreeMap<Integer, Node>();
+  protected final EnvMappings mappings = new EnvMappings();
 
   protected EnvSimple fallback = null;
 
@@ -105,6 +106,7 @@ public class EnvCNet implements Env {
     renewRequestModel();
   }
 
+  //  FIXME ouch, this now hangs with no integration!
   protected void renewRequestModel() {
     requestModel.clear();
     req.getValue().visitNotNull(new EdgeData.EdgeVisitor() {
@@ -160,18 +162,6 @@ public class EnvCNet implements Env {
     return nodeIndex.get(idx);
   }
 
-  public Pair<Node> requestPair(EntropySource eSource) {
-    if (fallback != null) {
-      return fallback.requestPair(eSource);
-    }
-
-    final int pairIdx = requestModel.generate(eSource, false, null);
-    return new Pair<Node>(
-        nodeIndex.get(requestCodec.id2leading(pairIdx)),
-        nodeIndex.get(requestCodec.id2trailing(pairIdx))
-    );
-  }
-
   public void putNode(Node newNode, Address address) {
     if (fallback != null) {
       fallback.putNode(newNode, address);
@@ -208,6 +198,10 @@ public class EnvCNet implements Env {
     }
 
     return nodeIndex.values();
+  }
+
+  public EnvMappings getMappings() {
+    return mappings;
   }
 
   protected static final NumberFormat nf = createNumberFormat();
