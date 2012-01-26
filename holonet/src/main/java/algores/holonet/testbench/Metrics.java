@@ -57,7 +57,7 @@ public class Metrics implements NetworkInterceptor {
   }
 
   public double getMeanLatencyRatio() {
-    return totalLatencyRatios;
+    return totalLatencyRatios / totalRequests;
   }
 
   public void registerLookup(final double latency, final long hopCount, final double directLatency) {
@@ -121,7 +121,7 @@ public class Metrics implements NetworkInterceptor {
   }
 
   public double getRpcSuccessRatio() {
-    return (double) rpcCallsFailures / (rpcCallsSuccesses + rpcCallsFailures);
+    return (double) rpcCallsSuccesses / (rpcCallsSuccesses + rpcCallsFailures);
   }
 
   //	-------------------------------------
@@ -173,21 +173,20 @@ public class Metrics implements NetworkInterceptor {
   }
 
   public void store(Context ctx) {
-    ctx.put(periodName + "_joins", getNodeArrivalSuccesses());
-    ctx.put(periodName + "_joinFails", getNodeArrivalFailures());
-    ctx.put(periodName + "_joinRatio", getArrivalSuccessRatio());
-    ctx.put(periodName + "_leaves", getNodeDepartures());
-    ctx.put(periodName + "_fails", getNodeFailures());
+    ctx.put(periodName + "_joinSuccessCount", getNodeArrivalSuccesses());
+    ctx.put(periodName + "_joinFailCount", getNodeArrivalFailures());
+    ctx.put(periodName + "_joinSuccessRatio", getArrivalSuccessRatio());
+    ctx.put(periodName + "_leaveCount", getNodeDepartures());
+    ctx.put(periodName + "_failCount", getNodeFailures());
 
-    ctx.put(periodName + "_lookups", getTotalRequests());
-    ctx.put(periodName + "_hops", getMeanPathLength());
-    ctx.put(periodName + "_delay", getMeanLatency());
-    ctx.put(periodName + "_delayEff", getMeanLatencyRatio());
+    ctx.put(periodName + "_lookupCount", getTotalRequests());
+    ctx.put(periodName + "_lookupHopAvg", getMeanPathLength());
+    ctx.put(periodName + "_lookupDelayAvg", getMeanLatency());
+    ctx.put(periodName + "_lookupVsDirectAvg", getMeanLatencyRatio());
+    ctx.put(periodName + "_lookupSuccessRatio", getLookupSuccessRatio());
+    ctx.put(periodName + "_lookupCorrectRatio", getLookupConsistency());
 
-    ctx.put(periodName + "_lookupRatio", getLookupSuccessRatio());
-    ctx.put(periodName + "_lookupCorr", getLookupConsistency());
-
-    ctx.put(periodName + "_rpcs", getRpcCallsTotal());
-    ctx.put(periodName + "_rpcRatio", getRpcSuccessRatio());
+    ctx.put(periodName + "_rpcCount", getRpcCallsTotal());
+    ctx.put(periodName + "_rpcSuccessRatio", getRpcSuccessRatio());
   }
 }
