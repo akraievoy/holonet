@@ -37,7 +37,8 @@
     </hn:Config>
     <hn:Config name="full" description="4 protocols (from basic Ring to Latency-optimizing Chord)">
       <hn:Param name="tbProtoClass.value"
-                value="algores.holonet.protocols.ring.RingService;algores.holonet.protocols.chord.ChordServiceBase;algores.holonet.protocols.chord.fault.FaultTolerantChordServiceBase;algores.holonet.protocols.chord.latency.LatencyChordServiceBase"/>
+                value="algores.holonet.protocols.ring.RingService;algores.holonet.protocols.chord.ChordServiceBase;algores.holonet.protocols.chord.fault.FaultTolerantChordServiceBase;algores.holonet.protocols.chord.latency.LatencyChordServiceBase"
+                strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
   </hn:Experiment>
 
