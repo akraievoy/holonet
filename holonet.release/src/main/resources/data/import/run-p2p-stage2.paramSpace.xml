@@ -30,28 +30,28 @@
       id="p2p-stage2-paramSpace" depends=""
       description="P2P [stage2] Choose param space">
     <hn:Config name="default" description="60 nodes with 32 elements (each)">
-      <hn:Param
-          name="tbNodes.value" value="60"
-          strategy="spawn" chainedStrategy="spawn"/>
-      <hn:Param
-          name="tbElems.value" value="32"
-          strategy="spawn" chainedStrategy="spawn"/>
-      <hn:Param
-          name="tbLoop.value" value="64"
-          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param name="tbNodes.value"
+                value="60"
+                strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param name="tbElems.value"
+                value="32"
+                strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param name="tbLoop.value"
+                value="64"
+                strategy="spawn" chainedStrategy="spawn"/>
 
-      <hn:Param
-          name="tbFailProb.value" value="0.003"
-          strategy="spawn" chainedStrategy="spawn"/>
-      <hn:Param
-          name="tbJoinProb.value" value="0.01"
-          strategy="spawn" chainedStrategy="spawn"/>
-      <hn:Param
-          name="tbStabProb.value" value="0.01"
-          strategy="spawn" chainedStrategy="spawn"/>
-      <hn:Param
-          name="tbAttackProb.value" value="0.01"
-          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param name="tbFailProb.value"
+                value="0.003"
+                strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param name="tbJoinProb.value"
+                value="0.01"
+                strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param name="tbStabProb.value"
+                value="0.01"
+                strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param name="tbAttackProb.value"
+                value="0.01"
+                strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
     <hn:Config name="extraLoops" description="extra loops">
       <hn:Param name="tbLoop.value"
@@ -74,22 +74,19 @@
                 strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
     <hn:Config name="elemsProf" description="elements profiling">
-      <hn:Param
-          name="tbElems.value"
-          value="002;004;008;016;032;064;128;256"
-          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param name="tbElems.value"
+                value="002;004;008;016;032;064;128;256"
+                strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
     <hn:Config name="loopProf" description="loop profiling">
-      <hn:Param
-          name="tbLoop.value"
-          value="8;16;32;64;128"
-          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param name="tbLoop.value"
+                value="8;16;32;64;128"
+                strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
     <hn:Config name="joinProf" description="joins profiling">
-      <hn:Param
-          name="tbJoinProb.value"
-          value="0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64"
-          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param name="tbJoinProb.value"
+                value="0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64"
+                strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
     <hn:Config name="failProf" description="failures profiling">
       <hn:Param name="tbFailProb.value"
