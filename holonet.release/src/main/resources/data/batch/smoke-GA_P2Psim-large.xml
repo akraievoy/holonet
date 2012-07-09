@@ -34,7 +34,7 @@
 <!--
           <constructor-arg value="big-1k"/>
 -->
-          <constructor-arg value="big-2k"/>
+          <constructor-arg value="big-1k"/>
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
           <constructor-arg value="run-overlayGO-stage2.ovlDataset"/>
@@ -46,7 +46,7 @@
 <!--
           <constructor-arg value="minEff19x50x256"/>
 -->
-          <constructor-arg value="minEff19x50x768"/>
+          <constructor-arg value="minEff19x10x320"/>
           <constructor-arg><list><value>run-overlayGO-stage2.ovlDataset</value></list></constructor-arg>
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
