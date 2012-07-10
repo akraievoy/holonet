@@ -66,6 +66,24 @@
     <hn:Config name="nu20" description="Visual (select 20% of nodes)">
       <hn:Param name="onf.nu" value="0.2"/>
       <hn:Param
+          name="onf.omega" value="-1"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="ovlReq.phi" value="1"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="ovlReq.psi" value="1"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="ovlReqThresh.minAbsValue" value="0.05"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="ovlReqThresh.minToMaxRatio" value="0.05"
+          strategy="spawn" chainedStrategy="spawn"/>
+    </hn:Config>
+    <hn:Config name="nu20_omegaProf" description="Visual (select 20% of nodes)">
+      <hn:Param name="onf.nu" value="0.2"/>
+      <hn:Param
           name="onf.omega" value="-4;2;4"
           strategy="spawn" chainedStrategy="spawn"/>
       <hn:Param

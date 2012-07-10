@@ -79,6 +79,15 @@
     <hn:Config name="minEff17" description="MinEff: 1.7">
       <hn:Param name="geneticStrategy.minEff" value="1.7"/>
     </hn:Config>
+    <hn:Config name="minEff17-smoke" description="MinEff: 1.7 (smoke)">
+      <hn:Param
+          name="entropySourceGenetics.seed" value="42600"
+          chainedStrategy="spawn" strategy="spawn"/>
+      <hn:Param
+          name="ovlGenOpt.specimenIndex" value="0-9"
+          chainedStrategy="use_first" strategy="use_first" />
+      <hn:Param name="geneticStrategy.minEff" value="1.7"/>
+    </hn:Config>
     <hn:Config name="minEff20" description="MinEff: 2.0">
       <hn:Param name="geneticStrategy.minEff" value="2.0"/>
     </hn:Config>

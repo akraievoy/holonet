@@ -45,13 +45,7 @@ public class CompositeMutator extends Composite<Mutator<Genome>> {
     public void mutate(GeneticStrategy strategy, Genome child, GeneticState state, EntropySource eSource) {
       elemUses[index]++;
 
-      final long breederStart = System.currentTimeMillis();
-
       wrapped.mutate(strategy, child, state, eSource);
-
-      final long breederEnd = System.currentTimeMillis();
-
-      elemTimes[index] += breederEnd - breederStart;
     }
 
     public int getIndex() {

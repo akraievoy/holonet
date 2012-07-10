@@ -45,13 +45,7 @@ public class CompositeCondition extends Composite<Condition<Genome>> {
     public boolean isValid(GeneticStrategy strategy, Genome child, Collection<Genome> generation, int generationIndex) {
       elemUses[index]++;
 
-      final long breederStart = System.currentTimeMillis();
-
       final boolean result = wrapped.isValid(strategy, child, generation, generationIndex);
-
-      final long breederEnd = System.currentTimeMillis();
-
-      elemTimes[index] += breederEnd - breederStart;
 
       return result;
     }

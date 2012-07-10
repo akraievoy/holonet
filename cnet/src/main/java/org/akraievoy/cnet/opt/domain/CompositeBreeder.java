@@ -45,13 +45,7 @@ public class CompositeBreeder extends Composite<Breeder<Genome>> {
     public Genome crossover(GeneticStrategy strategy, Genome parentA, Genome parentB, GeneticState state, EntropySource eSource) {
       elemUses[index]++;
 
-      final long breederStart = System.currentTimeMillis();
-
       final Genome result = wrapped.crossover(strategy, parentA, parentB, state, eSource);
-
-      final long breederEnd = System.currentTimeMillis();
-
-      elemTimes[index] += breederEnd - breederStart;
 
       return result;
     }

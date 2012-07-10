@@ -18,6 +18,7 @@
 
 package org.akraievoy.cnet.opt.domain;
 
+import com.google.common.base.Optional;
 import gnu.trove.TDoubleArrayList;
 import org.akraievoy.base.Die;
 import org.akraievoy.base.Format;
@@ -144,8 +145,9 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     if (generation == 0) {
       //  LATER we don't have constraint validation on the seeds here
       final List<Genome> genomes = seedSource.getSeeds(strategy);
-      final List<Genome> failed = storeToPopulation(children, genomes);
-      genomes.removeAll(failed);
+      for (Genome genome : genomes) {
+        storeToPopulation(children, genome);
+      }
       strategy.initOnSeeds(ctx, generationParamName, children);
       storeToContext(ctx, children);
       log.info("Initialization complete; fitness = {}", fitnessReport(children));
@@ -203,9 +205,16 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
         log.warn("IGNORING eigensolver failure: marking child as invalid", e);
       }
 
-      final List<Genome> childList = Collections.singletonList(child);
-      if (valid && child != null && storeToPopulation(children, childList).isEmpty()) {
-        continue;
+      if (valid && child != null) {
+        final Optional<FitnessKey> fkOpt = storeToPopulation(children, child);
+        if (fkOpt.isPresent()) {
+          //  fraction of children which are not better than this one
+          double rank = children.tailMap(fkOpt.get()).size() / (double) children.size();
+
+          mutators.rankFeedback(mutator.getValue(), rank);
+          breeders.rankFeedback(breeder.getValue(), rank);
+          continue;
+        }
       }
 
       mutators.onFailure(mutator.getValue());
@@ -220,24 +229,20 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     log.info("Generation #{} filled; fitness {}", generation, fitnessReport(children));
   }
 
-  public List<Genome> storeToPopulation(final SortedMap<FitnessKey, Genome> population, List<Genome> genomes) {
-    List<Genome> failedGenomes = null;
-    for (Genome genome : genomes) {
-      final double fitness = strategy.computeFitness(genome);
-      if (Double.isNaN(fitness)) {
-        if (failedGenomes == null) {
-          failedGenomes = new ArrayList<Genome>();
-        }
-        failedGenomes.add(genome);
-      }
-
-      final FitnessKey fKey = new FitnessKey(population.size(), fitness);
-
-      genome.setFitness(fitness);
-      population.put(fKey, genome);
+  public Optional<FitnessKey> storeToPopulation(
+      final SortedMap<FitnessKey, Genome> population,
+      final Genome genome
+  ) {
+    final double fitness = strategy.computeFitness(genome);
+    if (Double.isNaN(fitness)) {
+      return Optional.absent();
     }
 
-    return failedGenomes == null ? Collections.<Genome>emptyList() : failedGenomes;
+    final FitnessKey fKey = new FitnessKey(population.size(), fitness);
+
+    genome.setFitness(fitness);
+    population.put(fKey, genome);
+    return Optional.of(fKey);
   }
 
   protected void report(Ref<Long> lastReport) {

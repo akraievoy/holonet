@@ -32,7 +32,7 @@ public abstract class Composite<Component> {
   protected final WeightedEventModel elemsModel = new WeightedEventModelBase();
   protected int[] elemFails;
   protected int[] elemUses;
-  protected long[] elemTimes;
+  protected double[] elemRanks;
 
   public void setElems(List<Component> elems) {
     this.elems.clear();
@@ -40,7 +40,7 @@ public abstract class Composite<Component> {
 
     this.elemFails = new int[elems.size()];
     this.elemUses = new int[elems.size()];
-    this.elemTimes = new long[elems.size()];
+    this.elemRanks = new double[elems.size()];
   }
 
   public void calibrate(Context ctx, String generationParamName) {
@@ -56,13 +56,12 @@ public abstract class Composite<Component> {
     for (int i = 0; i < elems.size(); i++) {
       final int fails = elemFails[i];
       final int uses = elemUses[i];
-      final long times = elemTimes[i];
+      final double rank = elemRanks[i];
 
-      final double ratio = computeRatio(fails, uses, times);
-      final double success = (1.0 + uses - fails) / (1.0 + uses);
+      final double ratio = ratio(fails, uses, rank);
 
       ctx.put(getKeyRatio(i), ratio);
-      ctx.put(getKeySuccess(i), success);
+      ctx.put(getKeySuccess(i), ratio);
       ctx.put(getKeyUses(i), uses);
     }
   }
@@ -79,8 +78,13 @@ public abstract class Composite<Component> {
     return getTitle() + ".uses." + i;
   }
 
-  protected double computeRatio(final int fails, final int uses, long times) {
-    final double successFreq = (1.0 + uses - fails) / (1.0 + times);
+  protected double ratio(final int fails, final int uses, final double rank) {
+    final double successFreq = (0.05 + uses - fails) / (1.0 + uses);
+
+    if (uses > fails && rank > 0) {
+      final double averageRank = rank / (uses - fails);
+      return successFreq * averageRank;
+    }
 
     return successFreq;
   }
@@ -88,6 +92,12 @@ public abstract class Composite<Component> {
   public void onFailure(Component failed) {
     if (failed instanceof Indexed) {
       elemFails[((Indexed) failed).getIndex()]++;
+    }
+  }
+
+  public void rankFeedback(Component ranked, double rank) {
+    if (ranked instanceof Indexed) {
+      elemRanks[((Indexed) ranked).getIndex()] += rank;
     }
   }
 
@@ -114,10 +124,12 @@ public abstract class Composite<Component> {
       missReport.append(elemUses[i] - elemFails[i]);
       missReport.append("/");
       missReport.append(elemUses[i]);
-      missReport.append("@");
-      missReport.append(Format.formatDuration(elemTimes[i]));
-      missReport.append("=");
-      missReport.append(Format.format6(computeRatio(elemFails[i], elemUses[i], elemTimes[i])));
+      if (elemRanks[i] > 0) {
+        missReport.append("@");
+        missReport.append(Format.format6(elemRanks[i]));
+      }
+      missReport.append(" = ");
+      missReport.append(Format.format6(ratio(elemFails[i], elemUses[i], elemRanks[i])));
 
     }
     missReport.append("\n};");

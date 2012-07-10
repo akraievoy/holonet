@@ -40,11 +40,14 @@
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
           <constructor-arg value="run-overlayGO-stage3.genetics"/>
-          <constructor-arg value="minEff17"/>
-<!--
-          <constructor-arg value="minEff21x50x256"/>
--->
+          <constructor-arg value="minEff17-smoke"/>
           <constructor-arg><list><value>run-overlayGO-stage2.ovlDataset</value></list></constructor-arg>
+        </bean>
+        <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentNumberEqual">
+          <constructor-arg value="run-overlayGO-stage3.genetics"/>
+          <constructor-arg value="1001"/>
+          <constructor-arg value="specimen.best.fitness"/>
+          <constructor-arg value="0.5360743474105613"/>
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
           <constructor-arg value="run-p2p-stage0.seed"/>
