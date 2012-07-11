@@ -248,42 +248,6 @@ public class EdgeDataDense implements EdgeData {
     return !isNull(from, into);
   }
 
-  public TIntArrayList outVertexes(int from) {
-    return outVertexes(from, new TIntArrayList());
-  }
-
-  public TIntArrayList outVertexes(final int from, final TIntArrayList result) {
-    if (isSymmetric()) {
-      return connVertexes(from, result);
-    }
-
-    for (int into = 0; into < size; into++) {
-      if (conn(from, into)) {
-        result.add(into);
-      }
-    }
-
-    return result;
-  }
-
-  public TIntArrayList inVertexes(int into) {
-    return inVertexes(into, new TIntArrayList());
-  }
-
-  public TIntArrayList inVertexes(final int into, final TIntArrayList result) {
-    if (isSymmetric()) {
-      return connVertexes(into, result);
-    }
-
-    for (int from = 0; from < size; from++) {
-      if (conn(from, into)) {
-        result.add(from);
-      }
-    }
-
-    return result;
-  }
-
   public TIntArrayList connVertexes(int index) {
     return connVertexes(index, new TIntArrayList());
   }
@@ -294,64 +258,6 @@ public class EdgeDataDense implements EdgeData {
         result.add(jndex);
       } else if (conn(jndex, index)) {
         result.add(jndex);
-      }
-    }
-
-    return result;
-  }
-
-  public TDoubleArrayList outElements(int from) {
-    return outElements(from, new TDoubleArrayList());
-  }
-
-  public TDoubleArrayList outElements(final int from, final TDoubleArrayList result) {
-    if (isSymmetric()) {
-      return connElements(from, result);
-    }
-
-    for (int into = 0; into < size; into++) {
-      final double elem = get(from, into);
-      if (!isNull(elem)) {
-        result.add(elem);
-      }
-    }
-
-    return result;
-  }
-
-  public TDoubleArrayList inElements(int into) {
-    return inElements(into, new TDoubleArrayList());
-  }
-
-  public TDoubleArrayList inElements(final int into, final TDoubleArrayList result) {
-    if (isSymmetric()) {
-      return connElements(into, result);
-    }
-
-    for (int from = 0; from < size; from++) {
-      final double elem = get(from, into);
-      if (!isNull(elem)) {
-        result.add(elem);
-      }
-    }
-
-    return result;
-  }
-
-  public TDoubleArrayList connElements(int index) {
-    return connElements(index, new TDoubleArrayList());
-  }
-
-  public TDoubleArrayList connElements(int index, final TDoubleArrayList result) {
-    for (int jndex = 0; jndex < size; jndex++) {
-      final double ijElem = get(index, jndex);
-      if (!isNull(ijElem)) {
-        result.add(ijElem);
-      } else {
-        final double jiElem = get(jndex, index);
-        if (!isNull(jiElem)) {
-          result.add(jiElem);
-        }
       }
     }
 
@@ -383,38 +289,6 @@ public class EdgeDataDense implements EdgeData {
     return result;
   }
 
-  public double powerOut(final int from) {
-    if (isSymmetric()) {
-      return power(from);
-    }
-
-    double result = 0;
-    for (int into = 0; into < size; into++) {
-      final double elem = get(from, into);
-      if (!isNull(elem)) {
-        result += elem;
-      }
-    }
-
-    return result;
-  }
-
-  public double powerIn(final int into) {
-    if (isSymmetric()) {
-      return power(into);
-    }
-
-    double result = 0;
-    for (int from = 0; from < size; from++) {
-      final double elem = get(from, into);
-      if (!isNull(elem)) {
-        result += elem;
-      }
-    }
-
-    return result;
-  }
-
   public double weight(Route route, final double emptyWeight) {
     return weight(route.getIndexes(), emptyWeight);
   }
@@ -431,22 +305,6 @@ public class EdgeDataDense implements EdgeData {
     }
 
     return weight;
-  }
-
-  public double diameter(final int actualSize, final boolean refrective) {
-    double diameter = 0;
-
-    for (int from = 0; diameter < Double.POSITIVE_INFINITY && from < actualSize; from++) {
-      for (int into = isSymmetric() ? from : 0; diameter < Double.POSITIVE_INFINITY && into < actualSize; into++) {
-        if (!refrective && from == into) {
-          continue;
-        }
-
-        diameter = Math.max(diameter, weight(from, into));
-      }
-    }
-
-    return diameter;
   }
 
   @JsonIgnore

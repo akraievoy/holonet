@@ -159,30 +159,6 @@ public class EdgeDataSparse implements EdgeData {
     return !isNull(from, into);
   }
 
-  public TIntArrayList outVertexes(int from) {
-    return outVertexes(from, new TIntArrayList());
-  }
-
-  public TIntArrayList outVertexes(int from, final TIntArrayList result) {
-    if (isSymmetric()) {
-      return connVertexes(from, result);
-    }
-
-    return fiEdges.vertexes(from, result, false);
-  }
-
-  public TIntArrayList inVertexes(int into) {
-    return inVertexes(into, new TIntArrayList());
-  }
-
-  public TIntArrayList inVertexes(int into, final TIntArrayList result) {
-    if (isSymmetric()) {
-      return connVertexes(into, result);
-    }
-
-    return ifEdges.vertexes(into, result, false);
-  }
-
   public TIntArrayList connVertexes(int index) {
     return connVertexes(index, new TIntArrayList());
   }
@@ -190,41 +166,6 @@ public class EdgeDataSparse implements EdgeData {
   public TIntArrayList connVertexes(int index, final TIntArrayList result) {
     ifEdges.vertexes(index, result, false);
     fiEdges.vertexes(index, result, true);
-
-    return result;
-  }
-
-  public TDoubleArrayList outElements(int from) {
-    return outElements(from, new TDoubleArrayList());
-  }
-
-  public TDoubleArrayList outElements(int from, final TDoubleArrayList result) {
-    if (isSymmetric()) {
-      return connElements(from, result);
-    }
-
-    return fiEdges.elements(from, result, false);
-  }
-
-  public TDoubleArrayList inElements(int into) {
-    return inElements(into, new TDoubleArrayList());
-  }
-
-  public TDoubleArrayList inElements(int into, final TDoubleArrayList result) {
-    if (isSymmetric()) {
-      return connElements(into, result);
-    }
-
-    return ifEdges.elements(into, result, false);
-  }
-
-  public TDoubleArrayList connElements(int index) {
-    return connElements(index, new TDoubleArrayList());
-  }
-
-  public TDoubleArrayList connElements(int index, final TDoubleArrayList result) {
-    fiEdges.elements(index, result, false);
-    ifEdges.elements(index, result, true);
 
     return result;
   }
@@ -239,22 +180,6 @@ public class EdgeDataSparse implements EdgeData {
 
   public double power(final int index) {
     return ifEdges.power(index, false, this) + fiEdges.power(index, true, this);
-  }
-
-  public double powerOut(final int index) {
-    if (isSymmetric()) {
-      return power(index);
-    }
-
-    return fiEdges.power(index, false, this);
-  }
-
-  public double powerIn(final int index) {
-    if (isSymmetric()) {
-      return power(index);
-    }
-
-    return ifEdges.power(index, false, this);
   }
 
   public double weight(Route route, final double emptyWeight) {
@@ -273,22 +198,6 @@ public class EdgeDataSparse implements EdgeData {
     }
 
     return weight;
-  }
-
-  public double diameter(final int actualSize, final boolean refrective) {
-    double diameter = 0;
-
-    for (int from = 0; diameter < Double.POSITIVE_INFINITY && from < actualSize; from++) {
-      for (int into = isSymmetric() ? from : 0; diameter < Double.POSITIVE_INFINITY && into < actualSize; into++) {
-        if (!refrective && from == into) {
-          continue;
-        }
-
-        diameter = Math.max(diameter, weight(from, into));
-      }
-    }
-
-    return diameter;
   }
 
   @JsonIgnore

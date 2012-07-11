@@ -18,10 +18,42 @@
 
 package org.akraievoy.cnet.net.vo;
 
-import gnu.trove.TDoubleArrayList;
 import gnu.trove.TIntArrayList;
 import org.codehaus.jackson.annotate.JsonIgnore;
 
+/**
+ * Sparse storage scheme (here we try to keep data closely packed and
+ *  linearized to avoid fragmentation and extra GC overheads):
+ *   leadLen: int[nodes][2] -> lead/len for each row
+ *   intoIdx: int[2*nodes*avgOrder] -> column indexes
+ *   storage: 2*nodes*avgOrder*slot -> handcrafted packed linear storage
+ *      1bit, multibit, byte, int, float, long, double
+ * Total memory consumption o-function (in bytes) looks like so:
+ *   8*nodes*(1 + avgOrder * (1 + slot / 4) )
+ *
+ * Dense storage scheme:
+ *   storage: nodes*nodes*slotSize
+ * Total memory consumption o-function (in bytes) looks like so:
+ *   nodes * nodes * slot
+ *
+ * So to decide which storage is more efficient in runtime:
+ *   nodes * nodes * slot > 8 * nodes * ( 1 + avgOrger * (1 + slot) / 4 )
+ *   nodes * slot > 8 + 2 * avgOrder * ( 1 + slot )
+ *   2 * avgOrder * (1 + slot) < nodes * slot - 8
+ *
+ * So, storage equilibrium is at
+ *   avgOrder < ( nodes * slot / 2 - 4 ) / ( 1 + slot )
+ *
+ * Which effectively boils down to these statements:
+ *   doubles should be stores sparsely if avgOrder < ( nodes * 4 - 4 ) / 9
+ *     which is 454.6 links per node for 1024-node net, or 113 links for 256 nodes
+ *   floats should be stores sparsely if avgOrder < ( nodes * 2 - 4 ) / 5
+ *     which is 408 links for 1024 nodes, or 101 links for 256 nodes
+ *   bytes should be stores sparsely if avgOrder < ( nodes / 2 - 4 ) / 2
+ *     which is 254 links for 1024 nodes, or 62 links for 256 nodes
+ *   bits should be stores sparsely if avgOrder < (nodes / 16 - 4) / ( 9/8 )
+ *     which is 53.3 links for 1024 nodes , or 10.6 links for 256 nodes
+ */
 public interface EdgeData extends Resizable {
   class Util {
     public static String dump(EdgeData data) {
@@ -64,29 +96,9 @@ public interface EdgeData extends Resizable {
   //	TODO :: rename/clone to isConnected()
   boolean conn(int from, int into);
 
-  TIntArrayList outVertexes(int from);
-
-  TIntArrayList outVertexes(int from, TIntArrayList result);
-
-  TIntArrayList inVertexes(int into);
-
-  TIntArrayList inVertexes(int into, TIntArrayList result);
-
   TIntArrayList connVertexes(int index);
 
   TIntArrayList connVertexes(int index, TIntArrayList result);
-
-  TDoubleArrayList outElements(int from);
-
-  TDoubleArrayList outElements(int from, TDoubleArrayList result);
-
-  TDoubleArrayList inElements(int into);
-
-  TDoubleArrayList inElements(int into, TDoubleArrayList result);
-
-  TDoubleArrayList connElements(int index);
-
-  TDoubleArrayList connElements(int index, TDoubleArrayList result);
 
   double weight(int from, int into);
 
@@ -94,15 +106,9 @@ public interface EdgeData extends Resizable {
 
   double power(int index);
 
-  double powerOut(int index);
-
-  double powerIn(int index);
-
   double weight(Route route, double emptyWeight);
 
   double weight(TIntArrayList indexes, double emptyWeight);
-
-  double diameter(int actualSize, boolean refrective);
 
   @JsonIgnore
   int getNotNullCount();

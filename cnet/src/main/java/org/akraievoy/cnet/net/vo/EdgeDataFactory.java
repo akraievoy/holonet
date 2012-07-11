@@ -18,7 +18,6 @@
 
 package org.akraievoy.cnet.net.vo;
 
-import gnu.trove.TDoubleArrayList;
 import gnu.trove.TIntArrayList;
 import org.codehaus.jackson.annotate.JsonIgnore;
 
@@ -106,36 +105,6 @@ public class EdgeDataFactory {
       return !isNull(value);
     }
 
-    public TIntArrayList outVertexes(int from) {
-      return outVertexes(from, new TIntArrayList());
-    }
-
-    public TIntArrayList outVertexes(int from, TIntArrayList result) {
-      result.clear();
-      if (isNull(value)) {
-        return result;
-      }
-      for (int i = 0; i < size; i++) {
-        result.add(i);
-      }
-      return result;
-    }
-
-    public TIntArrayList inVertexes(int into) {
-      return inVertexes(into, new TIntArrayList());
-    }
-
-    public TIntArrayList inVertexes(int into, TIntArrayList result) {
-      result.clear();
-      if (isNull(value)) {
-        return result;
-      }
-      for (int i = 0; i < size; i++) {
-        result.add(i);
-      }
-      return result;
-    }
-
     public TIntArrayList connVertexes(int index) {
       return connVertexes(index, new TIntArrayList());
     }
@@ -151,30 +120,6 @@ public class EdgeDataFactory {
       return result;
     }
 
-    public TDoubleArrayList outElements(int from) {
-      throw new UnsupportedOperationException("not implemented yet");
-    }
-
-    public TDoubleArrayList outElements(int from, TDoubleArrayList result) {
-      throw new UnsupportedOperationException("not implemented yet");
-    }
-
-    public TDoubleArrayList inElements(int into) {
-      throw new UnsupportedOperationException("not implemented yet");
-    }
-
-    public TDoubleArrayList inElements(int into, TDoubleArrayList result) {
-      throw new UnsupportedOperationException("not implemented yet");
-    }
-
-    public TDoubleArrayList connElements(int index) {
-      throw new UnsupportedOperationException("not implemented yet");
-    }
-
-    public TDoubleArrayList connElements(int index, TDoubleArrayList result) {
-      throw new UnsupportedOperationException("not implemented yet");
-    }
-
     public double weight(int from, int into) {
       return value;
     }
@@ -187,24 +132,12 @@ public class EdgeDataFactory {
       return size * value;
     }
 
-    public double powerOut(int index) {
-      return size * value;
-    }
-
-    public double powerIn(int index) {
-      return size * value;
-    }
-
     public double weight(Route route, double emptyWeight) {
       throw new UnsupportedOperationException("not implemented yet");
     }
 
     public double weight(TIntArrayList indexes, double emptyWeight) {
       throw new UnsupportedOperationException("not implemented yet");
-    }
-
-    public double diameter(int actualSize, boolean refrective) {
-      return 1;
     }
 
     @JsonIgnore
