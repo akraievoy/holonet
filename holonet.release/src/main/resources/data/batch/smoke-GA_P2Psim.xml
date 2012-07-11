@@ -47,7 +47,7 @@
           <constructor-arg value="run-overlayGO-stage3.genetics"/>
           <constructor-arg value="1001"/>
           <constructor-arg value="specimen.best.fitness"/>
-          <constructor-arg value="0.5360743474105613"/>
+          <constructor-arg value="0.5637038860281032"/>
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
           <constructor-arg value="run-p2p-stage0.seed"/>
