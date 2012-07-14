@@ -137,15 +137,10 @@ public class EdgeDataSparseTest extends TestCase {
     assertEquals(Double.POSITIVE_INFINITY, res2.get(2, 2));
     assertEquals(0.0, res2.get(1, 1));
     assertEquals(Double.POSITIVE_INFINITY, res2.get(0, 0));
-    assertEquals(Double.POSITIVE_INFINITY, res2.get(4, 4));
 
     assertEquals(Double.POSITIVE_INFINITY, res2.get(0, 3));
     assertEquals(Double.POSITIVE_INFINITY, res2.get(3, 0));
     assertEquals(Double.POSITIVE_INFINITY, res2.get(0, 2));
     assertEquals(Double.POSITIVE_INFINITY, res2.get(2, 0));
-    assertEquals(Double.POSITIVE_INFINITY, res2.get(4, 0));
-    assertEquals(Double.POSITIVE_INFINITY, res2.get(0, 4));
-    assertEquals(Double.POSITIVE_INFINITY, res2.get(4, 1));
-    assertEquals(Double.POSITIVE_INFINITY, res2.get(1, 4));
   }
 }

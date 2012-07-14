@@ -57,7 +57,15 @@ public class MetricEDataStructure extends MetricEData {
     final EdgeData dist = distSource.getValue();
     final int size = dist.getSize();
 
-    final EdgeData structure = structureSource.getValue();
+    final EdgeData structureOri = structureSource.getValue();
+    final EdgeData structure = structureOri.proto(size);
+
+    structureOri.visitNotNull(new EdgeData.EdgeVisitor() {
+      public void visit(int from, int into, double e) {
+        structure.set(from, into, e);
+      }
+    });
+
     final WeightedEventModel eventModel = new WeightedEventModelBase();
 
     double[] powers = new double[size];

@@ -32,6 +32,7 @@ public class GenomeSoo extends Genome {
     this.solution = solution;
   }
 
+  @Deprecated
   //	this no-arg constructor is required
   public GenomeSoo() {
     this(null);
@@ -39,7 +40,7 @@ public class GenomeSoo extends Genome {
 
   public EdgeData getSolution() {
     if (solution == null) {
-      setSolution(EdgeDataFactory.sparse(true, 0.0, 0));
+      throw new IllegalArgumentException("solution not set");
     }
 
     return solution;

@@ -28,6 +28,7 @@ import org.akraievoy.cnet.metrics.domain.MetricScalarEffectiveness;
 import org.akraievoy.cnet.metrics.domain.MetricScalarEigenGap;
 import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
+import org.akraievoy.cnet.net.vo.EdgeDataFactory;
 import org.akraievoy.cnet.opt.api.GeneticStrategy;
 import org.akraievoy.cnet.opt.domain.FitnessKey;
 import org.slf4j.Logger;
@@ -145,7 +146,9 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
   }
 
   public GenomeSoo createGenome() {
-    return new GenomeSoo();
+    return new GenomeSoo(EdgeDataFactory.sparse(
+        true, 0.0, distSource.getValue().getSize()
+    ));
   }
 
   public void initOnSeeds(Context ctx, String generationParam, SortedMap<FitnessKey, GenomeSoo> children) {

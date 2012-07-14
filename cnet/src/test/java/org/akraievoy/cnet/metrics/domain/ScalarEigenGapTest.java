@@ -26,7 +26,7 @@ import org.akraievoy.cnet.net.vo.EdgeDataFactory;
 
 public class ScalarEigenGapTest extends TestCase {
   public void testGetMetric() throws Exception {
-    EdgeData netEData = EdgeDataFactory.sparse(true, 0);
+    EdgeData netEData = EdgeDataFactory.sparse(true, 5);
 
     netEData.set(0, 4, 1.0);
     netEData.set(1, 4, 1.0);
@@ -51,7 +51,7 @@ public class ScalarEigenGapTest extends TestCase {
   }
 
   public void testGetMetric_forPath() throws Exception {
-    EdgeData netEData = EdgeDataFactory.sparse(true, 0);
+    EdgeData netEData = EdgeDataFactory.sparse(true, 5);
 
     netEData.set(0, 1, 1.0);
     netEData.set(1, 2, 1.0);

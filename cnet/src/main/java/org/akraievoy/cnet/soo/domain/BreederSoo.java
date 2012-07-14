@@ -107,7 +107,10 @@ public abstract class BreederSoo implements Breeder {
   }
 
   protected GenomeSoo createChild(GenomeSoo genomeA, GenomeSoo genomeB) {
-    final GenomeSoo child = new GenomeSoo();
+    final EdgeData solA = genomeA.getSolution();
+    final EdgeData solB = genomeB.getSolution();
+
+    final GenomeSoo child = new  GenomeSoo(solA.proto(solA.getSize()));
     final EdgeData solution = child.getSolution();
     final EdgeData.EdgeVisitor buildChildVisitor = new EdgeData.EdgeVisitor() {
       public void visit(int from, int into, double linkFitness) {
@@ -115,8 +118,8 @@ public abstract class BreederSoo implements Breeder {
       }
     };
 
-    genomeA.getSolution().visitNotNull(buildChildVisitor);
-    genomeB.getSolution().visitNotNull(buildChildVisitor);
+    solA.visitNotNull(buildChildVisitor);
+    solB.visitNotNull(buildChildVisitor);
 
     return child;
   }

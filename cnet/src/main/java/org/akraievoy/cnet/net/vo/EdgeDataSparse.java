@@ -28,29 +28,31 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import java.util.ArrayList;
 import java.util.List;
 
-@JsonPropertyOrder({"size", "notNullCount", "nullElement", "symmetric", "fiEdges", "ifEdges"})
+/**
+ * Assymetric case:
+ *   store all from->into mappings
+ * Symmetric case:
+ *   store only from->into mappings where from <= into
+ */
+@JsonPropertyOrder({"nullElement", "symmetric", "fiEdges"})
 public class EdgeDataSparse implements EdgeData {
   protected double nullElement;
 
   protected Edges fiEdges;
-  protected Edges ifEdges;
 
   protected boolean symmetric;
 
   @Deprecated
+  @SuppressWarnings("UnusedDeclaration")
   public EdgeDataSparse() {
     this(true, 0.0, 0);
   }
 
   protected EdgeDataSparse(boolean symmetric, double nullElement, final int size) {
-    this.fiEdges = new Edges();
-    this.ifEdges = new Edges();
+    this.fiEdges = new Edges(size);
 
     this.nullElement = nullElement;
     this.symmetric = symmetric;
-
-    ifEdges.setSize(size);
-    fiEdges.setSize(size);
   }
 
   public boolean isSymmetric() {
@@ -73,18 +75,6 @@ public class EdgeDataSparse implements EdgeData {
   @Deprecated
   public void setFiEdges(Edges fiEdges) {
     this.fiEdges = fiEdges;
-  }
-
-  @Deprecated
-  @SuppressWarnings({"UnusedDeclaration"})
-  public Edges getIfEdges() {
-    return ifEdges;
-  }
-
-  @Deprecated
-  @SuppressWarnings({"UnusedDeclaration"})
-  public void setIfEdges(Edges ifEdges) {
-    this.ifEdges = ifEdges;
   }
 
   public boolean isNull(double elem) {
@@ -110,6 +100,17 @@ public class EdgeDataSparse implements EdgeData {
   }
 
   public double get(int from, int into) {
+    if (from >= fiEdges.getSize()) {
+      throw new IllegalArgumentException(
+          "from(" + from + ") >= size(" + fiEdges.getSize() + ")"
+      );
+    }
+    if (into >= fiEdges.getSize()) {
+      throw new IllegalArgumentException(
+        "into(" + into + ") >= size(" + fiEdges.getSize() + ")"
+      );
+    }
+
     if (isSymmetric() && from > into) {
       return fiEdges.get(into, from, this);
     }
@@ -118,29 +119,31 @@ public class EdgeDataSparse implements EdgeData {
   }
 
   public double set(int from, int into, double elem) {
+    if (from >= fiEdges.getSize()) {
+      throw new IllegalArgumentException(
+          "from(" + from + ") >= size(" + fiEdges.getSize() + ")"
+      );
+    }
+    if (into >= fiEdges.getSize()) {
+      throw new IllegalArgumentException(
+        "into(" + into + ") >= size(" + fiEdges.getSize() + ")"
+      );
+    }
+
     if (isSymmetric() && from > into) {
-      ifEdges.set(from, into, elem, this);
       return fiEdges.set(into, from, elem, this);
     }
 
-    ifEdges.set(into, from, elem, this);
     return fiEdges.set(from, into, elem, this);
   }
 
-  public void setSize(int size) {
-    ifEdges.setSize(size);
-    fiEdges.setSize(size);
-  }
-
+  @JsonIgnore
   public int getSize() {
     if (fiEdges.isEmpty()) {
       return 0;
     }
 
-    final int maxFrom = fiEdges.getMaxLeading();
-    final int maxInto = ifEdges.getMaxLeading();
-
-    return Math.max(maxFrom, maxInto);
+    return fiEdges.getSize();
   }
 
   public boolean conn(int from, int into) {
@@ -152,8 +155,14 @@ public class EdgeDataSparse implements EdgeData {
   }
 
   public TIntArrayList connVertexes(int index, final TIntArrayList result) {
-    ifEdges.vertexes(index, result, false);
-    fiEdges.vertexes(index, result, true);
+    fiEdges.vertexes(index, result, false);
+    if (symmetric) {
+      for (int from = 0; from < index; from++) {
+        if (conn(from, index)) {
+          result.add(from);
+        }
+      }
+    }
 
     return result;
   }
@@ -167,7 +176,13 @@ public class EdgeDataSparse implements EdgeData {
   }
 
   public double power(final int index) {
-    return ifEdges.power(index, false, this) + fiEdges.power(index, true, this);
+    double power = fiEdges.power(index, false, this);
+    if (symmetric) {
+      for (int from = 0; from < index; from++) {
+        power += weight(get(from, index));
+      }
+    }
+    return power;
   }
 
   public double weight(Route route, final double emptyWeight) {
@@ -268,7 +283,6 @@ public class EdgeDataSparse implements EdgeData {
 
   public void clear() {
     fiEdges.clear();
-    ifEdges.clear();
   }
 
   public double total() {
@@ -289,8 +303,16 @@ public class EdgeDataSparse implements EdgeData {
 
     protected int capacity = 4;
 
+    @SuppressWarnings("UnusedDeclaration")
     @Deprecated
     public Edges() {
+    }
+
+    public Edges(int size) {
+      while (index.size() < size) {
+        index.add(new TIntArrayList(capacity));
+        elems.add(new TDoubleArrayList(capacity));
+      }
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
@@ -318,11 +340,6 @@ public class EdgeDataSparse implements EdgeData {
     }
 
     public double get(int lead, int tail, final EdgeData weightOperator) {
-      while (index.size() <= lead) {
-        index.add(new TIntArrayList(capacity));
-        elems.add(new TDoubleArrayList(capacity));
-      }
-
       final int i = index.get(lead).binarySearch(tail);
 
       if (i < 0) {
@@ -333,11 +350,6 @@ public class EdgeDataSparse implements EdgeData {
     }
 
     public double set(int lead, int tail, double elem, final EdgeData weightOperator) {
-      while (index.size() <= lead) {
-        index.add(new TIntArrayList(capacity));
-        elems.add(new TDoubleArrayList(capacity));
-      }
-
       final int i = index.get(lead).binarySearch(tail);
       final boolean isNull = weightOperator != null && weightOperator.isNull(elem);
 
@@ -360,83 +372,12 @@ public class EdgeDataSparse implements EdgeData {
       }
     }
 
-    public void setSize(int size) {
-      if (index.size() > size) {
-        index.subList(size, index.size()).clear();
-        elems.subList(size, elems.size()).clear();
-      }
-
-      for (int i = index.size() - 1; i >= 0; i--) {
-        final TIntArrayList idx = index.get(i);
-
-        final int sizePos = idx.binarySearch(size);
-        final int cutoff = sizePos < 0 ? -(sizePos + 1) : sizePos;
-        final int cutlen = idx.size() - cutoff;
-
-        idx.remove(cutoff, cutlen);
-        elems.get(i).remove(cutoff, cutlen);
-      }
-
-      while (index.size() < size) {
-        index.add(new TIntArrayList(capacity));
-        elems.add(new TDoubleArrayList(capacity));
-      }
-    }
-
     @JsonIgnore
     public boolean isEmpty() {
       return index.isEmpty();
     }
 
-    public void remove(int remIdx) {
-      if (index.size() > remIdx) {
-        index.remove(remIdx);
-        elems.remove(remIdx);
-      }
-
-      for (int i = index.size() - 1; i >= 0; i--) {
-        final TIntArrayList idx = index.get(i);
-
-        final int remPos = idx.binarySearch(remIdx);
-
-        if (remPos >= 0) {
-          idx.remove(remPos);
-          elems.get(i).remove(remPos);
-        }
-
-        final int decStart = remPos < 0 ? -(remPos + 1) : remPos;
-        for (int insI = decStart; insI < idx.size(); insI++) {
-          idx.set(insI, idx.get(insI) - 1);
-        }
-      }
-    }
-
-    public void insert(int insIdx) {
-      while (index.size() < insIdx) {
-        index.add(new TIntArrayList(capacity));
-        elems.add(new TDoubleArrayList(capacity));
-      }
-      index.add(insIdx, new TIntArrayList(capacity));
-      elems.add(insIdx, new TDoubleArrayList(capacity));
-
-      for (int i = index.size() - 1; i >= 0; i--) {
-        final TIntArrayList idx = index.get(i);
-
-        final int insPos = idx.binarySearch(insIdx);
-        final int incStart = insPos < 0 ? -(insPos + 1) : insPos;
-
-        for (int insI = incStart; insI < idx.size(); insI++) {
-          idx.set(insI, 1 + idx.get(insI));
-        }
-      }
-    }
-
     public TIntArrayList vertexes(int leadIdx, final TIntArrayList result, final boolean ignoreReflective) {
-      while (index.size() <= leadIdx) {
-        index.add(new TIntArrayList(capacity));
-        elems.add(new TDoubleArrayList(capacity));
-      }
-
       final TIntArrayList range = index.get(leadIdx);
       result.add(range.toNativeArray());
 
@@ -450,32 +391,7 @@ public class EdgeDataSparse implements EdgeData {
       return result;
     }
 
-    public TDoubleArrayList elements(int leadIdx, final TDoubleArrayList result, final boolean ignoreReflective) {
-      while (index.size() <= leadIdx) {
-        index.add(new TIntArrayList(capacity));
-        elems.add(new TDoubleArrayList(capacity));
-      }
-
-      final TIntArrayList range = index.get(leadIdx);
-      final TDoubleArrayList elm = elems.get(leadIdx);
-      result.add(elm.toNativeArray());
-
-      if (ignoreReflective) {
-        final int leadPos = range.binarySearch(leadIdx);
-        if (leadPos >= 0) {
-          result.remove(result.size() - range.size() + leadPos);
-        }
-      }
-
-      return result;
-    }
-
     public double power(int leadIdx, final boolean ignoreReflective, EdgeData weightOperator) {
-      while (index.size() <= leadIdx) {
-        index.add(new TIntArrayList(capacity));
-        elems.add(new TDoubleArrayList(capacity));
-      }
-
       final TIntArrayList range = index.get(leadIdx);
       final TDoubleArrayList elm = elems.get(leadIdx);
 
@@ -494,7 +410,7 @@ public class EdgeDataSparse implements EdgeData {
     }
 
     @JsonIgnore
-    protected int getMaxLeading() {
+    protected int getSize() {
       return index.size();
     }
 
@@ -502,8 +418,8 @@ public class EdgeDataSparse implements EdgeData {
     public int getNotNullCount() {
       int notNullCount = 0;
 
-      for (int i = 0, size = elems.size(); i < size; i++) {
-        notNullCount += elems.get(i).size();
+      for (TDoubleArrayList elem : elems) {
+        notNullCount += elem.size();
       }
 
       return notNullCount;
