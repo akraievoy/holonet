@@ -51,14 +51,13 @@ public class MetricVDataLogScale extends MetricVData {
     final VertexData vertexData = source.getValue();
     final int size = vertexData.getSize();
 
-    final VertexData result = vertexData.proto();
+    final VertexData result = vertexData.proto(size);
 
     if (size == 0) {
       target.setValue(result);
       return;
     }
 
-    result.setSize(size);
     final double baseScale = Math.log(base);
     for (int i = 0; i < size; i++) {
       final double newValue = Math.log(vertexData.get(i)) / baseScale;

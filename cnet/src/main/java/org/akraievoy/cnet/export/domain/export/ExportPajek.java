@@ -32,7 +32,6 @@ import org.akraievoy.cnet.metrics.domain.MetricVDataFiller;
 import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.ref.RefVertexData;
 import org.akraievoy.cnet.net.vo.EdgeData;
-import org.akraievoy.cnet.net.vo.Resizable;
 import org.akraievoy.cnet.net.vo.VertexData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -183,9 +182,11 @@ public class ExportPajek implements Runnable, ContextInjectable, SkipTrigger {
       final EdgeData eColor = eColorSource.getValue();
 
       final int size = getMaxSize(
-          new Resizable[]{
+          new VertexData[] {
               vLabel, vRadius, vColor,
-              vCoordX, vCoordY, vCoordZ,
+              vCoordX, vCoordY, vCoordZ
+          },
+          new EdgeData[]{
               e, eWidth, eLabel, eColor
           }
       );
@@ -239,10 +240,15 @@ public class ExportPajek implements Runnable, ContextInjectable, SkipTrigger {
     }
   }
 
-  protected int getMaxSize(final Resizable[] resizables) {
+  protected int getMaxSize(final VertexData[] vDatas, final EdgeData[] eDatas) {
     int maxSize = 0;
-    for (Resizable r : resizables) {
-      maxSize = Math.max(maxSize, r == null ? 0 : r.getSize());
+    for (EdgeData ed : eDatas) {
+      maxSize = Math.max(maxSize, ed == null ? 0 : ed.getSize());
+    }
+
+    final VertexData[] vertexDatas = vDatas;
+    for (VertexData vd : vertexDatas) {
+      maxSize = Math.max(maxSize, vd == null ? 0 : vd.getSize());
     }
     return maxSize;
   }

@@ -50,7 +50,7 @@ public class MetricEDataRenorm extends MetricEData {
     final EdgeData edgeData = source.getValue();
     final int size = edgeData.getSize();
 
-    final EdgeData result = edgeData.proto();
+    final EdgeData result = edgeData.proto(edgeData.getSize());
 
     if (size == 0) {
       target.setValue(result);
@@ -74,7 +74,6 @@ public class MetricEDataRenorm extends MetricEData {
     final double dataMin = dataMinRef[0];
     final double diff = max - min;
 
-    result.setSize(size);
     edgeData.visitNotNull(new EdgeData.EdgeVisitor() {
       public void visit(int from, int into, double e) {
         result.set(from, into, diff * (e - dataMin) / dataDiff + min);

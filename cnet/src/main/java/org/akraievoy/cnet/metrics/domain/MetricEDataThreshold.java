@@ -52,7 +52,12 @@ public class MetricEDataThreshold extends MetricEData {
       return;
     }
 
-    final EdgeData result = EdgeDataFactory.sparse(data.isSymmetric(), data.getNullElement());
+    final EdgeData result = EdgeDataFactory.sparse(
+        data.isSymmetric(),
+        data.getNullElement(),
+        data.getSize()
+    );
+
     data.visitNotNull(new ThresholdVisitor(minToMaxRatio, minAbsValue, max.getMax(), result));
 
     target.setValue(result);

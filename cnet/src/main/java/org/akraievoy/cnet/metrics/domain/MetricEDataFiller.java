@@ -40,6 +40,6 @@ public class MetricEDataFiller extends MetricEData {
   }
 
   public void run() {
-    target.setValue(EdgeDataFactory.sparse(true, value));
+    target.setValue(EdgeDataFactory.sparse(true, value, 0));
   }
 }

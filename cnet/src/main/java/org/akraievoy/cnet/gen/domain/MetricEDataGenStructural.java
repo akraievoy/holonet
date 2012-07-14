@@ -91,11 +91,7 @@ public class MetricEDataGenStructural extends MetricEData {
   }
 
   public static EdgeData empty(int netSize) {
-    final EdgeData structure = EdgeDataFactory.sparse(true, 0.0);
-
-    structure.setSize(netSize);
-
-    return structure;
+    return EdgeDataFactory.sparse(true, 0.0, netSize);
   }
 
   public static EdgeData path(int netSize) {
@@ -127,11 +123,7 @@ public class MetricEDataGenStructural extends MetricEData {
   }
 
   public static EdgeData full(int netSize) {
-    final EdgeData structure = EdgeDataFactory.sparse(true, 1.0);
-
-    structure.setSize(netSize);
-
-    return structure;
+    return EdgeDataFactory.sparse(true, 1.0, netSize);
   }
 
   public static EdgeData paley(final int netSize) {

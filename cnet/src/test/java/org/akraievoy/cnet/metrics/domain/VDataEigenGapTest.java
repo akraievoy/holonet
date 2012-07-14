@@ -27,7 +27,7 @@ import org.akraievoy.cnet.net.vo.VertexData;
 
 public class VDataEigenGapTest extends TestCase {
   public void testVData_forPath() throws Exception {
-    EdgeData netEData = EdgeDataFactory.sparse(true);
+    EdgeData netEData = EdgeDataFactory.sparse(true, 0);
 
     netEData.set(0, 1, 1.0);
     netEData.set(1, 2, 1.0);

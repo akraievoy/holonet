@@ -51,7 +51,7 @@ public class MetricEDataLogScale extends MetricEData {
     final EdgeData edgeData = source.getValue();
     final int size = edgeData.getSize();
 
-    final EdgeData result = edgeData.proto();
+    final EdgeData result = edgeData.proto(edgeData.getSize());
 
     if (size == 0) {
       target.setValue(result);

@@ -69,7 +69,7 @@ public class MetricRoutesFloydWarshalTest extends TestCase {
        3
    */
   public void testRoutes() {
-    EdgeData eData = EdgeDataFactory.sparse(true, Double.POSITIVE_INFINITY);
+    EdgeData eData = EdgeDataFactory.sparse(true, Double.POSITIVE_INFINITY, 5);
 
     eData.set(1, 2, 3.0);
     eData.set(1, 3, 1.0);

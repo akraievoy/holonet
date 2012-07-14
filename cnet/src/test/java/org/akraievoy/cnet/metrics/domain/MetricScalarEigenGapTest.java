@@ -29,7 +29,7 @@ import java.util.Arrays;
 
 public class MetricScalarEigenGapTest extends TestCase {
   public void testStructures() {
-    final EdgeData path = EdgeDataFactory.sparse(true, 0);
+    final EdgeData path = EdgeDataFactory.sparse(true, 0, 6);
 
     path.set(0, 1, 1.0);
     path.set(1, 2, 1.0);
@@ -37,7 +37,7 @@ public class MetricScalarEigenGapTest extends TestCase {
     path.set(3, 4, 1.0);
     path.set(4, 5, 1.0);
 
-    final EdgeData star = EdgeDataFactory.sparse(true, 0);
+    final EdgeData star = EdgeDataFactory.sparse(true, 0, 6);
 
     star.set(0, 1, 1.0);
     star.set(0, 2, 1.0);
@@ -45,7 +45,7 @@ public class MetricScalarEigenGapTest extends TestCase {
     star.set(0, 4, 1.0);
     star.set(0, 5, 1.0);
 
-    final EdgeData cycle = EdgeDataFactory.sparse(true, 0);
+    final EdgeData cycle = EdgeDataFactory.sparse(true, 0, 6);
 
     cycle.set(0, 1, 1.0);
     cycle.set(1, 2, 1.0);
@@ -54,7 +54,7 @@ public class MetricScalarEigenGapTest extends TestCase {
     cycle.set(4, 5, 1.0);
     cycle.set(5, 0, 1.0);
 
-    final EdgeData star2 = EdgeDataFactory.sparse(true, 0);
+    final EdgeData star2 = EdgeDataFactory.sparse(true, 0, 6);
 
     star2.set(0, 1, 1.0);
     star2.set(1, 2, 1.0);

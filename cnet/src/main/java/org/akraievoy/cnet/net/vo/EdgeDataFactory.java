@@ -22,12 +22,12 @@ import gnu.trove.TIntArrayList;
 import org.codehaus.jackson.annotate.JsonIgnore;
 
 public class EdgeDataFactory {
-  public static EdgeData sparse(final boolean symmetric) {
-    return sparse(symmetric, 0.0);
+  public static EdgeData sparse(final boolean symmetric, final int size) {
+    return sparse(symmetric, 0.0, size);
   }
 
-  public static EdgeData sparse(boolean symmetric, double nullElement) {
-    return new EdgeDataSparse(symmetric, nullElement);
+  public static EdgeData sparse(boolean symmetric, double nullElement, final int size) {
+    return new EdgeDataSparse(symmetric, nullElement, size);
   }
 
   public static EdgeData dense(boolean symmetric) {
@@ -89,7 +89,7 @@ public class EdgeDataFactory {
       return 0.0;
     }
 
-    public EdgeData proto() {
+    public EdgeData proto(final int protoSize) {
       throw new UnsupportedOperationException("constant EdgeData");
     }
 
@@ -169,20 +169,9 @@ public class EdgeDataFactory {
       throw new UnsupportedOperationException("constant EdgeData");
     }
 
-    public void setSize(int size) {
-      this.size = size;
-    }
-
     public int getSize() {
       return size;
     }
 
-    public void insert(int index) {
-      throw new UnsupportedOperationException("constant EdgeData");
-    }
-
-    public void remove(int index) {
-      throw new UnsupportedOperationException("constant EdgeData");
-    }
   }
 }

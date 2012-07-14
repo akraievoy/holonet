@@ -110,8 +110,8 @@ public class EdgeDataDense implements EdgeData {
     this.nullElement = nullElement;
   }
 
-  public EdgeData proto() {
-    return EdgeDataFactory.dense(isSymmetric(), nullElement, size);
+  public EdgeData proto(final int protoSize) {
+    return EdgeDataFactory.dense(isSymmetric(), nullElement, protoSize);
   }
 
   public double get(int from, int into) {
@@ -185,63 +185,8 @@ public class EdgeDataDense implements EdgeData {
   }
 
   @JsonIgnore
-  public void setSize(int size) {
-    ensureCapacity(size - 1);
-
-    this.size = size;
-  }
-
-  @JsonIgnore
   public int getSize() {
     return size;
-  }
-
-  public void remove(int index) {
-    Die.ifFalse("index < size", index < size);
-    Die.ifFalse("size > 0", size > 0);
-
-    final double[] edges = G4Trove.elements(this.edges);
-    final int capacity = computeCapacity();
-    for (int i = 0; i < size - 1; i++) {
-      final int row = capacity * i;
-      if (i < index) {
-        System.arraycopy(edges, row + index + 1, edges, row + index, size - index - 1);
-        edges[row + size - 1] = nullElement;
-      } else {
-        System.arraycopy(edges, row + capacity, edges, row, index);
-        System.arraycopy(edges, row + capacity + index + 1, edges, row + index, size - index - 1);
-        edges[row + size - 1] = nullElement;
-      }
-    }
-    Arrays.fill(edges, (size - 1) * capacity, size * capacity, nullElement);
-
-    size--;
-  }
-
-  public void insert(final int index) {
-    if (index >= size) {
-      ensureCapacity(index);
-      return;
-    }
-
-    ensureCapacity(size);
-
-    final int capacity = computeCapacity();
-    final double[] edges = G4Trove.elements(this.edges);
-    for (int i = size - 1; i >= 0; i--) {
-      final int row = capacity * i;
-
-      if (i > index) {
-        System.arraycopy(edges, row - capacity, edges, row, index);
-        System.arraycopy(edges, row - capacity + index, edges, row + index + 1, size - index - 1);
-        edges[row + index] = nullElement;
-      } else if (i == index) {
-        Arrays.fill(edges, row, row + capacity, nullElement);
-      } else {
-        System.arraycopy(edges, row + index, edges, row + index + 1, size - index - 1);
-        edges[row + index] = nullElement;
-      }
-    }
   }
 
   public boolean conn(int from, int into) {

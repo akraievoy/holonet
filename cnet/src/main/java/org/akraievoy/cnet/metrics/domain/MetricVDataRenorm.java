@@ -50,7 +50,7 @@ public class MetricVDataRenorm extends MetricVData {
     final VertexData vertexData = source.getValue();
     final int size = vertexData.getSize();
 
-    final VertexData result = vertexData.proto();
+    final VertexData result = vertexData.proto(size);
 
     if (size == 0) {
       target.setValue(result);
@@ -67,7 +67,6 @@ public class MetricVDataRenorm extends MetricVData {
     final double dataDiff = dataMax - dataMin;
     final double diff = max - min;
 
-    result.setSize(size);
     for (int i = 0; i < size; i++) {
       result.set(i, diff * (vertexData.get(i) - dataMin) / dataDiff + min);
     }

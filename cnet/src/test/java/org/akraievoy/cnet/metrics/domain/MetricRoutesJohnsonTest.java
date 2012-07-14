@@ -51,7 +51,7 @@ public class MetricRoutesJohnsonTest extends TestCase {
        3
    */
   public void testRoutes() {
-    EdgeData eData = EdgeDataFactory.sparse(true, Double.POSITIVE_INFINITY);
+    EdgeData eData = EdgeDataFactory.sparse(true, Double.POSITIVE_INFINITY, 5);
 
     eData.set(1, 2, 3.0);
     eData.set(1, 3, 1.0);
@@ -84,7 +84,7 @@ public class MetricRoutesJohnsonTest extends TestCase {
 
   public void testRoutes_for01() {
 
-    EdgeData eData = EdgeDataFactory.sparse(true, Double.POSITIVE_INFINITY);
+    EdgeData eData = EdgeDataFactory.sparse(true, Double.POSITIVE_INFINITY, 9);
 
     eData.set(0, 1, 1.0);
     eData.set(1, 2, 1.0);
@@ -107,7 +107,7 @@ public class MetricRoutesJohnsonTest extends TestCase {
 
   public void testRoutes_for02() {
 
-    EdgeData eData = EdgeDataFactory.sparse(true, Double.POSITIVE_INFINITY);
+    EdgeData eData = EdgeDataFactory.sparse(true, Double.POSITIVE_INFINITY, 8);
 
     eData.set(0, 1, 3.0);
     eData.set(1, 2, 1.0);
@@ -134,7 +134,7 @@ public class MetricRoutesJohnsonTest extends TestCase {
 
   public void testRoutes_for03() {
 
-    EdgeData eData = EdgeDataFactory.sparse(true, Double.POSITIVE_INFINITY);
+    EdgeData eData = EdgeDataFactory.sparse(true, Double.POSITIVE_INFINITY, 8);
 
 
     eData.set(0, 1, 1.0);
@@ -159,7 +159,7 @@ public class MetricRoutesJohnsonTest extends TestCase {
 
   public void testRoutes_for04() {
 
-    EdgeData eData = EdgeDataFactory.sparse(true, Double.POSITIVE_INFINITY);
+    EdgeData eData = EdgeDataFactory.sparse(true, Double.POSITIVE_INFINITY, 6);
 
     eData.set(1, 3, 4.0);
     eData.set(1, 4, 3.0);
@@ -180,7 +180,7 @@ public class MetricRoutesJohnsonTest extends TestCase {
 
   public void testRoutes_for05() {
 
-    EdgeData eData = EdgeDataFactory.sparse(true, Double.POSITIVE_INFINITY);
+    EdgeData eData = EdgeDataFactory.sparse(true, Double.POSITIVE_INFINITY, 6);
 
     eData.set(1, 2, 3.0);
     eData.set(1, 5, 3.0);

@@ -65,37 +65,6 @@ public class EdgeDataDenseTest extends TestCase {
     assertEquals(5, eData.getSize());
   }
 
-  public void testRemove() {
-    eData.remove(2);
-
-    assertEquals(4, eData.getSize());
-
-    assertEquals(12.0, eData.get(2, 3));
-    assertEquals(0.0, eData.get(2, 4));
-    assertEquals(0.0, eData.get(3, 4));
-    assertEquals(0.0, eData.get(1, 3));
-  }
-
-  public void testInsert() {
-    eData.set(3, 4, 12.0);
-    eData.set(4, 2, 11.0);
-
-    eData.insert(4);
-
-    assertEquals(6, eData.getSize());
-
-    assertEquals(12.0, eData.get(5, 3));
-    assertEquals(12.0, eData.get(3, 5));
-    assertEquals(11.0, eData.get(2, 5));
-    assertEquals(11.0, eData.get(5, 2));
-    assertEquals(0.0, eData.get(3, 4));
-    assertEquals(0.0, eData.get(4, 3));
-    assertEquals(0.0, eData.get(2, 4));
-    assertEquals(0.0, eData.get(4, 2));
-    assertEquals(0.0, eData.get(4, 5));
-    assertEquals(0.0, eData.get(5, 4));
-  }
-
   public void testPower() {
     assertEquals(23.0, eData.power(4));
     assertEquals(11.0, eData.power(2));

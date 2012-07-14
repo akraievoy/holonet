@@ -21,7 +21,7 @@ package org.akraievoy.cnet.net.vo;
 import gnu.trove.TDoubleArrayList;
 import org.codehaus.jackson.annotate.JsonIgnore;
 
-public class VertexData implements Resizable {
+public class VertexData {
   protected final TDoubleArrayList data = new TDoubleArrayList();
   protected double nullElement;
 
@@ -36,8 +36,9 @@ public class VertexData implements Resizable {
 
   public VertexData(double nullElement, int size) {
     this.nullElement = nullElement;
-
-    setSize(size);
+    for (int i = 0; i < size; i++) {
+      data.add(nullElement);
+    }
   }
 
   public double getNullElement() {
@@ -60,8 +61,8 @@ public class VertexData implements Resizable {
     this.data.add(data);
   }
 
-  public VertexData proto() {
-    return new VertexData(nullElement, 0);
+  public VertexData proto(final int size) {
+    return new VertexData(nullElement, size);
   }
 
   public boolean isNull(int index) {
@@ -71,18 +72,6 @@ public class VertexData implements Resizable {
   @JsonIgnore
   public int getSize() {
     return data.size();
-  }
-
-  @JsonIgnore
-  public void setSize(int size) {
-    if (getSize() == size) {
-      return; // no op
-    }
-
-    data.clear();
-    for (int i = 0; i < size; i++) {
-      data.add(getNullElement());
-    }
   }
 
   public double get(int index) {
@@ -99,14 +88,6 @@ public class VertexData implements Resizable {
 
   public void insert(int index, double elem) {
     data.insert(index, elem);
-  }
-
-  public void insert(int index) {
-    data.insert(index, getNullElement());
-  }
-
-  public void remove(int index) {
-    data.remove(index);
   }
 
   public String toString() {

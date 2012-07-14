@@ -39,7 +39,7 @@ public class GenomeSoo extends Genome {
 
   public EdgeData getSolution() {
     if (solution == null) {
-      setSolution(EdgeDataFactory.sparse(true, 0.0));
+      setSolution(EdgeDataFactory.sparse(true, 0.0, 0));
     }
 
     return solution;

@@ -55,7 +55,7 @@ public class SeedSourceHeuristic implements SeedSource<GenomeSoo> {
 
   protected GenomeSoo generateSeed(int limit, int size, EdgeData dist, EdgeData req) {
     final BitSet starRoots = new BitSet();
-    final EdgeData solution = EdgeDataFactory.sparse(true, 0.0);
+    final EdgeData solution = EdgeDataFactory.sparse(true, 0.0, size);
     final EdgeData minDist = EdgeDataFactory.dense(true, Double.POSITIVE_INFINITY, size);
 
     AtomicInteger linksToAdd = new AtomicInteger(limit);

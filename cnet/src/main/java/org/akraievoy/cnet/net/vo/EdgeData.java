@@ -54,7 +54,7 @@ import org.codehaus.jackson.annotate.JsonIgnore;
  *   bits should be stores sparsely if avgOrder < (nodes / 16 - 4) / ( 9/8 )
  *     which is 53.3 links for 1024 nodes , or 10.6 links for 256 nodes
  */
-public interface EdgeData extends Resizable {
+public interface EdgeData {
   class Util {
     public static String dump(EdgeData data) {
       final StringBuilder res = new StringBuilder();
@@ -79,6 +79,8 @@ public interface EdgeData extends Resizable {
     }
   }
 
+  public int getSize();
+
   boolean isSymmetric();
 
   boolean isNull(double elem);
@@ -87,7 +89,7 @@ public interface EdgeData extends Resizable {
 
   double getNullElement();
 
-  EdgeData proto();
+  EdgeData proto(final int protoSize);
 
   double get(int from, int into);
 

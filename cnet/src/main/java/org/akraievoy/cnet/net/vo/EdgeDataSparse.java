@@ -39,15 +39,18 @@ public class EdgeDataSparse implements EdgeData {
 
   @Deprecated
   public EdgeDataSparse() {
-    this(true, 0.0);
+    this(true, 0.0, 0);
   }
 
-  protected EdgeDataSparse(boolean symmetric, double nullElement) {
+  protected EdgeDataSparse(boolean symmetric, double nullElement, final int size) {
     this.fiEdges = new Edges();
     this.ifEdges = new Edges();
 
     this.nullElement = nullElement;
     this.symmetric = symmetric;
+
+    ifEdges.setSize(size);
+    fiEdges.setSize(size);
   }
 
   public boolean isSymmetric() {
@@ -102,8 +105,8 @@ public class EdgeDataSparse implements EdgeData {
     this.nullElement = nullElement;
   }
 
-  public EdgeData proto() {
-    return EdgeDataFactory.sparse(isSymmetric(), nullElement);
+  public EdgeData proto(final int protoSize) {
+    return EdgeDataFactory.sparse(isSymmetric(), nullElement, protoSize);
   }
 
   public double get(int from, int into) {
@@ -138,21 +141,6 @@ public class EdgeDataSparse implements EdgeData {
     final int maxInto = ifEdges.getMaxLeading();
 
     return Math.max(maxFrom, maxInto);
-  }
-
-  public void remove(int index) {
-    fiEdges.remove(index);
-    ifEdges.remove(index);
-  }
-
-  public void insert(final int index) {
-    final boolean last = index == getSize();
-    if (last) {
-      return;
-    }
-
-    fiEdges.insert(index);
-    ifEdges.insert(index);
   }
 
   public boolean conn(int from, int into) {
@@ -387,6 +375,11 @@ public class EdgeDataSparse implements EdgeData {
 
         idx.remove(cutoff, cutlen);
         elems.get(i).remove(cutoff, cutlen);
+      }
+
+      while (index.size() < size) {
+        index.add(new TIntArrayList(capacity));
+        elems.add(new TDoubleArrayList(capacity));
       }
     }
 
