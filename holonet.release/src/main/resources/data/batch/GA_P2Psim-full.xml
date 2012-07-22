@@ -31,9 +31,6 @@
       <list>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
           <constructor-arg value="run-overlayGO-stage1.physDataset"/>
-<!--
-          <constructor-arg value="big-1k"/>
--->
           <constructor-arg value="big-1k"/>
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
@@ -43,10 +40,7 @@
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
           <constructor-arg value="run-overlayGO-stage3.genetics"/>
-<!--
-          <constructor-arg value="minEff19x50x256"/>
--->
-          <constructor-arg value="minEff19x10x320"/>
+          <constructor-arg value="minEff19x50x768"/>
           <constructor-arg><list><value>run-overlayGO-stage2.ovlDataset</value></list></constructor-arg>
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
@@ -59,7 +53,7 @@
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
           <constructor-arg value="run-p2p-stage2.paramSpace"/>
-          <constructor-arg value="extraLoops"/>
+          <constructor-arg value="failProf-large-192"/>
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
           <constructor-arg value="run-p2p-stage3.attackDestab"/>

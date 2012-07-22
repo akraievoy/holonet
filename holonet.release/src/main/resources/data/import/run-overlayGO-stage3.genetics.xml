@@ -103,15 +103,6 @@
           name="ovlGenOpt.generation" value="0-319"
           chainedStrategy="use_last" />
     </hn:Config>
-    <hn:Config name="minEff19x50x256" description="MinEff: 1.9 * 50 seeds * 256 gens (sim corr study)">
-      <hn:Param name="geneticStrategy.minEff" value="1.9"/>
-      <hn:Param 
-          name="entropySourceGenetics.seed" value="42600-42649"
-          chainedStrategy="spawn" strategy="spawn"/>
-      <hn:Param
-          name="ovlGenOpt.generation" value="0-255"
-          chainedStrategy="use_last" />
-    </hn:Config>
     <hn:Config name="minEff19x50x768" description="MinEff: 1.9 * 50 seeds * 768 gens (full opt)">
       <hn:Param name="geneticStrategy.minEff" value="1.9"/>
       <hn:Param
@@ -119,6 +110,18 @@
           chainedStrategy="spawn" strategy="spawn"/>
       <hn:Param
           name="ovlGenOpt.generation" value="0-767"
+          chainedStrategy="use_last" />
+    </hn:Config>
+    <hn:Config name="minEff19x50x256-tune" description="MinEff: 1.9 * 50 seeds * 256 gens / tuning">
+      <hn:Param name="geneticStrategy.minEff" value="1.9"/>
+      <hn:Param
+          name="entropySourceGenetics.seed" value="42600-42649"
+          chainedStrategy="spawn" strategy="spawn"/>
+      <hn:Param
+          name="ovlGenOpt.generation" value="0-255"
+          chainedStrategy="use_last" />
+      <hn:Param
+          name="ovlGenOpt.eliteRatio" value="0.01;0.03;0.05;0.1;0.2"
           chainedStrategy="use_last" />
     </hn:Config>
     <hn:Config name="minEff.2x2x3" description="MinEff: 1.2 * 2 seeds * 3 gens (debug)">
