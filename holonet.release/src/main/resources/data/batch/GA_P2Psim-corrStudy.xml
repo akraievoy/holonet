@@ -31,9 +31,6 @@
       <list>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
           <constructor-arg value="run-overlayGO-stage1.physDataset"/>
-<!--
-          <constructor-arg value="big-1k"/>
--->
           <constructor-arg value="big-1k"/>
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
@@ -43,7 +40,7 @@
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
           <constructor-arg value="run-overlayGO-stage3.genetics"/>
-          <constructor-arg value="minEff19x10x320"/>
+          <constructor-arg value="minEff19x80x60"/>
           <constructor-arg><list><value>run-overlayGO-stage2.ovlDataset</value></list></constructor-arg>
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
@@ -56,37 +53,7 @@
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
           <constructor-arg value="run-p2p-stage2.paramSpace"/>
-          <constructor-arg value="extraLoops"/>
-        </bean>
-        <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
-          <constructor-arg value="run-p2p-stage3.attackDestab"/>
-          <constructor-arg value="default"/>
-          <constructor-arg><list>
-              <value>run-overlayGO-stage3.genetics</value>
-              <value>run-p2p-stage0.seed</value>
-              <value>run-p2p-stage1.protoSet</value>
-              <value>run-p2p-stage2.paramSpace</value>
-          </list></constructor-arg>
-        </bean>
-        <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
-          <constructor-arg value="run-p2p-stage3.preDestab"/>
-          <constructor-arg value="default"/>
-          <constructor-arg><list>
-              <value>run-overlayGO-stage3.genetics</value>
-              <value>run-p2p-stage0.seed</value>
-              <value>run-p2p-stage1.protoSet</value>
-              <value>run-p2p-stage2.paramSpace</value>
-          </list></constructor-arg>
-        </bean>
-        <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
-          <constructor-arg value="run-p2p-stage3.static"/>
-          <constructor-arg value="default"/>
-          <constructor-arg><list>
-              <value>run-overlayGO-stage3.genetics</value>
-              <value>run-p2p-stage0.seed</value>
-              <value>run-p2p-stage1.protoSet</value>
-              <value>run-p2p-stage2.paramSpace</value>
-          </list></constructor-arg>
+          <constructor-arg value="failProf-large-192"/>
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
           <constructor-arg value="run-p2p-stage3.staticDestab"/>
