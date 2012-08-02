@@ -102,18 +102,18 @@
                 value="256"
                 strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
-    <hn:Config name="failProf-norm-192" description="failure profiling, more loops and data for 192 nodes">
+    <hn:Config name="corrStudy-large-192" description="correlation study, more loops for 192 nodes">
       <hn:Param name="tbNodes.value"
                 value="192"
                 strategy="spawn" chainedStrategy="spawn"/>
       <hn:Param name="tbFailProb.value"
-                value="0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64"
+                value="0.32"
                 strategy="spawn" chainedStrategy="spawn"/>
       <hn:Param name="tbElems.value"
-                value="256"
+                value="64"
                 strategy="spawn" chainedStrategy="spawn"/>
       <hn:Param name="tbLoop.value"
-                value="64"
+                value="80"
                 strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
     <hn:Config name="attackProf" description="attacks profiling">
