@@ -79,8 +79,8 @@
     <hn:Config name="minEff17" description="MinEff: 1.7">
       <hn:Param name="geneticStrategy.minEff" value="1.7"/>
     </hn:Config>
-    <hn:Config name="minEff19x4x64" description="MinEff: 1.9 * 4 seeds * 64 gens (fast sim corr study)">
-      <hn:Param name="geneticStrategy.minEff" value="1.9"/>
+    <hn:Config name="minEff17x4x64" description="MinEff: 1.7 * 4 seeds * 64 gens (fast sim corr study)">
+      <hn:Param name="geneticStrategy.minEff" value="1.7"/>
       <hn:Param
           name="entropySourceGenetics.seed" value="42600-42603"
           chainedStrategy="spawn" strategy="spawn"/>
