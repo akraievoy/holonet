@@ -18,15 +18,30 @@
 
 package org.akraievoy.cnet.net.vo;
 
+import com.google.common.io.Closeables;
+import com.google.common.io.InputSupplier;
 import org.akraievoy.base.soft.Soft;
+import org.akraievoy.db.Streamable;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.BitSet;
 
-interface Store {
-  double def();
+import static org.akraievoy.cnet.net.vo.StoreUtils.*;
+
+@SuppressWarnings("UnusedDeclaration")
+interface Store extends Streamable {
+  enum Width { BIT, BYTE, INT, LONG, FLOAT, DOUBLE }
+
+  Width width();
   int size();
-  void ins(int fromIncl, int uptoExcl);
+  void ins(int fromIncl, int uptoExcl, boolean def);
+  void ins(int fromIncl, int uptoExcl, byte def);
+  void ins(int fromIncl, int uptoExcl, int def);
+  void ins(int fromIncl, int uptoExcl, long def);
+  void ins(int fromIncl, int uptoExcl, float def);
+  void ins(int fromIncl, int uptoExcl, double def);
   void del(int fromIncl, int uptoExcl);
 
   double get(int pos, double typeHint);
@@ -43,8 +58,13 @@ interface Store {
   boolean set(int pos, boolean val);
 }
 
+@SuppressWarnings("UnusedDeclaration")
 class StoreUtils {
-  protected static void validateInsert(final int storeSize, int fromIncl, int uptoExcl) {
+  protected static void validateInsert(
+      final int storeSize,
+      final int fromIncl,
+      final int uptoExcl
+  ) {
     if (fromIncl > storeSize) {
       throw new IllegalArgumentException(
           "fromIncl(" + fromIncl + ") > size(" + storeSize + ")"
@@ -64,7 +84,11 @@ class StoreUtils {
     }
   }
 
-  protected static void validateDelete(final int storeSize, int fromIncl, int uptoExcl) {
+  protected static void validateDelete(
+      final int storeSize,
+      final int fromIncl,
+      final int uptoExcl
+  ) {
     if (uptoExcl > storeSize) {
       throw new IllegalArgumentException(
           "uptoExcl(" + uptoExcl + ") > size(" + storeSize + ")"
@@ -90,7 +114,10 @@ class StoreUtils {
     }
   }
 
-  protected static void validateAccess(int pos, final int storeSize) {
+  protected static void validateAccess(
+      final int pos,
+      final int storeSize
+  ) {
     if (pos >= storeSize) {
       throw new IllegalArgumentException(
           "pos("+pos + ") >= size(" + storeSize + ")"
@@ -103,30 +130,81 @@ class StoreUtils {
       );
     }
   }
+
+  public static void intBits(final int val, final byte[] dest) {
+    dest[3] = (byte) val;
+    dest[2] = (byte) (val >> 8);
+    dest[1] = (byte) (val >> 16);
+    dest[0] = (byte) (val >> 24);
+  }
+
+  public static void longBits(final long val, final byte[] dest) {
+    dest[7] = (byte) val;
+    dest[6] = (byte) (val >> 8);
+    dest[5] = (byte) (val >> 16);
+    dest[4] = (byte) (val >> 24);
+    dest[3] = (byte) (val >> 32);
+    dest[2] = (byte) (val >> 40);
+    dest[1] = (byte) (val >> 48);
+    dest[0] = (byte) (val >> 56);
+  }
+
+  public static int escapeByte(final byte res) {
+    return ((int) res) & 0xFF;
+  }
+
+  public static byte unescapeByte(final InputStream input) throws IOException {
+    int readValue = input.read();
+
+    if (readValue < 0) {
+      throw new IOException("should have read a byte successfully");
+    }
+
+    return (byte) readValue;
+  }
+
+  public static int unescapeInt(InputStream input) throws IOException {
+    return
+        (unescapeByte(input) << 24) |
+            ((unescapeByte(input) << 16) & 0xFF0000) |
+            ((unescapeByte(input) << 8) & 0xFF00) |
+            (unescapeByte(input) & 0xFF);
+  }
+
+  public static long unescapeLong(InputStream input) throws IOException {
+    return
+        ((long) unescapeInt(input) << 32) |
+            (unescapeInt(input) & 0xFFFFFFFFL);
+  }
+
+  enum StreamState {SIZE, DATA, COMPLETE }
 }
 
+@SuppressWarnings("UnusedDeclaration")
 class StoreBit implements Store {
   private BitSet bits;
   private int size;
-  private boolean def;
 
-  StoreBit(final int newSize, final boolean newDef) {
-    bits = new BitSet(newSize);
-    size = newSize;
-    def = newDef;
-
-    bits.set(0, size, def);
+  StoreBit() {
+    this(0, false);
   }
 
-  public double def() {
-    return def ? 1 : 0;
+  StoreBit(final int newSize, boolean newDef) {
+    bits = new BitSet(newSize);
+    size = newSize;
+
+    bits.set(0, size, newDef);
+  }
+
+  public Width width() {
+    return Width.BIT;
   }
 
   public int size() {
     return size;
   }
 
-  public void ins(int fromIncl, int uptoExcl) {
+  public void ins(int fromIncl, int uptoExcl, boolean def) {
     StoreUtils.validateInsert(size, fromIncl, uptoExcl);
 
     int subSize = uptoExcl - fromIncl;
@@ -140,6 +218,26 @@ class StoreBit implements Store {
     bits.set(fromIncl, uptoExcl, def);
 
     size += subSize;
+  }
+
+  public void ins(int fromIncl, int uptoExcl, byte def) {
+    ins(fromIncl, uptoExcl, def > 0);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, int def) {
+    ins(fromIncl, uptoExcl, def > 0);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, long def) {
+    ins(fromIncl, uptoExcl, def > 0);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, float def) {
+    ins(fromIncl, uptoExcl, Soft.PICO.positive(def));
+  }
+
+  public void ins(int fromIncl, int uptoExcl, double def) {
+    ins(fromIncl, uptoExcl, Soft.PICO.positive(def));
   }
 
   public void del(int fromIncl, int uptoExcl) {
@@ -168,6 +266,7 @@ class StoreBit implements Store {
   }
 
   public float set(int pos, float val) {
+    //  LATER un-iceness: we're upcasting to double from float for simple comparison
     return set(pos, Soft.PICO.positive(val)) ? 1.0f : 0.0f;
   }
 
@@ -210,30 +309,101 @@ class StoreBit implements Store {
 
     return oldVal;
   }
+
+  public void fromStream(
+      InputSupplier<? extends InputStream> inputSupplier
+  ) throws IOException {
+    InputStream input = null;
+    try {
+      input = inputSupplier.getInput();
+
+      size = unescapeInt(input);
+
+      byte buf = 0;
+      for (int pos = 0; pos < size; pos++) {
+        if (pos % 8 == 0) {
+          buf = unescapeByte(input);
+        }
+
+        bits.set(pos, buf < 0);
+
+        buf <<= 1;
+      }
+    } finally {
+      Closeables.closeQuietly(input);
+    }
+  }
+
+  public InputSupplier<InputStream> toStream() {
+    return new InputSupplier<InputStream>() {
+      private StreamState state = StreamState.SIZE;
+      private int sizePos = 0;
+      private byte[] sizeBits = new byte[4];
+      private int pos = 0;
+
+      public InputStream getInput() throws IOException {
+        return new InputStream() {
+          @Override
+          public int read() throws IOException {
+            if (state == StreamState.SIZE) {
+              if (sizePos == 0) {
+                intBits(size, sizeBits);
+              }
+              final byte res = sizeBits[sizePos++];
+              if (sizePos == sizeBits.length) {
+                state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
+              }
+              return escapeByte(res);
+            } else if (state == StreamState.DATA) {
+              byte res = 0;
+              int posOld = pos;
+              while (pos - posOld < 8) {
+                res = (byte) ((res << 1) | (bits.get(pos) ? 1 : 0));
+                pos ++ ;
+              }
+              if (pos >= size) {
+                state = StreamState.COMPLETE;
+              }
+              return escapeByte(res);
+            } else if (state == StreamState.COMPLETE) {
+              return -1;
+            } else {
+              throw new IllegalStateException(
+                  "implement handling state " + state
+              );
+            }
+          }
+        };
+      }
+    };
+  }
 }
 
+@SuppressWarnings("UnusedDeclaration")
 class StoreByte implements Store {
   private byte[] arr;
   private int size;
-  private byte def;
+
+  StoreByte() {
+    this(0, (byte) 0);
+  }
 
   StoreByte(final int newSize, final byte newDef) {
     arr = new byte[newSize];
     size = newSize;
-    def = newDef;
 
-    Arrays.fill(arr, 0, size, def);
+    Arrays.fill(arr, 0, size, newDef);
   }
 
-  public double def() {
-    return def;
+  public Width width() {
+    return Width.BYTE;
   }
 
   public int size() {
     return size;
   }
 
-  public void ins(int fromIncl, int uptoExcl) {
+  public void ins(int fromIncl, int uptoExcl, byte def) {
     StoreUtils.validateInsert(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
@@ -257,6 +427,26 @@ class StoreByte implements Store {
     Arrays.fill(arr, fromIncl, uptoExcl, def);
 
     size += subSize;
+  }
+
+  public void ins(int fromIncl, int uptoExcl, boolean def) {
+    ins(fromIncl, uptoExcl, def ? (byte) 1 : (byte) 0);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, int def) {
+    ins(fromIncl, uptoExcl, (byte) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, long def) {
+    ins(fromIncl, uptoExcl, (byte) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, float def) {
+    ins(fromIncl, uptoExcl, (byte) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, double def) {
+    ins(fromIncl, uptoExcl, (byte) def);
   }
 
   public void del(int fromIncl, int uptoExcl) {
@@ -325,36 +515,95 @@ class StoreByte implements Store {
   }
 
   public boolean get(int pos, boolean typeHint) {
-    return get(pos, (byte) 0) != def;
+    return get(pos, (byte) 0) != 0;
   }
 
   public boolean set(int pos, boolean val) {
-    return set(pos, val ? (byte) 1 : (byte) 0) != def;
+    return set(pos, val ? (byte) 1 : (byte) 0) != 0;
+  }
+
+  public void fromStream(
+      InputSupplier<? extends InputStream> inputSupplier
+  ) throws IOException {
+    InputStream input = null;
+    try {
+      input = inputSupplier.getInput();
+
+      size = unescapeInt(input);
+      arr = new byte[size];
+      for (int pos = 0; pos < size; pos++) {
+        arr[pos] = unescapeByte(input);
+      }
+    } finally {
+      Closeables.closeQuietly(input);
+    }
+  }
+
+  public InputSupplier<InputStream> toStream() {
+    return new InputSupplier<InputStream>() {
+      private StreamState state = StreamState.SIZE;
+      private int sizePos = 0;
+      private byte[] sizeBits = new byte[4];
+      private int pos = 0;
+
+      public InputStream getInput() throws IOException {
+        return new InputStream() {
+          @Override
+          public int read() throws IOException {
+            if (state == StreamState.SIZE) {
+              if (sizePos == 0) {
+                intBits(size, sizeBits);
+              }
+              final byte res = sizeBits[sizePos++];
+              if (sizePos == sizeBits.length) {
+                state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
+              }
+              return escapeByte(res);
+            } else if (state == StreamState.DATA) {
+              byte res = arr[pos++];
+              if (pos == size) {
+                state = StreamState.COMPLETE;
+              }
+              return escapeByte(res);
+            } else if (state == StreamState.COMPLETE) {
+              return -1;
+            } else {
+              throw new IllegalStateException(
+                  "implement handling state " + state
+              );
+            }
+          }
+        };
+      }
+    };
   }
 }
 
+@SuppressWarnings("UnusedDeclaration")
 class StoreInt implements Store {
   private int[] arr;
   private int size;
-  private int def;
+
+  StoreInt() {
+    this(0, 0);
+  }
 
   StoreInt(final int newSize, final int newDef) {
     arr = new int[newSize];
     size = newSize;
-    def = newDef;
 
-    Arrays.fill(arr, 0, size, def);
+    Arrays.fill(arr, 0, size, newDef);
   }
 
-  public double def() {
-    return def;
+  public Width width() {
+    return Width.INT;
   }
 
   public int size() {
     return size;
   }
 
-  public void ins(int fromIncl, int uptoExcl) {
+  public void ins(int fromIncl, int uptoExcl, int def) {
     StoreUtils.validateInsert(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
@@ -378,6 +627,26 @@ class StoreInt implements Store {
     Arrays.fill(arr, fromIncl, uptoExcl, def);
 
     size += subSize;
+  }
+
+  public void ins(int fromIncl, int uptoExcl, long def) {
+    ins(fromIncl, uptoExcl, (int) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, float def) {
+    ins(fromIncl, uptoExcl, (int) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, double def) {
+    ins(fromIncl, uptoExcl, (int) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, byte def) {
+    ins(fromIncl, uptoExcl, (int) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, boolean def) {
+    ins(fromIncl, uptoExcl, def ? 1 : 0);
   }
 
   public void del(int fromIncl, int uptoExcl) {
@@ -446,36 +715,103 @@ class StoreInt implements Store {
   }
 
   public boolean get(int pos, boolean typeHint) {
-    return get(pos, (int) 0) != def;
+    return get(pos, 0) != 0;
   }
 
   public boolean set(int pos, boolean val) {
-    return set(pos, val ? (int) 1 : (int) 0) != def;
+    return set(pos, val ? 1 : 0) != 0;
+  }
+
+  public void fromStream(
+      InputSupplier<? extends InputStream> inputSupplier
+  ) throws IOException {
+    InputStream input = null;
+    try {
+      input = inputSupplier.getInput();
+
+      size = unescapeInt(input);
+      arr = new int[size];
+      for (int pos = 0; pos < size; pos++) {
+        arr[pos] = unescapeInt(input);
+      }
+    } finally {
+      Closeables.closeQuietly(input);
+    }
+  }
+
+  public InputSupplier<InputStream> toStream() {
+    return new InputSupplier<InputStream>() {
+      private StreamState state = StreamState.SIZE;
+      private int sizePos = 0;
+      private byte[] sizeBits = new byte[4];
+      private int pos = 0;
+      private int byteBufPos = 0;
+      private byte[] byteBuf = new byte[4];
+
+      public InputStream getInput() throws IOException {
+        return new InputStream() {
+          @Override
+          public int read() throws IOException {
+            if (state == StreamState.SIZE) {
+              if (sizePos == 0) {
+                intBits(size, sizeBits);
+              }
+              final byte res = sizeBits[sizePos++];
+              if (sizePos == sizeBits.length) {
+                state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
+              }
+              return escapeByte(res);
+            } else if (state == StreamState.DATA) {
+              if (byteBufPos == 0) {
+                intBits(arr[pos++], byteBuf);
+              }
+              byte res = byteBuf[byteBufPos++];
+              if (byteBufPos == byteBuf.length) {
+                byteBufPos = 0;
+              }
+              if (pos == size && byteBufPos == 0) {
+                state = StreamState.COMPLETE;
+              }
+              return escapeByte(res);
+            } else if (state == StreamState.COMPLETE) {
+              return -1;
+            } else {
+              throw new IllegalStateException(
+                  "implement handling state " + state
+              );
+            }
+          }
+        };
+      }
+    };
   }
 }
 
+@SuppressWarnings("UnusedDeclaration")
 class StoreLong implements Store {
   private long[] arr;
   private int size;
-  private long def;
+
+  StoreLong() {
+    this(0, 0);
+  }
 
   StoreLong(final int newSize, final long newDef) {
     arr = new long[newSize];
     size = newSize;
-    def = newDef;
 
-    Arrays.fill(arr, 0, size, def);
+    Arrays.fill(arr, 0, size, newDef);
   }
 
-  public double def() {
-    return def;
+  public Width width() {
+    return Width.LONG;
   }
 
   public int size() {
     return size;
   }
 
-  public void ins(int fromIncl, int uptoExcl) {
+  public void ins(int fromIncl, int uptoExcl, long def) {
     StoreUtils.validateInsert(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
@@ -499,6 +835,26 @@ class StoreLong implements Store {
     Arrays.fill(arr, fromIncl, uptoExcl, def);
 
     size += subSize;
+  }
+
+  public void ins(int fromIncl, int uptoExcl, int def) {
+    ins(fromIncl, uptoExcl, (long) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, float def) {
+    ins(fromIncl, uptoExcl, (long) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, double def) {
+    ins(fromIncl, uptoExcl, (long) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, byte def) {
+    ins(fromIncl, uptoExcl, (long) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, boolean def) {
+    ins(fromIncl, uptoExcl, def ? 1L : 0L);
   }
 
   public void del(int fromIncl, int uptoExcl) {
@@ -567,36 +923,103 @@ class StoreLong implements Store {
   }
 
   public boolean get(int pos, boolean typeHint) {
-    return get(pos, (long) 0) != def;
+    return get(pos, (long) 0) != 0;
   }
 
   public boolean set(int pos, boolean val) {
-    return set(pos, val ? (long) 1 : (long) 0) != def ;
+    return set(pos, val ? (long) 1 : (long) 0) != 0;
+  }
+
+  public void fromStream(
+      InputSupplier<? extends InputStream> inputSupplier
+  ) throws IOException {
+    InputStream input = null;
+    try {
+      input = inputSupplier.getInput();
+
+      size = unescapeInt(input);
+      arr = new long[size];
+      for (int pos = 0; pos < size; pos++) {
+        arr[pos] = unescapeLong(input);
+      }
+    } finally {
+      Closeables.closeQuietly(input);
+    }
+  }
+
+  public InputSupplier<InputStream> toStream() {
+    return new InputSupplier<InputStream>() {
+      private StreamState state = StreamState.SIZE;
+      private int sizePos = 0;
+      private byte[] sizeBits = new byte[4];
+      private int pos = 0;
+      private int byteBufPos = 0;
+      private byte[] byteBuf = new byte[8];
+
+      public InputStream getInput() throws IOException {
+        return new InputStream() {
+          @Override
+          public int read() throws IOException {
+            if (state == StreamState.SIZE) {
+              if (sizePos == 0) {
+                intBits(size, sizeBits);
+              }
+              final byte res = sizeBits[sizePos++];
+              if (sizePos == sizeBits.length) {
+                state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
+              }
+              return escapeByte(res);
+            } else if (state == StreamState.DATA) {
+              if (byteBufPos == 0) {
+                longBits(arr[pos++], byteBuf);
+              }
+              byte res = byteBuf[byteBufPos++];
+              if (byteBufPos == byteBuf.length) {
+                byteBufPos = 0;
+              }
+              if (pos == size && byteBufPos == 0) {
+                state = StreamState.COMPLETE;
+              }
+              return escapeByte(res);
+            } else if (state == StreamState.COMPLETE) {
+              return -1;
+            } else {
+              throw new IllegalStateException(
+                  "implement handling state " + state
+              );
+            }
+          }
+        };
+      }
+    };
   }
 }
 
+@SuppressWarnings("UnusedDeclaration")
 class StoreFloat implements Store {
   private float[] arr;
   private int size;
-  private float def;
+
+  StoreFloat() {
+    this(0, 0);
+  }
 
   StoreFloat(final int newSize, final float newDef) {
     arr = new float[newSize];
     size = newSize;
-    def = newDef;
 
-    Arrays.fill(arr, 0, size, def);
+    Arrays.fill(arr, 0, size, newDef);
   }
 
-  public double def() {
-    return def;
+  public Width width() {
+    return Width.FLOAT;
   }
 
   public int size() {
     return size;
   }
 
-  public void ins(int fromIncl, int uptoExcl) {
+  public void ins(int fromIncl, int uptoExcl, float def) {
     StoreUtils.validateInsert(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
@@ -620,6 +1043,26 @@ class StoreFloat implements Store {
     Arrays.fill(arr, fromIncl, uptoExcl, def);
 
     size += subSize;
+  }
+
+  public void ins(int fromIncl, int uptoExcl, long def) {
+    ins(fromIncl,uptoExcl,(float) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, int def) {
+    ins(fromIncl,uptoExcl,(float) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, double def) {
+    ins(fromIncl,uptoExcl,(float) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, byte def) {
+    ins(fromIncl,uptoExcl,(float) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, boolean def) {
+    ins(fromIncl,uptoExcl, def ? 1f : 0f);
   }
 
   public void del(int fromIncl, int uptoExcl) {
@@ -688,36 +1131,102 @@ class StoreFloat implements Store {
   }
 
   public boolean get(int pos, boolean typeHint) {
-    return Float.compare(get(pos, (float) 0), def) != 0;
+    return Float.compare(get(pos, (float) 0), .0f) != 0;
   }
 
   public boolean set(int pos, boolean val) {
-    return Float.compare(set(pos, val ? (float) 1 : (float) 0), def) != 0 ;
+    return Float.compare(set(pos, val ? (float) 1 : (float) 0), .0f) != 0 ;
+  }
+
+  public void fromStream(
+      InputSupplier<? extends InputStream> inputSupplier
+  ) throws IOException {
+    InputStream input = null;
+    try {
+      input = inputSupplier.getInput();
+      size = unescapeInt(input);
+      arr = new float[size];
+      for (int pos = 0; pos < size; pos++) {
+        arr[pos] = Float.intBitsToFloat(unescapeInt(input));
+      }
+    } finally {
+      Closeables.closeQuietly(input);
+    }
+  }
+
+  public InputSupplier<InputStream> toStream() {
+    return new InputSupplier<InputStream>() {
+      private StreamState state = StreamState.SIZE;
+      private int sizePos = 0;
+      private byte[] sizeBits = new byte[4];
+      private int pos = 0;
+      private int byteBufPos = 0;
+      private byte[] byteBuf = new byte[4];
+
+      public InputStream getInput() throws IOException {
+        return new InputStream() {
+          @Override
+          public int read() throws IOException {
+            if (state == StreamState.SIZE) {
+              if (sizePos == 0) {
+                intBits(size, sizeBits);
+              }
+              final byte res = sizeBits[sizePos++];
+              if (sizePos == sizeBits.length) {
+                state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
+              }
+              return escapeByte(res);
+            } else if (state == StreamState.DATA) {
+              if (byteBufPos == 0) {
+                intBits(Float.floatToIntBits(arr[pos++]), byteBuf);
+              }
+              byte res = byteBuf[byteBufPos++];
+              if (byteBufPos == byteBuf.length) {
+                byteBufPos = 0;
+              }
+              if (pos == size && byteBufPos == 0) {
+                state = StreamState.COMPLETE;
+              }
+              return escapeByte(res);
+            } else if (state == StreamState.COMPLETE) {
+              return -1;
+            } else {
+              throw new IllegalStateException(
+                  "implement handling state " + state
+              );
+            }
+          }
+        };
+      }
+    };
   }
 }
 
+@SuppressWarnings("UnusedDeclaration")
 class StoreDouble implements Store {
   private double[] arr;
   private int size;
-  private double def;
+
+  StoreDouble() {
+    this(0, 0);
+  }
 
   StoreDouble(final int newSize, final double newDef) {
     arr = new double[newSize];
     size = newSize;
-    def = newDef;
 
-    Arrays.fill(arr, 0, size, def);
+    Arrays.fill(arr, 0, size, newDef);
   }
 
-  public double def() {
-    return def;
+  public Width width() {
+    return Width.DOUBLE;
   }
 
   public int size() {
     return size;
   }
 
-  public void ins(int fromIncl, int uptoExcl) {
+  public void ins(int fromIncl, int uptoExcl, double def) {
     StoreUtils.validateInsert(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
@@ -741,6 +1250,26 @@ class StoreDouble implements Store {
     Arrays.fill(arr, fromIncl, uptoExcl, def);
 
     size += subSize;
+  }
+
+  public void ins(int fromIncl, int uptoExcl, long def) {
+    ins(fromIncl, uptoExcl, (double) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, int def) {
+    ins(fromIncl, uptoExcl, (double) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, float def) {
+    ins(fromIncl, uptoExcl, (double) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, byte def) {
+    ins(fromIncl, uptoExcl, (double) def);
+  }
+
+  public void ins(int fromIncl, int uptoExcl, boolean def) {
+    ins(fromIncl, uptoExcl, def ? 1.0 : .0);
   }
 
   public void del(int fromIncl, int uptoExcl) {
@@ -809,225 +1338,74 @@ class StoreDouble implements Store {
   }
 
   public boolean get(int pos, boolean typeHint) {
-    return Double.compare(get(pos, (double) 0), def) != 0;
+    return Double.compare(get(pos, (double) 0), .0) != 0;
   }
 
   public boolean set(int pos, boolean val) {
-    return Double.compare(set(pos, val ? (double) 1 : (double) 0), def) != 0;
-  }
-}
-
-public class CNetLocal {
-  protected static void testArray() {
-    final StoreByte store = new StoreByte(4, (byte) 0);
-
-    assert store.size() == 4;
-    assert !store.get(0, false);
-    assert !store.set(0, true);
-    assert store.get(0, false);
-
-    assert store.get(0, (byte) 0) == 1;
-    assert store.get(1, (byte) 0) == 0;
-
-    assert store.set(3, (byte) 3) == 0;
-    assert store.get(3, (byte) 0) == 3;
-
-    store.ins(0, 1);
-
-    assert store.get(0, (byte) 0) == 0;
-    assert store.get(1, (byte) 0) == 1;
-    assert store.get(2, (byte) 0) == 0;
-    assert store.get(3, (byte) 0) == 0;
-    assert store.get(4, (byte) 0) == 3;
-
-    store.ins(2, 3);
-
-    assert store.get(0, (byte) 0) == 0;
-    assert store.get(1, (byte) 0) == 1;
-    assert store.get(2, (byte) 0) == 0;
-    assert store.get(3, (byte) 0) == 0;
-    assert store.get(4, (byte) 0) == 0;
-    assert store.get(5, (byte) 0) == 3;
-
-    store.ins(5, 6);
-
-    assert store.get(0, (byte) 0) == 0;
-    assert store.get(1, (byte) 0) == 1;
-    assert store.get(2, (byte) 0) == 0;
-    assert store.get(3, (byte) 0) == 0;
-    assert store.get(4, (byte) 0) == 0;
-    assert store.get(5, (byte) 0) == 0;
-    assert store.get(6, (byte) 0) == 3;
-
-    store.ins(7, 8);
-
-    assert store.get(0, (byte) 0) == 0;
-    assert store.get(1, (byte) 0) == 1;
-    assert store.get(2, (byte) 0) == 0;
-    assert store.get(3, (byte) 0) == 0;
-    assert store.get(4, (byte) 0) == 0;
-    assert store.get(5, (byte) 0) == 0;
-    assert store.get(6, (byte) 0) == 3;
-    assert store.get(7, (byte) 0) == 0;
-
-    store.set(3, (byte) 23);
-    store.set(4, (byte) 32);
-    store.ins(4, 5000 + 5000 + 4);
-
-    assert store.size() == 5000 + 5000 + 8;
-    assert store.get(1, (byte) 0) == 1;
-    assert store.get(3, (byte) 0) == 23;
-    assert store.get(5000 + 5000 + 4, (byte) 0) == 32;
-    assert store.get(5000 + 5000 + 6, (byte) 0) == 3;
-
-    assert store.set(4 + 5000 - 1, (byte) 34) == 0;
-    assert store.set(4 + 5000, (byte) 43) == 0;
-
-    store.del(4, 4 + 5000 - 1);
-
-    assert store.get(3, (byte) 0) == 23;
-    assert store.get(4, (byte) 0) == 34;
-    assert store.get(5, (byte) 0) == 43;
-
-    store.del(6, 6 + 5000 - 1);
-
-    assert store.get(3, (byte) 0) == 23;
-    assert store.get(4, (byte) 0) == 34;
-    assert store.get(5, (byte) 0) == 43;
-    assert store.get(6, (byte) 0) == 32;
-
-    store.del(9, 10);
-    store.del(0, 1);
-
-    assert store.get(0, (byte) 0) == 1;
-    assert store.get(2, (byte) 0) == 23;
-    assert store.get(3, (byte) 0) == 34;
-    assert store.get(4, (byte) 0) == 43;
-    assert store.get(5, (byte) 0) == 32;
-    assert store.get(7, (byte) 0) == 3;
-
-    store.del(6, 7);
-    store.del(1, 2);
-
-    assert store.get(0, (byte) 0) == 1;
-    assert store.get(1, (byte) 0) == 23;
-    assert store.get(2, (byte) 0) == 34;
-    assert store.get(3, (byte) 0) == 43;
-    assert store.get(4, (byte) 0) == 32;
-    assert store.get(5, (byte) 0) == 3;
-
-    assert store.size() == 6;
-
-    System.out.println("array-based storage MAY work");
+    return Double.compare(set(pos, val ? (double) 1 : (double) 0), .0) != 0;
   }
 
-  protected static void testBit() {
-    final StoreBit store = new StoreBit(4, false);
+    public void fromStream(
+        InputSupplier<? extends InputStream> inputSupplier
+    ) throws IOException {
+    InputStream input = null;
+    try {
+      input = inputSupplier.getInput();
 
-    assert store.size() == 4;
-    assert !store.get(0, false);
-    assert !store.set(0, true);
-    assert store.get(0, false);
-
-    assert store.get(0, false);
-    assert !store.get(1, false);
-
-    assert !store.set(3, true);
-    assert store.get(3, false);
-
-    store.ins(0, 1);
-
-    assert !store.get(0, false);
-    assert store.get(1, false);
-    assert !store.get(2, false);
-    assert !store.get(3, false);
-    assert store.get(4, false);
-
-    store.ins(2, 3);
-
-    assert !store.get(0, false);
-    assert store.get(1, false);
-    assert !store.get(2, false);
-    assert !store.get(3, false);
-    assert !store.get(4, false);
-    assert store.get(5, false);
-
-    store.ins(5, 6);
-
-    assert !store.get(0, false);
-    assert store.get(1, false);
-    assert !store.get(2, false);
-    assert !store.get(3, false);
-    assert !store.get(4, false);
-    assert !store.get(5, false);
-    assert store.get(6, false);
-
-    store.ins(7, 8);
-
-    assert !store.get(0, false);
-    assert store.get(1, false);
-    assert !store.get(2, false);
-    assert !store.get(3, false);
-    assert !store.get(4, false);
-    assert !store.get(5, false);
-    assert store.get(6, false);
-    assert !store.get(7, false);
-
-    store.set(3, true);
-    store.set(4, true);
-    store.ins(4, 5000 + 5000 + 4);
-
-    assert store.size() == 5000 + 5000 + 8;
-    assert store.get(1, false);
-    assert store.get(3, false);
-    assert store.get(5000 + 5000 + 4, false);
-    assert store.get(5000 + 5000 + 6, false);
-
-    assert !store.set(4 + 5000 - 1, true);
-    assert !store.set(4 + 5000, true);
-
-    store.del(4, 4 + 5000 - 1);
-
-    assert store.get(3, false);
-    assert store.get(4, false);
-    assert store.get(5, false);
-
-    store.del(6, 6 + 5000 - 1);
-
-    assert store.get(3, false);
-    assert store.get(4, false);
-    assert store.get(5, false);
-    assert store.get(6, false);
-
-    store.del(9, 10);
-    store.del(0, 1);
-
-    assert store.get(0, false);
-    assert !store.get(1, false);
-    assert store.get(2, false);
-    assert store.get(3, false);
-    assert store.get(4, false);
-    assert store.get(5, false);
-    assert !store.get(6, false);
-    assert store.get(7, false);
-
-    store.del(6, 7);
-    store.del(1, 2);
-
-    assert store.get(0, false);
-    assert store.get(1, false);
-    assert store.get(2, false);
-    assert store.get(3, false);
-    assert store.get(4, false);
-    assert store.get(5, false);
-
-    assert store.size() == 6;
-
-    System.out.println("bitset-based storage MAY work");
+      size = unescapeInt(input);
+      arr = new double[size];
+      for (int pos = 0; pos < size; pos++) {
+        arr[pos] = Double.longBitsToDouble(unescapeLong(input));
+      }
+    } finally {
+      Closeables.closeQuietly(input);
+    }
   }
 
-  public static void main(String[] args) {
-    testArray();
-    testBit();
+  public InputSupplier<InputStream> toStream() {
+    return new InputSupplier<InputStream>() {
+      private StreamState state = StreamState.SIZE;
+      private int sizePos = 0;
+      private byte[] sizeBits = new byte[4];
+      private int pos = 0;
+      private int byteBufPos = 0;
+      private byte[] byteBuf = new byte[8];
+
+      public InputStream getInput() throws IOException {
+        return new InputStream() {
+          @Override
+          public int read() throws IOException {
+            if (state == StreamState.SIZE) {
+              if (sizePos == 0) {
+                intBits(size, sizeBits);
+              }
+              final byte res = sizeBits[sizePos++];
+              if (sizePos == sizeBits.length) {
+                state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
+              }
+              return escapeByte(res);
+            } else if (state == StreamState.DATA) {
+              if (byteBufPos == 0) {
+                longBits(Double.doubleToLongBits(arr[pos++]), byteBuf);
+              }
+              byte res = byteBuf[byteBufPos++];
+              if (byteBufPos == byteBuf.length) {
+                byteBufPos = 0;
+              }
+              if (pos == size && byteBufPos == 0) {
+                state = StreamState.COMPLETE;
+              }
+              return escapeByte(res);
+            } else if (state == StreamState.COMPLETE) {
+              return -1;
+            } else {
+              throw new IllegalStateException(
+                  "implement handling state " + state
+              );
+            }
+          }
+        };
+      }
+    };
   }
 }

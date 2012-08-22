@@ -54,6 +54,10 @@ import org.codehaus.jackson.annotate.JsonIgnore;
  *   bits should be stores sparsely if avgOrder < (nodes / 16 - 4) / ( 9/8 )
  *     which is 53.3 links for 1024 nodes , or 10.6 links for 256 nodes
  */
+//  TODO rename nullElem to defElem
+//  TODO tighten the exposed API area
+//  FIXME most efficient serialization scheme <<< active
+//  TODO compactify hook (compactify just before streaming down to DB?)
 public interface EdgeData {
   class Util {
     public static String dump(EdgeData data) {
