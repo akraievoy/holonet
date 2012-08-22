@@ -109,7 +109,7 @@ public class EnvCNet implements Env {
   //  FIXME ouch, this now hangs with no integration!
   protected void renewRequestModel() {
     requestModel.clear();
-    req.getValue().visitNotNull(new EdgeData.EdgeVisitor() {
+    req.getValue().visitNonDef(new EdgeData.EdgeVisitor() {
       public void visit(int from, int into, double e) {
         if (nodeIndex.containsKey(from) && nodeIndex.containsKey(into)) {
           requestModel.add(requestCodec.fi2id(from, into), e);

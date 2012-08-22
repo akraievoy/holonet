@@ -214,7 +214,7 @@ public class ExportPajek implements Runnable, ContextInjectable, SkipTrigger {
         fw.print("*" + (e.isSymmetric() ? "Edges" : "Arcs"));
         fw.print(newLine);
 
-        e.visitNotNull(new EdgeData.EdgeVisitor() {
+        e.visitNonDef(new EdgeData.EdgeVisitor() {
           public void visit(int from, int into, double e) {
             final String label;
             if (eLabel == null) {

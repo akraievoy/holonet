@@ -59,7 +59,7 @@ public class MetricEDataRenorm extends MetricEData {
 
     final double[] dataMaxRef = new double[]{Double.NaN};
     final double[] dataMinRef = new double[]{Double.NaN};
-    edgeData.visitNotNull(new EdgeData.EdgeVisitor() {
+    edgeData.visitNonDef(new EdgeData.EdgeVisitor() {
       public void visit(int from, int into, double e) {
         if (Double.isNaN(dataMaxRef[0]) || e > dataMaxRef[0]) {
           dataMaxRef[0] = e;
@@ -74,7 +74,7 @@ public class MetricEDataRenorm extends MetricEData {
     final double dataMin = dataMinRef[0];
     final double diff = max - min;
 
-    edgeData.visitNotNull(new EdgeData.EdgeVisitor() {
+    edgeData.visitNonDef(new EdgeData.EdgeVisitor() {
       public void visit(int from, int into, double e) {
         result.set(from, into, diff * (e - dataMin) / dataDiff + min);
       }

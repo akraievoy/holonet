@@ -20,7 +20,6 @@ package org.akraievoy.cnet.soo.domain;
 
 import org.akraievoy.base.Die;
 import org.akraievoy.cnet.net.vo.EdgeData;
-import org.akraievoy.cnet.net.vo.EdgeDataFactory;
 import org.akraievoy.cnet.opt.api.Genome;
 
 public class GenomeSoo extends Genome {
@@ -52,7 +51,7 @@ public class GenomeSoo extends Genome {
   }
 
   public int getLinkNum() {
-    return solution.getNotNullCount();
+    return solution.getNonDefCount();
   }
 
   public Object[] getGenomeData() {

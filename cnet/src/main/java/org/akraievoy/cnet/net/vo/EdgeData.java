@@ -27,7 +27,7 @@ import org.codehaus.jackson.annotate.JsonIgnore;
  *   leadLen: int[nodes][2] -> lead/len for each row
  *   intoIdx: int[2*nodes*avgOrder] -> column indexes
  *   storage: 2*nodes*avgOrder*slot -> handcrafted packed linear storage
- *      1bit, multibit, byte, int, float, long, double
+ *      bit, byte, int, float, long, double
  * Total memory consumption o-function (in bytes) looks like so:
  *   8*nodes*(1 + avgOrder * (1 + slot / 4) )
  *
@@ -54,7 +54,6 @@ import org.codehaus.jackson.annotate.JsonIgnore;
  *   bits should be stores sparsely if avgOrder < (nodes / 16 - 4) / ( 9/8 )
  *     which is 53.3 links for 1024 nodes , or 10.6 links for 256 nodes
  */
-//  TODO rename nullElem to defElem
 //  TODO tighten the exposed API area
 //  FIXME most efficient serialization scheme <<< active
 //  TODO compactify hook (compactify just before streaming down to DB?)
@@ -87,11 +86,11 @@ public interface EdgeData {
 
   boolean isSymmetric();
 
-  boolean isNull(double elem);
+  boolean isDef(double elem);
 
   double weight(double elem);
 
-  double getNullElement();
+  double getDefElem();
 
   EdgeData proto(final int protoSize);
 
@@ -108,7 +107,7 @@ public interface EdgeData {
 
   double weight(int from, int into);
 
-  boolean isNull(int from, int into);
+  boolean isDef(int from, int into);
 
   double power(int index);
 
@@ -117,9 +116,9 @@ public interface EdgeData {
   double weight(TIntArrayList indexes, double emptyWeight);
 
   @JsonIgnore
-  int getNotNullCount();
+  int getNonDefCount();
 
-  void visitNotNull(EdgeVisitor visitor);
+  void visitNonDef(EdgeVisitor visitor);
 
   double total();
 

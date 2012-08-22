@@ -69,13 +69,13 @@ public abstract class BreederSoo implements Breeder {
     }
     final double linksToUnwireFromA = (1 - state.getCrossoverRatio()) * linksToUnwire;
 
-    child.getSolution().visitNotNull(new EdgeSubsetVisitor(unwireModel, linkFitness, genomeA, genomeB, codec));
+    child.getSolution().visitNonDef(new EdgeSubsetVisitor(unwireModel, linkFitness, genomeA, genomeB, codec));
 
     final double[] removedRef = {0};
     remove(strategy, child, eSource, linksToUnwireFromA, removedRef);
 
     unwireModel.clear();
-    child.getSolution().visitNotNull(new EdgeSubsetVisitor(unwireModel, linkFitness, genomeB, null, codec));
+    child.getSolution().visitNonDef(new EdgeSubsetVisitor(unwireModel, linkFitness, genomeB, null, codec));
 
     remove(strategy, child, eSource, linksToUnwire, removedRef);
   }
@@ -118,8 +118,8 @@ public abstract class BreederSoo implements Breeder {
       }
     };
 
-    solA.visitNotNull(buildChildVisitor);
-    solB.visitNotNull(buildChildVisitor);
+    solA.visitNonDef(buildChildVisitor);
+    solB.visitNonDef(buildChildVisitor);
 
     return child;
   }

@@ -34,9 +34,9 @@ import java.util.List;
  * Symmetric case:
  *   store only from->into mappings where from <= into
  */
-@JsonPropertyOrder({"nullElement", "symmetric", "fiEdges"})
+@JsonPropertyOrder({"defElem", "symmetric", "fiEdges"})
 public class EdgeDataSparse implements EdgeData {
-  protected double nullElement;
+  protected double defElem;
 
   protected Edges fiEdges;
 
@@ -48,10 +48,10 @@ public class EdgeDataSparse implements EdgeData {
     this(true, 0.0, 0);
   }
 
-  protected EdgeDataSparse(boolean symmetric, double nullElement, final int size) {
+  protected EdgeDataSparse(boolean symmetric, double defElem, final int size) {
     this.fiEdges = new Edges(size);
 
-    this.nullElement = nullElement;
+    this.defElem = defElem;
     this.symmetric = symmetric;
   }
 
@@ -77,26 +77,26 @@ public class EdgeDataSparse implements EdgeData {
     this.fiEdges = fiEdges;
   }
 
-  public boolean isNull(double elem) {
-    return Double.compare(elem, nullElement) == 0;
+  public boolean isDef(double elem) {
+    return Double.compare(elem, defElem) == 0;
   }
 
   public double weight(double elem) {
     return elem;
   }
 
-  public double getNullElement() {
-    return nullElement;
+  public double getDefElem() {
+    return defElem;
   }
 
   @SuppressWarnings({"UnusedDeclaration"})
   @Deprecated
-  public void setNullElement(double nullElement) {
-    this.nullElement = nullElement;
+  public void setDefElem(double defElem) {
+    this.defElem = defElem;
   }
 
   public EdgeData proto(final int protoSize) {
-    return EdgeDataFactory.sparse(isSymmetric(), nullElement, protoSize);
+    return EdgeDataFactory.sparse(isSymmetric(), defElem, protoSize);
   }
 
   public double get(int from, int into) {
@@ -147,7 +147,7 @@ public class EdgeDataSparse implements EdgeData {
   }
 
   public boolean conn(int from, int into) {
-    return !isNull(from, into);
+    return !isDef(from, into);
   }
 
   public TIntArrayList connVertexes(int index) {
@@ -171,8 +171,8 @@ public class EdgeDataSparse implements EdgeData {
     return weight(get(from, into));
   }
 
-  public boolean isNull(int from, int into) {
-    return isNull(get(from, into));
+  public boolean isDef(int from, int into) {
+    return isDef(get(from, into));
   }
 
   public double power(final int index) {
@@ -204,11 +204,11 @@ public class EdgeDataSparse implements EdgeData {
   }
 
   @JsonIgnore
-  public int getNotNullCount() {
-    return fiEdges.getNotNullCount();
+  public int getNonDefCount() {
+    return fiEdges.getNotDefCount();
   }
 
-  public void visitNotNull(EdgeVisitor visitor) {
+  public void visitNonDef(EdgeVisitor visitor) {
     fiEdges.visit(visitor);
   }
 
@@ -218,11 +218,11 @@ public class EdgeDataSparse implements EdgeData {
 
     final EdgeDataSparse edgeData = (EdgeDataSparse) o;
 
-    if (Double.compare(edgeData.nullElement, nullElement) != 0) return false;
+    if (Double.compare(edgeData.defElem, defElem) != 0) return false;
     if (symmetric != edgeData.symmetric) return false;
 
-    final int linkCount = edgeData.getNotNullCount();
-    if (getNotNullCount() != linkCount) {
+    final int linkCount = edgeData.getNonDefCount();
+    if (getNonDefCount() != linkCount) {
       return false;
     }
 
@@ -237,10 +237,10 @@ public class EdgeDataSparse implements EdgeData {
   public int hashCode() {
     int result;
     long temp;
-    temp = nullElement != +0.0d ? Double.doubleToLongBits(nullElement) : 0L;
+    temp = defElem != +0.0d ? Double.doubleToLongBits(defElem) : 0L;
     result = (int) (temp ^ (temp >>> 32));
     result = 31 * result + (symmetric ? 1 : 0);
-    result = 13 * result + (getNotNullCount());
+    result = 13 * result + (getNonDefCount());
 
     return result;
   }
@@ -278,7 +278,7 @@ public class EdgeDataSparse implements EdgeData {
     }
 
 
-    return sameLinkCount / fiEdges.getNotNullCount();
+    return sameLinkCount / fiEdges.getNotDefCount();
   }
 
   public void clear() {
@@ -343,7 +343,7 @@ public class EdgeDataSparse implements EdgeData {
       final int i = index.get(lead).binarySearch(tail);
 
       if (i < 0) {
-        return weightOperator.getNullElement();
+        return weightOperator.getDefElem();
       }
 
       return elems.get(lead).get(i);
@@ -351,21 +351,21 @@ public class EdgeDataSparse implements EdgeData {
 
     public double set(int lead, int tail, double elem, final EdgeData weightOperator) {
       final int i = index.get(lead).binarySearch(tail);
-      final boolean isNull = weightOperator != null && weightOperator.isNull(elem);
+      final boolean def = weightOperator != null && weightOperator.isDef(elem);
 
-      if (i < 0 && !isNull) {
+      if (i < 0 && !def) {
         int insertionIndex = -(i + 1);
         index.get(lead).insert(insertionIndex, tail);
         elems.get(lead).insert(insertionIndex, elem);
-        return weightOperator != null ? weightOperator.getNullElement() : 0;
+        return weightOperator != null ? weightOperator.getDefElem() : 0;
       }
 
-      if (isNull) {
+      if (def) {
         if (i >= 0) {
           index.get(lead).remove(i);
           return elems.get(lead).remove(i);
         } else {
-          return weightOperator.getNullElement();
+          return weightOperator.getDefElem();
         }
       } else {
         return elems.get(lead).getSet(i, elem);
@@ -415,14 +415,14 @@ public class EdgeDataSparse implements EdgeData {
     }
 
     @JsonIgnore
-    public int getNotNullCount() {
-      int notNullCount = 0;
+    public int getNotDefCount() {
+      int nonDefCount = 0;
 
       for (TDoubleArrayList elem : elems) {
-        notNullCount += elem.size();
+        nonDefCount += elem.size();
       }
 
-      return notNullCount;
+      return nonDefCount;
     }
 
     public void visit(final EdgeVisitor visitor) {
@@ -444,10 +444,10 @@ public class EdgeDataSparse implements EdgeData {
   }
 
   public String toString() {
-    final int notNull = getNotNullCount();
+    final int nonDefCount = getNonDefCount();
     final int size = getSize();
-    final double density = (double) notNull / size / size;
+    final double density = (double) nonDefCount / size / size;
 
-    return "EdgeDataSparse[" + notNull + "/" + size + "^2 = " + density + "]";
+    return "EdgeDataSparse[" + nonDefCount + "/" + size + "^2 = " + density + "]";
   }
 }

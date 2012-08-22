@@ -49,7 +49,7 @@ public class MetricStatLengths extends MetricStat {
     final int nodes = eData.getSize();
     final Stat lengths = new StatImpl(nodes);
 
-    eData.visitNotNull(new EdgeData.EdgeVisitor() {
+    eData.visitNonDef(new EdgeData.EdgeVisitor() {
       public void visit(int from, int into, double e) {
         lengths.put(distEData.get(from, into));
       }

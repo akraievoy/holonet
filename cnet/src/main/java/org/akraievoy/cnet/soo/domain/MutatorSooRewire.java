@@ -68,7 +68,7 @@ public abstract class MutatorSooRewire implements Mutator<GenomeSoo> {
     oldModel.setMinWeight(state.getMinElemFitness());
     oldModel.setAmp(state.getElemFitPow());
 
-    genome.getSolution().visitNotNull(
+    genome.getSolution().visitNonDef(
         new EdgeData.EdgeVisitor() {
           public void visit(int from, int into, double value) {
             oldModel.add(codec.fi2id(from, into), linkFitness.get(from, into));

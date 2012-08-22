@@ -59,7 +59,7 @@ public class MetricEDataLogScale extends MetricEData {
     }
 
     final double baseScale = Math.log(base);
-    edgeData.visitNotNull(new EdgeData.EdgeVisitor() {
+    edgeData.visitNonDef(new EdgeData.EdgeVisitor() {
       public void visit(int from, int into, double e) {
         final double newValue = Math.log(e) / baseScale;
         if (Double.isInfinite(newValue) || Double.isNaN(newValue)) {

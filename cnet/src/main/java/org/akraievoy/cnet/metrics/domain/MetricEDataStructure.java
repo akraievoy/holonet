@@ -60,7 +60,7 @@ public class MetricEDataStructure extends MetricEData {
     final EdgeData structureOri = structureSource.getValue();
     final EdgeData structure = structureOri.proto(size);
 
-    structureOri.visitNotNull(new EdgeData.EdgeVisitor() {
+    structureOri.visitNonDef(new EdgeData.EdgeVisitor() {
       public void visit(int from, int into, double e) {
         structure.set(from, into, e);
       }

@@ -93,7 +93,7 @@ public class SeedSourceSooSpectral implements SeedSource<GenomeSoo> {
     final MetricVDataEigenGap eigenVData = new MetricVDataEigenGap();
     eigenVData.setSource(new RefEdgeData(solution));
 
-    for (int addedEdges = solution.getNotNullCount(); addedEdges < limit; addedEdges++) {
+    for (int addedEdges = solution.getNonDefCount(); addedEdges < limit; addedEdges++) {
       final VertexData eigenVector = (VertexData) MetricResultFetcher.fetch(eigenVData);
 
       double median = this.median.computeMedian(eigenVector.getData());
@@ -158,7 +158,7 @@ public class SeedSourceSooSpectral implements SeedSource<GenomeSoo> {
 
 //		final GenomeSoo genomeSoo = sooSpectral.generateSeed(7 * 64, 128);
 
-    genomeSoo.getSolution().visitNotNull(new EdgeData.EdgeVisitor() {
+    genomeSoo.getSolution().visitNonDef(new EdgeData.EdgeVisitor() {
       public void visit(int from, int into, double e) {
         System.out.println(from + " <-> " + into);
       }

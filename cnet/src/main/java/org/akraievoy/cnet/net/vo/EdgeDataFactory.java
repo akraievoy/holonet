@@ -76,8 +76,8 @@ public class EdgeDataFactory {
       return true;
     }
 
-    public boolean isNull(double elem) {
-      return elem == getNullElement();
+    public boolean isDef(double elem) {
+      return elem == getDefElem();
     }
 
     public double weight(double elem) {
@@ -85,7 +85,7 @@ public class EdgeDataFactory {
     }
 
     @JsonIgnore
-    public double getNullElement() {
+    public double getDefElem() {
       return 0.0;
     }
 
@@ -102,7 +102,7 @@ public class EdgeDataFactory {
     }
 
     public boolean conn(int from, int into) {
-      return !isNull(value);
+      return !isDef(value);
     }
 
     public TIntArrayList connVertexes(int index) {
@@ -111,7 +111,7 @@ public class EdgeDataFactory {
 
     public TIntArrayList connVertexes(int index, TIntArrayList result) {
       result.clear();
-      if (isNull(value)) {
+      if (isDef(value)) {
         return result;
       }
       for (int i = 0; i < size; i++) {
@@ -124,8 +124,8 @@ public class EdgeDataFactory {
       return value;
     }
 
-    public boolean isNull(int from, int into) {
-      return isNull(weight(from, into));
+    public boolean isDef(int from, int into) {
+      return isDef(weight(from, into));
     }
 
     public double power(int index) {
@@ -141,14 +141,14 @@ public class EdgeDataFactory {
     }
 
     @JsonIgnore
-    public int getNotNullCount() {
-      if (isNull(value)) {
+    public int getNonDefCount() {
+      if (isDef(value)) {
         return 0;
       }
       return size * size;
     }
 
-    public void visitNotNull(EdgeVisitor visitor) {
+    public void visitNonDef(EdgeVisitor visitor) {
 
       for (int from = 0; from < size; from++) {
         for (int into = 0; into < size; into++) {

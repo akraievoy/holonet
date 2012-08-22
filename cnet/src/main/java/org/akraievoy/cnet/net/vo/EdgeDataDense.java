@@ -27,9 +27,9 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
 
 import java.util.Arrays;
 
-@JsonPropertyOrder({"bits", "size", "notNullCount", "nullElement", "symmetric", "edges"})
+@JsonPropertyOrder({"bits", "size", "nonDefCount", "defElem", "symmetric", "edges"})
 public class EdgeDataDense implements EdgeData {
-  protected double nullElement;
+  protected double defElem;
 
   protected final TDoubleArrayList edges;
   protected int size = 0;
@@ -42,16 +42,16 @@ public class EdgeDataDense implements EdgeData {
     this(true, 0.0, 6);
   }
 
-  protected EdgeDataDense(boolean symmetric, double nullElement, final int bits) {
+  protected EdgeDataDense(boolean symmetric, double defElem, final int bits) {
     this.edges = new TDoubleArrayList();
 
-    this.nullElement = nullElement;
+    this.defElem = defElem;
     this.symmetric = symmetric;
 
     this.bits = bits;
 
     int capacity = computeCapacity();
-    this.edges.fill(0, capacity * capacity, nullElement);
+    this.edges.fill(0, capacity * capacity, defElem);
   }
 
   protected int computeCapacity() {
@@ -92,26 +92,26 @@ public class EdgeDataDense implements EdgeData {
     G4Trove.binaryToDoubles(edgesBinary, edges);
   }
 
-  public boolean isNull(double elem) {
-    return Double.compare(elem, nullElement) == 0;
+  public boolean isDef(double elem) {
+    return Double.compare(elem, defElem) == 0;
   }
 
   public double weight(double elem) {
     return elem;
   }
 
-  public double getNullElement() {
-    return nullElement;
+  public double getDefElem() {
+    return defElem;
   }
 
   @SuppressWarnings({"UnusedDeclaration"})
   @Deprecated
-  public void setNullElement(double nullElement) {
-    this.nullElement = nullElement;
+  public void setDefElem(double defElem) {
+    this.defElem = defElem;
   }
 
   public EdgeData proto(final int protoSize) {
-    return EdgeDataFactory.dense(isSymmetric(), nullElement, protoSize);
+    return EdgeDataFactory.dense(isSymmetric(), defElem, protoSize);
   }
 
   public double get(int from, int into) {
@@ -137,13 +137,13 @@ public class EdgeDataDense implements EdgeData {
     int capacity;
     while ((capacity = computeCapacity()) < size) {
       double[] filler = new double[capacity];
-      Arrays.fill(filler, nullElement);
+      Arrays.fill(filler, defElem);
 
       for (int from = 0; from < capacity; from++) {
         edges.insert((2 * from + 1) * capacity, filler);
       }
 
-      edges.fill(2 * capacity * capacity, 4 * capacity * capacity, nullElement);
+      edges.fill(2 * capacity * capacity, 4 * capacity * capacity, defElem);
 
       bits += 1;
     }
@@ -190,7 +190,7 @@ public class EdgeDataDense implements EdgeData {
   }
 
   public boolean conn(int from, int into) {
-    return !isNull(from, into);
+    return !isDef(from, into);
   }
 
   public TIntArrayList connVertexes(int index) {
@@ -213,19 +213,19 @@ public class EdgeDataDense implements EdgeData {
     return weight(get(from, into));
   }
 
-  public boolean isNull(int from, int into) {
-    return isNull(get(from, into));
+  public boolean isDef(int from, int into) {
+    return isDef(get(from, into));
   }
 
   public double power(final int index) {
     double result = 0;
     for (int jndex = 0; jndex < size; jndex++) {
       final double ijElem = get(index, jndex);
-      if (!isNull(ijElem)) {
+      if (!isDef(ijElem)) {
         result += ijElem;
       } else {
         final double jiElem = get(jndex, index);
-        if (!isNull(jiElem)) {
+        if (!isDef(jiElem)) {
           result += jiElem;
         }
       }
@@ -253,23 +253,23 @@ public class EdgeDataDense implements EdgeData {
   }
 
   @JsonIgnore
-  public int getNotNullCount() {
-    int notNullCount = 0;
+  public int getNonDefCount() {
+    int nonDefCount = 0;
     for (int from = 0; from < size; from++) {
       for (int into = 0; into < size; into++) {
-        if (!isNull(from, into)) {
-          notNullCount += 1;
+        if (!isDef(from, into)) {
+          nonDefCount += 1;
         }
       }
     }
-    return notNullCount;
+    return nonDefCount;
   }
 
-  public void visitNotNull(EdgeVisitor visitor) {
+  public void visitNonDef(EdgeVisitor visitor) {
     for (int from = 0; from < size; from++) {
       for (int into = 0; into < size; into++) {
         final double value = get(from, into);
-        if (!isNull(value)) {
+        if (!isDef(value)) {
           visitor.visit(from, into, value);
         }
       }
@@ -293,7 +293,7 @@ public class EdgeDataDense implements EdgeData {
 
     final EdgeDataDense edgeData = (EdgeDataDense) o;
 
-    if (Double.compare(edgeData.nullElement, nullElement) != 0) return false;
+    if (Double.compare(edgeData.defElem, defElem) != 0) return false;
     if (symmetric != edgeData.symmetric) return false;
 
     for (int from = 0; from < size; from++) {
@@ -312,49 +312,49 @@ public class EdgeDataDense implements EdgeData {
   public int hashCode() {
     int result;
     long temp;
-    temp = nullElement != +0.0d ? Double.doubleToLongBits(nullElement) : 0L;
+    temp = defElem != +0.0d ? Double.doubleToLongBits(defElem) : 0L;
     result = (int) (temp ^ (temp >>> 32));
     result = 31 * result + (symmetric ? 1 : 0);
-    result = 13 * result + (getNotNullCount());
+    result = 13 * result + (getNonDefCount());
 
     return result;
   }
 
   public double similarity(EdgeData that) {
-    int thisNotNull = 0;
-    int thatNotNull = 0;
+    int thisNonDef = 0;
+    int thatNonDef = 0;
     int similar = 0;
     for (int from = 0; from < size; from++) {
       for (int into = 0; into < size; into++) {
         final double valueThis = get(from, into);
         final double valueThat = that.get(from, into);
 
-        final boolean isNullThis = isNull(valueThis);
-        final boolean isNullThat = that.isNull(valueThat);
-        if (isNullThis && isNullThat) {
+        final boolean isDefThis = isDef(valueThis);
+        final boolean isDefThat = that.isDef(valueThat);
+        if (isDefThis && isDefThat) {
           continue;
         }
 
-        if (!isNullThat) {
-          thatNotNull++;
+        if (!isDefThat) {
+          thatNonDef++;
         }
 
-        if (!isNullThis) {
-          thisNotNull++;
+        if (!isDefThis) {
+          thisNonDef++;
         }
 
-        if (!isNullThis && !isNullThat) {
+        if (!isDefThis && !isDefThat) {
           similar++;
         }
       }
     }
 
-    return similar / (double) Math.max(thisNotNull, thatNotNull);
+    return similar / (double) Math.max(thisNonDef, thatNonDef);
   }
 
   public void clear() {
     final int capacity = computeCapacity();
-    this.edges.fill(0, capacity * capacity, nullElement);
+    this.edges.fill(0, capacity * capacity, defElem);
   }
 
   public String toString() {

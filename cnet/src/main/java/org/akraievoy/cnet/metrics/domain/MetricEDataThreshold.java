@@ -45,7 +45,7 @@ public class MetricEDataThreshold extends MetricEData {
     final EdgeData data = (EdgeData) MetricResultFetcher.fetch(metric);
 
     final EdgeMaxVisitor max = new EdgeMaxVisitor();
-    data.visitNotNull(max);
+    data.visitNonDef(max);
 
     if (!max.isMaxSet() || max.getMax() == 0) {
       target.setValue(data);
@@ -54,11 +54,11 @@ public class MetricEDataThreshold extends MetricEData {
 
     final EdgeData result = EdgeDataFactory.sparse(
         data.isSymmetric(),
-        data.getNullElement(),
+        data.getDefElem(),
         data.getSize()
     );
 
-    data.visitNotNull(new ThresholdVisitor(minToMaxRatio, minAbsValue, max.getMax(), result));
+    data.visitNonDef(new ThresholdVisitor(minToMaxRatio, minAbsValue, max.getMax(), result));
 
     target.setValue(result);
   }
