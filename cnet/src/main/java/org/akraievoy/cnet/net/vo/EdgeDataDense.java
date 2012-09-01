@@ -25,7 +25,6 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 
 import java.io.IOException;
-import java.util.Formatter;
 
 @JsonPropertyOrder({"size", "nonDefCount", "defElem", "symmetric", "edges"})
 public class EdgeDataDense implements EdgeData {
@@ -199,7 +198,9 @@ public class EdgeDataDense implements EdgeData {
     if (indexes.isEmpty()) {
       return emptyWeight;
     }
-    Die.ifTrue("indexes.size == 1", indexes.size() == 1);
+    if (indexes.size() == 1) {
+      throw new IllegalStateException("indexes.size == 1");
+    }
 
     double weight = 0;
     for (int i = 0; i < indexes.size() - 1; i++) {
@@ -318,31 +319,4 @@ public class EdgeDataDense implements EdgeData {
 
     return "EdgeDataDense[" + size + "]";
   }
-
-  public static void main(String[] args) {
-    final Formatter formatter = new Formatter(System.out);
-    int k = 0;
-    for (int i = 0; i < 6; i++) {
-      for (int j = 0; j < 6; j++) {
-        if (i > j) {
-          System.out.print("    ");
-        } else {
-          formatter.format("%4d", k++);
-        }
-      }
-      System.out.println();
-    }
-
-    for (int i = 0; i < 6; i++) {
-      for (int j = 0; j < 6; j++) {
-        if (i > j) {
-          System.out.print("    ");
-        } else {
-          formatter.format("%4d", i + j * (j + 1) / 2);
-        }
-      }
-      System.out.println();
-    }
-  }
-
 }
