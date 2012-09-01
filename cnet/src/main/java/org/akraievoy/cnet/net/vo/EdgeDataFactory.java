@@ -30,21 +30,12 @@ public class EdgeDataFactory {
     return new EdgeDataSparse(symmetric, nullElement, size);
   }
 
-  public static EdgeData dense(boolean symmetric) {
-    return dense(symmetric, 0.0);
-  }
-
-  public static EdgeData dense(boolean symmetric, double nullElement) {
-    return dense(symmetric, nullElement, 32);
-  }
-
   public static EdgeData constant(final int size, final double value) {
     return new EdgeDataConstant(size, value);
   }
 
-  public static EdgeData dense(boolean symmetric, double nullElement, int capacity) {
-    final int bits = (int) Math.ceil(Math.log(capacity) / Math.log(2.0));
-    final EdgeDataDense dense = new EdgeDataDense(symmetric, nullElement, bits);
+  public static EdgeData dense(boolean symmetric, double nullElement, int size) {
+    final EdgeDataDense dense = new EdgeDataDense(symmetric, nullElement, size);
 
     return dense;
   }

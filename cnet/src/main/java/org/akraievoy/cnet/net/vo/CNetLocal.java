@@ -42,6 +42,12 @@ interface Store extends Streamable {
   void ins(int fromIncl, int uptoExcl, long def);
   void ins(int fromIncl, int uptoExcl, float def);
   void ins(int fromIncl, int uptoExcl, double def);
+  void fill(int fromIncl, int uptoExcl, boolean def);
+  void fill(int fromIncl, int uptoExcl, byte def);
+  void fill(int fromIncl, int uptoExcl, int def);
+  void fill(int fromIncl, int uptoExcl, long def);
+  void fill(int fromIncl, int uptoExcl, float def);
+  void fill(int fromIncl, int uptoExcl, double def);
   void del(int fromIncl, int uptoExcl);
 
   double get(int pos, double typeHint);
@@ -84,7 +90,7 @@ class StoreUtils {
     }
   }
 
-  protected static void validateDelete(
+  protected static void validateDeleteOrFill(
       final int storeSize,
       final int fromIncl,
       final int uptoExcl
@@ -240,8 +246,33 @@ class StoreBit implements Store {
     ins(fromIncl, uptoExcl, Soft.PICO.positive(def));
   }
 
+  public void fill(int fromIncl, int uptoExcl, boolean def) {
+    StoreUtils.validateDeleteOrFill(size, fromIncl, uptoExcl);
+    bits.set(fromIncl, uptoExcl, def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, byte def) {
+    fill(fromIncl, uptoExcl, def > 0);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, int def) {
+    fill(fromIncl, uptoExcl, def > 0);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, long def) {
+    fill(fromIncl, uptoExcl, def > 0);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, float def) {
+    fill(fromIncl, uptoExcl, Soft.PICO.positive(def));
+  }
+
+  public void fill(int fromIncl, int uptoExcl, double def) {
+    fill(fromIncl, uptoExcl, Soft.PICO.positive(def));
+  }
+
   public void del(int fromIncl, int uptoExcl) {
-    StoreUtils.validateDelete(size, fromIncl, uptoExcl);
+    StoreUtils.validateDeleteOrFill(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
 
@@ -449,8 +480,33 @@ class StoreByte implements Store {
     ins(fromIncl, uptoExcl, (byte) def);
   }
 
+  public void fill(int fromIncl, int uptoExcl, boolean def) {
+    fill(fromIncl, uptoExcl, def ? (byte) 1 : (byte) 0);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, byte def) {
+    validateDeleteOrFill(size, fromIncl, uptoExcl);
+    Arrays.fill(arr, fromIncl, uptoExcl, def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, int def) {
+    Arrays.fill(arr, fromIncl, uptoExcl, (byte) def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, long def) {
+    Arrays.fill(arr, fromIncl, uptoExcl, (byte) def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, float def) {
+    Arrays.fill(arr, fromIncl, uptoExcl, (byte) def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, double def) {
+    Arrays.fill(arr, fromIncl, uptoExcl, (byte) def);
+  }
+
   public void del(int fromIncl, int uptoExcl) {
-    StoreUtils.validateDelete(size, fromIncl, uptoExcl);
+    StoreUtils.validateDeleteOrFill(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
 
@@ -649,8 +705,33 @@ class StoreInt implements Store {
     ins(fromIncl, uptoExcl, def ? 1 : 0);
   }
 
+  public void fill(int fromIncl, int uptoExcl, boolean def) {
+    fill(fromIncl, uptoExcl, def ? 1 : 0);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, byte def) {
+    fill(fromIncl, uptoExcl, (int) def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, int def) {
+    validateDeleteOrFill(size, fromIncl, uptoExcl);
+    Arrays.fill(arr, fromIncl, uptoExcl, def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, long def) {
+    fill(fromIncl, uptoExcl, (int) def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, float def) {
+    fill(fromIncl, uptoExcl, (int) def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, double def) {
+    fill(fromIncl, uptoExcl, (int) def);
+  }
+
   public void del(int fromIncl, int uptoExcl) {
-    StoreUtils.validateDelete(size, fromIncl, uptoExcl);
+    StoreUtils.validateDeleteOrFill(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
 
@@ -857,8 +938,33 @@ class StoreLong implements Store {
     ins(fromIncl, uptoExcl, def ? 1L : 0L);
   }
 
+  public void fill(int fromIncl, int uptoExcl, boolean def) {
+    fill(fromIncl, uptoExcl, def ? 1L : 0L);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, byte def) {
+    fill(fromIncl, uptoExcl, (long) def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, int def) {
+    fill(fromIncl, uptoExcl, (long) def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, long def) {
+    validateDeleteOrFill(size, fromIncl, uptoExcl);
+    Arrays.fill(arr, fromIncl, uptoExcl, def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, float def) {
+    fill(fromIncl, uptoExcl, (long) def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, double def) {
+    fill(fromIncl, uptoExcl, (long) def);
+  }
+
   public void del(int fromIncl, int uptoExcl) {
-    StoreUtils.validateDelete(size, fromIncl, uptoExcl);
+    StoreUtils.validateDeleteOrFill(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
 
@@ -1065,8 +1171,33 @@ class StoreFloat implements Store {
     ins(fromIncl,uptoExcl, def ? 1f : 0f);
   }
 
+  public void fill(int fromIncl, int uptoExcl, boolean def) {
+    fill(fromIncl, uptoExcl, def ? 1.0f : 0.0f);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, byte def) {
+    fill(fromIncl, uptoExcl, (float) def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, int def) {
+    fill(fromIncl, uptoExcl, (float) def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, long def) {
+    fill(fromIncl, uptoExcl, (float) def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, float def) {
+    validateDeleteOrFill(size, fromIncl, uptoExcl);
+    Arrays.fill(arr, fromIncl, uptoExcl, def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, double def) {
+    fill(fromIncl, uptoExcl, (float) def);
+  }
+
   public void del(int fromIncl, int uptoExcl) {
-    StoreUtils.validateDelete(size, fromIncl, uptoExcl);
+    StoreUtils.validateDeleteOrFill(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
 
@@ -1272,8 +1403,33 @@ class StoreDouble implements Store {
     ins(fromIncl, uptoExcl, def ? 1.0 : .0);
   }
 
+  public void fill(int fromIncl, int uptoExcl, boolean def) {
+    fill(fromIncl, uptoExcl, def ? 1.0 : 0.0);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, byte def) {
+    fill(fromIncl, uptoExcl, (double) def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, int def) {
+    fill(fromIncl, uptoExcl, (double) def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, long def) {
+    fill(fromIncl, uptoExcl, (double) def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, float def) {
+    fill(fromIncl, uptoExcl, (double) def);
+  }
+
+  public void fill(int fromIncl, int uptoExcl, double def) {
+    validateDeleteOrFill(size, fromIncl, uptoExcl);
+    Arrays.fill(arr, fromIncl, uptoExcl, def);
+  }
+
   public void del(int fromIncl, int uptoExcl) {
-    StoreUtils.validateDelete(size, fromIncl, uptoExcl);
+    StoreUtils.validateDeleteOrFill(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
 

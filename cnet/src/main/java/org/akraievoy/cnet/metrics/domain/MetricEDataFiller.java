@@ -23,6 +23,7 @@ import org.akraievoy.cnet.net.vo.EdgeDataFactory;
 
 public class MetricEDataFiller extends MetricEData {
   protected double value = 0.0;
+  protected int size = 0;
 
   public MetricEDataFiller() {
   }
@@ -35,11 +36,15 @@ public class MetricEDataFiller extends MetricEData {
     return "Filler with " + value;
   }
 
+  public void setSize(int size) {
+    this.size = size;
+  }
+
   public void setValue(double value) {
     this.value = value;
   }
 
   public void run() {
-    target.setValue(EdgeDataFactory.sparse(true, value, 0));
+    target.setValue(EdgeDataFactory.sparse(true, value, size));
   }
 }

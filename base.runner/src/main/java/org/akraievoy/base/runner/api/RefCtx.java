@@ -87,10 +87,43 @@ public abstract class RefCtx<T> implements ContextInjectable, Ref<T> {
   }
 
   protected T ctxGet() {
-    return ctx.get(this.path, classOfT, false);
+    final T t = ctx.get(this.path, classOfT, false);
+/*
+    final boolean edgeData = classOfT.getName().contains("EdgeData");
+    if (edgeData) {
+      System.err.print("get("+this.path + "): ");
+      if (t == null) {
+        System.err.println("null");
+      } else {
+        try {
+          System.err.println(t.getClass().getMethod("getSize").invoke(t));
+        } catch (Exception e) {
+          throw new IllegalStateException(e);
+        }
+      }
+      Thread.dumpStack();
+    }
+*/
+    return t;
   }
 
   protected void ctxPut(Object value) {
+/*
+    final boolean edgeData = classOfT.getName().contains("EdgeData");
+    if (edgeData) {
+      System.err.print("put("+this.path + "): ");
+      if (value == null) {
+        System.err.println("null");
+      } else {
+        try {
+          System.err.println(value.getClass().getMethod("getSize").invoke(value));
+        } catch (Exception e) {
+          throw new IllegalStateException(e);
+        }
+      }
+      Thread.dumpStack();
+    }
+*/
     ctx.put(path, value);
   }
 

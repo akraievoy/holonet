@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 
 public class EdgeDataDenseTest extends TestCase {
-  final EdgeData eData = EdgeDataFactory.dense(true, 0.0, 2);
+  final EdgeData eData = EdgeDataFactory.dense(true, 0.0, 5);
 
   public void setUp() {
     eData.set(3, 4, 12.0);
@@ -98,7 +98,7 @@ public class EdgeDataDenseTest extends TestCase {
   }
 
   public void testJsonSerialization() throws IOException {
-    EdgeData edd = EdgeDataFactory.dense(false, Double.POSITIVE_INFINITY);
+    EdgeData edd = EdgeDataFactory.dense(false, Double.POSITIVE_INFINITY, 5);
 
     edd.set(1, 1, 0.0);
     edd.set(0, 1, 1.0);
@@ -150,7 +150,7 @@ public class EdgeDataDenseTest extends TestCase {
   }
 
   public void testJsonSerialization_forSize() throws IOException {
-    EdgeData edd = EdgeDataFactory.dense(false, Double.POSITIVE_INFINITY);
+    EdgeData edd = EdgeDataFactory.dense(false, Double.POSITIVE_INFINITY, 401);
 
     edd.set(100, 100, 0.0);
     edd.set(0, 100, 1.0);

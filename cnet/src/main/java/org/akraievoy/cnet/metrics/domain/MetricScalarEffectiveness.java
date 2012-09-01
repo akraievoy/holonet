@@ -61,7 +61,13 @@ public class MetricScalarEffectiveness extends MetricScalar {
     final EdgeData net = source.getValue();
     final EdgeData weights = weightSource.getValue();
 
-    final int size = Math.max(net.getSize(), weights != null ? weights.getSize() : 0);
+    if (weights != null && weights.getSize() != net.getSize()) {
+      throw new IllegalArgumentException(
+          "net.size(" + net.getSize() + ") != weights.size(" + weights.getSize() + ")"
+      );
+    }
+
+    final int size = net.getSize();
 
     double effSum = 0;
     double weightSum = 0;

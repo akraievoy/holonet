@@ -18,44 +18,43 @@
 
 package org.akraievoy.cnet.net.vo;
 
-import gnu.trove.TDoubleArrayList;
+import com.google.common.io.ByteStreams;
 import gnu.trove.TIntArrayList;
 import org.akraievoy.base.Die;
-import org.akraievoy.gear.G4Trove;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 
-import java.util.Arrays;
+import java.io.IOException;
+import java.util.Formatter;
 
-@JsonPropertyOrder({"bits", "size", "nonDefCount", "defElem", "symmetric", "edges"})
+@JsonPropertyOrder({"size", "nonDefCount", "defElem", "symmetric", "edges"})
 public class EdgeDataDense implements EdgeData {
+
   protected double defElem;
-
-  protected final TDoubleArrayList edges;
-  protected int size = 0;
-  protected int bits;
-
   protected boolean symmetric;
+  protected int size;
+  protected Store edgeStore;
 
   @Deprecated
   public EdgeDataDense() {
-    this(true, 0.0, 6);
+    this(true, 0.0, 32);
   }
 
-  protected EdgeDataDense(boolean symmetric, double defElem, final int bits) {
-    this.edges = new TDoubleArrayList();
-
+  protected EdgeDataDense(boolean symmetric, double defElem, final int size) {
     this.defElem = defElem;
     this.symmetric = symmetric;
+    this.size = size;
 
-    this.bits = bits;
-
-    int capacity = computeCapacity();
-    this.edges.fill(0, capacity * capacity, defElem);
-  }
-
-  protected int computeCapacity() {
-    return (int) Math.pow(2, this.bits);
+    if (symmetric) {
+      //  column-based packed storage for the upper triangular matrix
+      //    please see the links for more details on this
+      //      http://software.intel.com/sites/products/documentation/hpc/mkl/mklman/GUID-7B11079E-CB74-4A5F-AEEA-D6C9B7181C42.htm#PACKED
+      //      http://www.netlib.org/lapack/lug/node123.html
+      //      http://wwwasdoc.web.cern.ch/wwwasdoc/shortwrupsdir/f112/top.html
+      this.edgeStore = new StoreDouble(size * (size + 1) / 2, defElem);
+    } else {
+      this.edgeStore = new StoreDouble(size * size, defElem);
+    }
   }
 
   public boolean isSymmetric() {
@@ -70,34 +69,22 @@ public class EdgeDataDense implements EdgeData {
 
   @SuppressWarnings({"UnusedDeclaration"})
   @Deprecated
-  public int getBits() {
-    return bits;
+  public byte[] getEdgeStore() {
+    try {
+      return ByteStreams.toByteArray(edgeStore.toStream());
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   @SuppressWarnings({"UnusedDeclaration"})
   @Deprecated
-  public void setBits(int bits) {
-    this.bits = bits;
-  }
-
-  @SuppressWarnings({"UnusedDeclaration"})
-  @Deprecated
-  public byte[] getEdges() {
-    return G4Trove.doublesToBinary(edges);
-  }
-
-  @SuppressWarnings({"UnusedDeclaration"})
-  @Deprecated
-  public void setEdges(byte[] edgesBinary) {
-    G4Trove.binaryToDoubles(edgesBinary, edges);
-  }
-
-  public boolean isDef(double elem) {
-    return Double.compare(elem, defElem) == 0;
-  }
-
-  public double weight(double elem) {
-    return elem;
+  public void setEdgeStore(byte[] edgesBinary) {
+    try {
+      edgeStore.fromStream(ByteStreams.newInputStreamSupplier(edgesBinary));
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   public double getDefElem() {
@@ -110,83 +97,53 @@ public class EdgeDataDense implements EdgeData {
     this.defElem = defElem;
   }
 
+  public int getSize() {
+    return size;
+  }
+
+  @SuppressWarnings({"UnusedDeclaration"})
+  @Deprecated
+  public void setSize(int size) {
+    this.size = size;
+  }
+
+  public boolean isDef(double elem) {
+    return Double.compare(elem, defElem) == 0;
+  }
+
+  public double weight(double elem) {
+    return elem;
+  }
+
   public EdgeData proto(final int protoSize) {
     return EdgeDataFactory.dense(isSymmetric(), defElem, protoSize);
   }
 
   public double get(int from, int into) {
-    ensureCapacity(Math.max(from, into));
+    final int index = getIndex(into, from);
 
-    final int index;
-    if (symmetric && from > into) {
-      index = getIndex(into, from);
-    } else {
-      index = getIndex(from, into);
-    }
-
-    return edges.get(index);
-  }
-
-  protected boolean ensureCapacity(int vertex) {
-    if (size > vertex) {
-      return false;
-    }
-
-    size = vertex + 1;
-
-    int capacity;
-    while ((capacity = computeCapacity()) < size) {
-      double[] filler = new double[capacity];
-      Arrays.fill(filler, defElem);
-
-      for (int from = 0; from < capacity; from++) {
-        edges.insert((2 * from + 1) * capacity, filler);
-      }
-
-      edges.fill(2 * capacity * capacity, 4 * capacity * capacity, defElem);
-
-      bits += 1;
-    }
-
-    return true;
+    return edgeStore.get(index, .0);
   }
 
   protected int getIndex(int from, int into) {
-    return (from << bits) + into;
+    if (symmetric) {
+      if (from > into) {
+        return into + from * (from + 1) / 2;
+      } else {
+        return from + into * (into + 1) / 2;
+      }
+    }
+
+    return from * size + into;
   }
 
   public double set(int from, int into, double elem) {
-    ensureCapacity(Math.max(from, into));
+    final int index = getIndex(into, from);
+    final double prevElem = edgeStore.get(index, .0);
 
-    final int index;
-    if (isSymmetric() && from > into) {
-      index = getIndex(into, from);
-    } else {
-      index = getIndex(from, into);
-    }
-
-    final double prevElem = edges.get(index);
-
-    edges.set(index, elem);
+    edgeStore.set(index, elem);
 
     return prevElem;
-  }
-
-  @Deprecated
-  @SuppressWarnings({"UnusedDeclaration"})
-  public void setSizeJson(int size) {
-    this.size = size;
-  }
-
-  @Deprecated
-  @SuppressWarnings({"UnusedDeclaration"})
-  public int getSizeJson() {
-    return this.size;
-  }
-
-  @JsonIgnore
-  public int getSize() {
-    return size;
   }
 
   public boolean conn(int from, int into) {
@@ -353,14 +310,39 @@ public class EdgeDataDense implements EdgeData {
   }
 
   public void clear() {
-    final int capacity = computeCapacity();
-    this.edges.fill(0, capacity * capacity, defElem);
+    edgeStore.fill(0, edgeStore.size(), defElem);
   }
 
   public String toString() {
     final int size = getSize();
 
     return "EdgeDataDense[" + size + "]";
+  }
+
+  public static void main(String[] args) {
+    final Formatter formatter = new Formatter(System.out);
+    int k = 0;
+    for (int i = 0; i < 6; i++) {
+      for (int j = 0; j < 6; j++) {
+        if (i > j) {
+          System.out.print("    ");
+        } else {
+          formatter.format("%4d", k++);
+        }
+      }
+      System.out.println();
+    }
+
+    for (int i = 0; i < 6; i++) {
+      for (int j = 0; j < 6; j++) {
+        if (i > j) {
+          System.out.print("    ");
+        } else {
+          formatter.format("%4d", i + j * (j + 1) / 2);
+        }
+      }
+      System.out.println();
+    }
   }
 
 }
