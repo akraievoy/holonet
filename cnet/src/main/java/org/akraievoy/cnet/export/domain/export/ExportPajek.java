@@ -177,8 +177,14 @@ public class ExportPajek implements Runnable, ContextInjectable, SkipTrigger {
       final VertexData vColor = vColorSource.getValue();
 
       final EdgeData e = eSource.getValue();
+      if (eWidthSource instanceof MetricEDataFiller) {
+        ((MetricEDataFiller) eWidthSource).setSize(e.getSize());
+      }
       final EdgeData eWidth = eWidthSource.getValue();
       final EdgeData eLabel = eLabelSource.getValue();
+      if (eColorSource instanceof MetricEDataFiller) {
+        ((MetricEDataFiller) eColorSource).setSize(e.getSize());
+      }
       final EdgeData eColor = eColorSource.getValue();
 
       final int size = getMaxSize(

@@ -65,11 +65,10 @@ public class MetricEDataOverlayRequest extends MetricEData {
   }
 
   public void run() {
-    final EdgeData requests = EdgeDataFactory.dense(false, 0.0);
-
     @SuppressWarnings({"unchecked"})
     final VertexData density = source.getValue();
     final int size = density.getSize();
+    final EdgeData requests = EdgeDataFactory.dense(false, 0.0, size);
 
     for (int i = 1; i < size; i++) {
       final double densityI = density.get(i);

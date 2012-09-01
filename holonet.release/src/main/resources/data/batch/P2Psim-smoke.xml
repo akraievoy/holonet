@@ -36,7 +36,7 @@
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
           <constructor-arg value="run-p2p-stage2.paramSpace"/>
-          <constructor-arg value="failProf"/>
+          <constructor-arg value="failProf-large-192"/>
         </bean>
         <bean class="org.akraievoy.base.runner.domain.BatchRunner$ComponentExperiment">
           <constructor-arg value="run-p2p-stage3.attackDestab"/>

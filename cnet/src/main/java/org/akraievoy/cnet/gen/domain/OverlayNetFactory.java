@@ -122,7 +122,7 @@ public class OverlayNetFactory extends MetricVData {
 
     for (RefRO<EdgeData> sourceRef : edgeDataMap.keySet()) {
       final EdgeData eData = sourceRef.getValue();
-      final EdgeData vNodeEData = eData.proto(eData.getSize());
+      final EdgeData vNodeEData = eData.proto(vNodeNum);
 
       for (int i = 0; i < vNodeNum; i++) {
         final double physI = indexes.get(i);

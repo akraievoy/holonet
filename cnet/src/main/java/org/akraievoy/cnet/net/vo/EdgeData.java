@@ -57,6 +57,7 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 //  TODO tighten the exposed API area
 //  FIXME most efficient serialization scheme <<< active
 //  TODO compactify hook (compactify just before streaming down to DB?)
+//  TODO routes now may be optimized
 public interface EdgeData {
   class Util {
     public static String dump(EdgeData data) {
