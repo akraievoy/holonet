@@ -234,6 +234,49 @@ public class EdgeDataDense implements EdgeData {
     }
   }
 
+  public ElemIterator nonDefIterator() {
+    return new ElemIterator();
+  }
+
+  class ElemIterator implements EdgeData.ElemIterator, IteratorTuple{
+    int from = -1;
+    int into = size;
+    int fromTuple = -1;
+    int intoTuple = -1;
+
+    public boolean hasNext() {
+      while (from < size && (into >= size || isDef(get(from, into)))) {
+        if (into >= size) {
+          from++;
+          into = 0;
+        } else {
+          into++;
+        }
+      }
+
+      return from < size;
+    }
+
+    public IteratorTuple next() {
+      fromTuple = from;
+      intoTuple = into;
+      into++;
+      return this;
+    }
+
+    public int from() {
+      return fromTuple;
+    }
+
+    public int into() {
+      return intoTuple;
+    }
+
+    public double value() {
+      return get(fromTuple, intoTuple);
+    }
+  }
+
   public double total() {
     double totalConnectivity = 0;
     for (int from = 0; from < size; from++) {

@@ -93,7 +93,7 @@ public class SeedSourceSooSpectral implements SeedSource<GenomeSoo> {
     final MetricVDataEigenGap eigenVData = new MetricVDataEigenGap();
     eigenVData.setSource(new RefEdgeData(solution));
 
-    for (int addedEdges = solution.getNonDefCount(); addedEdges < limit; addedEdges++) {
+    for (int addedEdges = solution.getNonDefCount() / 2; addedEdges < limit; addedEdges++) {
       final VertexData eigenVector = (VertexData) MetricResultFetcher.fetch(eigenVData);
 
       double median = this.median.computeMedian(eigenVector.getData());

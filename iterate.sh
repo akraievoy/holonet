@@ -1,5 +1,5 @@
 #!/bin/bash
-mvn ${0} clean package
+mvn ${1} clean package
 mkdir $HOME/holonet.release-1.3-standalone/
 mv holonet.release/target/holonet.release-1.3-standalone.zip $HOME/holonet.release-1.3-standalone/
 cd $HOME/holonet.release-1.3-standalone/

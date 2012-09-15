@@ -32,7 +32,7 @@ public class ConditionSooDensity implements Condition<GenomeSoo> {
 
     linkLimit = strategySoo.getTotalLinkUpperLimit();
 
-    final boolean valid = !Soft.MILLI.greater(child.getSolution().total(),linkLimit);
+    final boolean valid = !Soft.MILLI.greater(child.getSolution().total() / 2, linkLimit);
 
     return valid;
   }

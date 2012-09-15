@@ -27,8 +27,12 @@ import org.akraievoy.cnet.net.vo.IndexCodec;
 import org.akraievoy.cnet.opt.api.GeneticState;
 import org.akraievoy.cnet.opt.api.GeneticStrategy;
 import org.akraievoy.cnet.opt.api.Mutator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class MutatorSooRewire implements Mutator<GenomeSoo> {
+  private static final Logger log = LoggerFactory.getLogger(MutatorSooRewire.class);
+
   protected final IndexCodec codec;
   protected WeightedEventModelRenorm oldModel;
   protected WeightedEventModelRenorm newModel;
@@ -70,6 +74,10 @@ public abstract class MutatorSooRewire implements Mutator<GenomeSoo> {
     for (int i = 0, links = Math.min(newWireId.size(), oldWireId.size()); i < links; i++) {
       rewire(strategySoo, genome, oldWireId.get(i), newWireId.get(i));
     }
+
+    if (genome.getSolution().total() > strategySoo.getTotalLinkUpperLimit() * 2) {
+      log.warn("too much links: {} > {}",  genome.getSolution().total() / 2, strategySoo.getTotalLinkUpperLimit());
+    }
   }
 
   protected TIntArrayList chooseOldWire(final EdgeData linkFitness, int linkNum, EntropySource eSource, GeneticState state, GenomeSoo genome) {
@@ -80,6 +88,9 @@ public abstract class MutatorSooRewire implements Mutator<GenomeSoo> {
     genome.getSolution().visitNonDef(
         new EdgeData.EdgeVisitor() {
           public void visit(int from, int into, double value) {
+            if (from > into) {
+              return;
+            }
             oldModel.add(codec.fi2id(from, into), linkFitness.get(from, into));
           }
         }

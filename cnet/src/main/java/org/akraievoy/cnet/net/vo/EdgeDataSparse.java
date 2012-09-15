@@ -18,15 +18,15 @@
 
 package org.akraievoy.cnet.net.vo;
 
-import gnu.trove.TDoubleArrayList;
+import com.google.common.io.ByteStreams;
 import gnu.trove.TIntArrayList;
 import org.akraievoy.base.Die;
-import org.akraievoy.gear.G4Trove;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
 
 /**
  * Assymetric case:
@@ -36,11 +36,14 @@ import java.util.List;
  */
 @JsonPropertyOrder({"defElem", "symmetric", "fiEdges"})
 public class EdgeDataSparse implements EdgeData {
-  protected double defElem;
-
-  protected Edges fiEdges;
+  private static final Logger log = LoggerFactory.getLogger(EdgeDataSparse.class);
 
   protected boolean symmetric;
+  protected double defElem;
+  protected int nonDefElems;
+  protected int[][] leads;
+  protected Store trails;
+  protected Store data;
 
   @Deprecated
   @SuppressWarnings("UnusedDeclaration")
@@ -49,10 +52,12 @@ public class EdgeDataSparse implements EdgeData {
   }
 
   protected EdgeDataSparse(boolean symmetric, double defElem, final int size) {
-    this.fiEdges = new Edges(size);
-
-    this.defElem = defElem;
     this.symmetric = symmetric;
+    this.defElem = defElem;
+    this.nonDefElems = 0;
+    this.leads = new int[size][2];
+    this.trails = new StoreInt();
+    this.data = new StoreDouble();
   }
 
   public boolean isSymmetric() {
@@ -65,24 +70,28 @@ public class EdgeDataSparse implements EdgeData {
     this.symmetric = symmetric;
   }
 
+  @Deprecated
+  @SuppressWarnings({"UnusedDeclaration"})
+  public int getNonDefElems() {
+    return nonDefElems;
+  }
+
+  @Deprecated
+  @SuppressWarnings({"UnusedDeclaration"})
+  public void setNonDefElems(int nonDefElems) {
+    this.nonDefElems = nonDefElems;
+  }
+
   @SuppressWarnings({"UnusedDeclaration"})
   @Deprecated
-  public Edges getFiEdges() {
-    return fiEdges;
+  public int[][] getLeads() {
+    return leads;
   }
 
   @SuppressWarnings({"UnusedDeclaration"})
   @Deprecated
-  public void setFiEdges(Edges fiEdges) {
-    this.fiEdges = fiEdges;
-  }
-
-  public boolean isDef(double elem) {
-    return Double.compare(elem, defElem) == 0;
-  }
-
-  public double weight(double elem) {
-    return elem;
+  public void setLeads(int[][] leads) {
+    this.leads = leads;
   }
 
   public double getDefElem() {
@@ -95,55 +104,199 @@ public class EdgeDataSparse implements EdgeData {
     this.defElem = defElem;
   }
 
+  @SuppressWarnings({"UnusedDeclaration"})
+  @Deprecated
+  public byte[] getData() {
+    try {
+      return ByteStreams.toByteArray(data.toStream());
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  @SuppressWarnings({"UnusedDeclaration"})
+  @Deprecated
+  public void setData(byte[] dataBinary) {
+    try {
+      data.fromStream(ByteStreams.newInputStreamSupplier(dataBinary));
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  @SuppressWarnings({"UnusedDeclaration"})
+  @Deprecated
+  public byte[] getTrails() {
+    try {
+      return ByteStreams.toByteArray(trails.toStream());
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  @SuppressWarnings({"UnusedDeclaration"})
+  @Deprecated
+  public void setTrails(byte[] intoBinary) {
+    try {
+      trails.fromStream(ByteStreams.newInputStreamSupplier(intoBinary));
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
   public EdgeData proto(final int protoSize) {
     return EdgeDataFactory.sparse(isSymmetric(), defElem, protoSize);
   }
 
+  public boolean isDef(double elem) {
+    return Double.compare(elem, defElem) == 0;
+  }
+
+  public double weight(double elem) {
+    return elem;
+  }
+
   public double get(int from, int into) {
-    if (from >= fiEdges.getSize()) {
+    validateAccess(from, into);
+
+    final int lead = from;
+    final int trail = into;
+
+    final int fromIncl = leads[lead][0];
+    final int uptoExcl = leads[lead][1];
+
+    if (fromIncl == uptoExcl) {
+      return defElem;
+    }
+
+    final int dataIdx = trails.bSearch(fromIncl, uptoExcl, trail);
+    if (dataIdx >= 0) {
+      return data.get(dataIdx, .0);
+    }
+
+    return defElem;
+  }
+
+  protected int validateAccess(int from, int into) {
+    if (from < 0) {
       throw new IllegalArgumentException(
-          "from(" + from + ") >= size(" + fiEdges.getSize() + ")"
+          "from(" + from + ") < 0"
       );
     }
-    if (into >= fiEdges.getSize()) {
+    if (into < 0) {
       throw new IllegalArgumentException(
-        "into(" + into + ") >= size(" + fiEdges.getSize() + ")"
+          "into(" + into + ") < 0"
       );
     }
 
-    if (isSymmetric() && from > into) {
-      return fiEdges.get(into, from, this);
+    final int size = leads.length;
+    if (from >= size) {
+      throw new IllegalArgumentException(
+          "from(" + from + ") >= size(" + size + ")"
+      );
+    }
+    if (into >= size) {
+      throw new IllegalArgumentException(
+          "into(" + into + ") >= size(" + size + ")"
+      );
     }
 
-    return fiEdges.get(from, into, this);
+    return size;
   }
 
   public double set(int from, int into, double elem) {
-    if (from >= fiEdges.getSize()) {
-      throw new IllegalArgumentException(
-          "from(" + from + ") >= size(" + fiEdges.getSize() + ")"
-      );
-    }
-    if (into >= fiEdges.getSize()) {
-      throw new IllegalArgumentException(
-        "into(" + into + ") >= size(" + fiEdges.getSize() + ")"
-      );
+    validateAccess(from, into);
+
+    //  it's better to degrade writes linearly, and
+    //    store twice as much data, but
+    //    keep reads and queries efficient
+    if (symmetric && from != into) {
+      set0(into, from, elem, true);
+      if (defElem == 0.0 && Math.IEEEremainder(elem, 1.0) == 0.0 && total() != nonDefElems) {
+        log.warn("non-def elems skewed");
+      }
     }
 
-    if (isSymmetric() && from > into) {
-      return fiEdges.set(into, from, elem, this);
+    final double origVal = set0(from, into, elem, true);
+    if (defElem == 0.0 && Math.IEEEremainder(elem, 1.0) == 0.0 && total() != nonDefElems) {
+      log.warn("non-def elems skewed");
+    }
+    return origVal;
+  }
+
+  protected double set0(int from, int into, double elem, final boolean count) {
+    final int lead = from;
+    final int trail = into;
+    final int fromIncl = leads[lead][0];
+    final int uptoExcl = leads[lead][1];
+
+    final int size = uptoExcl - fromIncl;
+    final int capacityUptoExcl =
+        lead + 1 < leads.length ? leads[lead + 1][0] : trails.size();
+    final int capacity = capacityUptoExcl - fromIncl;
+
+    final int elemPos = trails.bSearch(fromIncl, uptoExcl, trail);
+
+    if (elemPos < 0) { //  such position was not stored before
+      if (Double.compare(elem, defElem) == 0) {
+        return defElem; //  nothing to do
+      }
+
+      if (uptoExcl >= capacityUptoExcl) { //  expand storage
+        final int increment = size == 0 ? 2 : size;
+        trails.ins(uptoExcl, uptoExcl + increment, -1);
+        data.ins(uptoExcl, uptoExcl + increment, defElem);
+        for (int leadPos = lead + 1; leadPos < leads.length; leadPos++) {
+          leads[leadPos][0] += increment;
+          leads[leadPos][1] += increment;
+        }
+      }
+
+      //  insert element
+      int insertIdx = -(elemPos + 1);
+      trails.rotUp(insertIdx, uptoExcl + 1);
+      data.rotUp(insertIdx, uptoExcl + 1);
+      trails.set(insertIdx, trail);
+      data.set(insertIdx, elem);
+      leads[lead][1] += 1;
+      if (count) {
+        nonDefElems += 1;
+      }
+
+      return defElem;
     }
 
-    return fiEdges.set(from, into, elem, this);
+    //  such position stored
+    if (Double.compare(elem, defElem) == 0) { //  remove element
+      trails.rotDown(elemPos, uptoExcl);
+      data.rotDown(elemPos, uptoExcl);
+      trails.set(uptoExcl - 1, -1);
+      final double ori = data.set(uptoExcl - 1, defElem);
+      leads[lead][1] -= 1;
+      if (count) {
+        nonDefElems -= 1;
+      }
+
+      if (size * 4 < capacity) { //  leave at most size*2 capacity
+        int delFromIncl = uptoExcl + size;
+        trails.del(delFromIncl, capacityUptoExcl);
+        data.del(delFromIncl, capacityUptoExcl);
+        final int decrement = capacityUptoExcl - delFromIncl;
+        for (int leadPos = lead + 1; leadPos < leads.length; leadPos++) {
+          leads[leadPos][0] -= decrement;
+          leads[leadPos][1] -= decrement;
+        }
+      }
+
+      return ori;
+    }
+
+    return data.set(elemPos, elem); //  overwrite existing position
   }
 
   @JsonIgnore
   public int getSize() {
-    if (fiEdges.isEmpty()) {
-      return 0;
-    }
-
-    return fiEdges.getSize();
+    return leads.length;
   }
 
   public boolean conn(int from, int into) {
@@ -155,13 +308,15 @@ public class EdgeDataSparse implements EdgeData {
   }
 
   public TIntArrayList connVertexes(int index, final TIntArrayList result) {
-    fiEdges.vertexes(index, result, false);
-    if (symmetric) {
-      for (int from = 0; from < index; from++) {
-        if (conn(from, index)) {
-          result.add(from);
-        }
-      }
+    final int fromIncl = leads[index][0];
+    final int uptoExcl = leads[index][1];
+
+    if (fromIncl == uptoExcl) { //  nothing to add
+      return result;
+    }
+
+    for (int trailPos = fromIncl; trailPos < uptoExcl; trailPos++) {
+      result.add(trails.get(trailPos, 0));
     }
 
     return result;
@@ -176,12 +331,18 @@ public class EdgeDataSparse implements EdgeData {
   }
 
   public double power(final int index) {
-    double power = fiEdges.power(index, false, this);
-    if (symmetric) {
-      for (int from = 0; from < index; from++) {
-        power += weight(get(from, index));
-      }
+    final int fromIncl = leads[index][0];
+    final int uptoExcl = leads[index][1];
+
+    if (fromIncl == uptoExcl) { //  nothing to add
+      return 0;
     }
+
+    double power = 0;
+    for (int trailPos = fromIncl; trailPos < uptoExcl; trailPos++) {
+      power += weight(data.get(trailPos, .0));
+    }
+
     return power;
   }
 
@@ -205,12 +366,67 @@ public class EdgeDataSparse implements EdgeData {
 
   @JsonIgnore
   public int getNonDefCount() {
-    return fiEdges.getNotDefCount();
+    return nonDefElems;
   }
 
   public void visitNonDef(EdgeVisitor visitor) {
-    fiEdges.visit(visitor);
+    for (int lead = 0; lead < leads.length; lead++) {
+      final int fromIncl = leads[lead][0];
+      final int uptoExcl = leads[lead][1];
+      for (int pos = fromIncl; pos < uptoExcl; pos++) {
+        final int trail = trails.get(pos, 0);
+        final double elem = data.get(pos, .0);
+
+        visitor.visit(lead, trail, elem);
+      }
+    }
   }
+
+  public ElemIterator nonDefIterator() {
+    return new SparseElemIterator();
+  }
+
+  class SparseElemIterator implements ElemIterator, IteratorTuple {
+    int from = -1;
+    int fromIncl = -1;
+    int uptoExcl = -1;
+    int posTuple = -1;
+    int pos = -1;
+
+    public boolean hasNext() {
+      while (pos >= uptoExcl && from < leads.length) {
+        from += 1; // outer loop for from
+        if (from < leads.length) {
+          pos = fromIncl = leads[from][0];
+          uptoExcl = leads[from][1];
+        } else {
+          pos = leads.length;
+          uptoExcl = leads.length;
+        }
+      }
+
+      return from() < leads.length;
+    }
+
+    public IteratorTuple next() {
+      posTuple = pos;
+      pos++;
+      return this;
+    }
+
+    public int from() {
+      return from;
+    }
+
+    public int into() {
+      return trails.get(posTuple, 0);
+    }
+
+    public double value() {
+      return data.get(posTuple, .0);
+    }
+  }
+
 
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -226,12 +442,32 @@ public class EdgeDataSparse implements EdgeData {
       return false;
     }
 
-    //noinspection SimplifiableIfStatement
-    if (edgeData.getSize() != edgeData.getSize()) {
+    final int size = leads.length;
+    if (size != edgeData.getSize()) {
       return false;
     }
 
-    return fiEdges.index.equals(edgeData.fiEdges.index) && fiEdges.elems.equals(edgeData.fiEdges.elems);
+    final ElemIterator thisNDI = nonDefIterator();
+    final ElemIterator thatNDI = edgeData.nonDefIterator();
+
+    while (thisNDI.hasNext()) {
+      if (!thatNDI.hasNext()) {
+        throw new IllegalStateException(
+            "same link count, but `that` iterator exhausted?"
+        );
+      }
+
+      if (!Util.eq(thisNDI.next(), thatNDI.next())) {
+        return false;
+      }
+    }
+    if (thatNDI.hasNext()) {
+      throw new IllegalStateException(
+          "same link count, but `that` iterator NOT exhausted?"
+      );
+    }
+
+    return true;
   }
 
   public int hashCode() {
@@ -245,24 +481,26 @@ public class EdgeDataSparse implements EdgeData {
     return result;
   }
 
-  //	LATER add a generic similarity measure
+  //	TODO add a generic similarity measure with an Edge Iterator
   public double similarity(EdgeData that) {
-    final List<TIntArrayList> thisIndex = fiEdges.index;
-    final List<TIntArrayList> thatIndex = ((EdgeDataSparse) that).fiEdges.index;
+    final int[][] thisLeads = leads;
+    final int[][] thatLeads = ((EdgeDataSparse) that).leads;
+    final Store thisTrails = trails;
+    final Store thatTrails = ((EdgeDataSparse) that).trails;
 
 
     double sameLinkCount = 0.0;
-    for (int lead = 0, maxLead = Math.min(thisIndex.size(), thatIndex.size()); lead < maxLead; lead++) {
-      final TIntArrayList thisRange = thisIndex.get(lead);
-      final TIntArrayList thatRange = thatIndex.get(lead);
-      final int thisSize = thisRange.size();
-      final int thatSize = thatRange.size();
+    for (int lead = 0, maxLead = Math.min(thisLeads.length, thatLeads.length); lead < maxLead; lead++) {
+      final int thisFromIncl = thisLeads[lead][0];
+      final int thisUptoExcl = thisLeads[lead][1];
+      final int thatFromIncl = thatLeads[lead][0];
+      final int thatUptoExcl = thatLeads[lead][1];
 
-      int thisPos = 0;
-      int thatPos = 0;
-      while (thisPos < thisSize && thatPos < thatSize) {
-        final int thisIdx = thisRange.get(thisPos);
-        final int thatIdx = thatRange.get(thatPos);
+      int thisPos = thisFromIncl;
+      int thatPos = thatFromIncl;
+      while (thisPos < thisUptoExcl && thatPos < thatUptoExcl) {
+        final int thisIdx = thisTrails.get(thisPos, 0);
+        final int thatIdx = thatTrails.get(thatPos, 0);
 
         if (thisIdx == thatIdx) {
           //	LATER: the data might be different too
@@ -277,170 +515,27 @@ public class EdgeDataSparse implements EdgeData {
       }
     }
 
-
-    return sameLinkCount / fiEdges.getNotDefCount();
+    return sameLinkCount / nonDefElems;
   }
 
   public void clear() {
-    fiEdges.clear();
+    for (int i = 0; i < leads.length; i++) {
+      leads[i][0] = leads[i][1] = 0;
+      trails.del(0, trails.size());
+      data.del(0, data.size());
+    }
   }
 
   public double total() {
     final double[] totalConnectivity = new double[] {0.0};
 
-    fiEdges.visit(new EdgeVisitor() {
+    visitNonDef(new EdgeVisitor() {
       public void visit(int from, int into, double e) {
         totalConnectivity[0] += e;
       }
     });
 
     return totalConnectivity[0];
-  }
-
-  public static class Edges {
-    protected final List<TIntArrayList> index = new ArrayList<TIntArrayList>();
-    protected final List<TDoubleArrayList> elems = new ArrayList<TDoubleArrayList>();
-
-    protected int capacity = 4;
-
-    @SuppressWarnings("UnusedDeclaration")
-    @Deprecated
-    public Edges() {
-    }
-
-    public Edges(int size) {
-      while (index.size() < size) {
-        index.add(new TIntArrayList(capacity));
-        elems.add(new TDoubleArrayList(capacity));
-      }
-    }
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    @Deprecated
-    public byte[] getIndex() {
-      return G4Trove.intsListToBinary(index);
-    }
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    @Deprecated
-    public void setIndex(byte[] indexBinary) {
-      G4Trove.binaryToIntsList(indexBinary, index);
-    }
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    @Deprecated
-    public byte[] getElems() {
-      return G4Trove.doublesListToBinary(elems);
-    }
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    @Deprecated
-    public void setElems(byte[] elemsBinary) {
-      G4Trove.binaryToDoublesList(elemsBinary, elems);
-    }
-
-    public double get(int lead, int tail, final EdgeData weightOperator) {
-      final int i = index.get(lead).binarySearch(tail);
-
-      if (i < 0) {
-        return weightOperator.getDefElem();
-      }
-
-      return elems.get(lead).get(i);
-    }
-
-    public double set(int lead, int tail, double elem, final EdgeData weightOperator) {
-      final int i = index.get(lead).binarySearch(tail);
-      final boolean def = weightOperator != null && weightOperator.isDef(elem);
-
-      if (i < 0 && !def) {
-        int insertionIndex = -(i + 1);
-        index.get(lead).insert(insertionIndex, tail);
-        elems.get(lead).insert(insertionIndex, elem);
-        return weightOperator != null ? weightOperator.getDefElem() : 0;
-      }
-
-      if (def) {
-        if (i >= 0) {
-          index.get(lead).remove(i);
-          return elems.get(lead).remove(i);
-        } else {
-          return weightOperator.getDefElem();
-        }
-      } else {
-        return elems.get(lead).getSet(i, elem);
-      }
-    }
-
-    @JsonIgnore
-    public boolean isEmpty() {
-      return index.isEmpty();
-    }
-
-    public TIntArrayList vertexes(int leadIdx, final TIntArrayList result, final boolean ignoreReflective) {
-      final TIntArrayList range = index.get(leadIdx);
-      result.add(range.toNativeArray());
-
-      if (ignoreReflective) {
-        final int leadPos = range.binarySearch(leadIdx);
-        if (leadPos >= 0) {
-          result.remove(result.size() - range.size() + leadPos);
-        }
-      }
-
-      return result;
-    }
-
-    public double power(int leadIdx, final boolean ignoreReflective, EdgeData weightOperator) {
-      final TIntArrayList range = index.get(leadIdx);
-      final TDoubleArrayList elm = elems.get(leadIdx);
-
-      double result = 0;
-      for (int i = 0; i < range.size(); i++) {
-        if (ignoreReflective) {
-          if (range.get(i) == leadIdx) {
-            continue;
-          }
-        }
-
-        result += weightOperator.weight(elm.get(i));
-      }
-
-      return result;
-    }
-
-    @JsonIgnore
-    protected int getSize() {
-      return index.size();
-    }
-
-    @JsonIgnore
-    public int getNotDefCount() {
-      int nonDefCount = 0;
-
-      for (TDoubleArrayList elem : elems) {
-        nonDefCount += elem.size();
-      }
-
-      return nonDefCount;
-    }
-
-    public void visit(final EdgeVisitor visitor) {
-      for (int lead = 0; lead < index.size(); lead++) {
-        final TIntArrayList range = index.get(lead);
-        for (int pos = 0; pos < range.size(); pos++) {
-          final int tail = range.get(pos);
-          final double elm = elems.get(lead).get(pos);
-
-          visitor.visit(lead, tail, elm);
-        }
-      }
-    }
-
-    protected void clear() {
-      index.clear();
-      elems.clear();
-    }
   }
 
   public String toString() {

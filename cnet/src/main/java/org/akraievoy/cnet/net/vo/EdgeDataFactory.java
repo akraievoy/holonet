@@ -140,12 +140,15 @@ public class EdgeDataFactory {
     }
 
     public void visitNonDef(EdgeVisitor visitor) {
-
       for (int from = 0; from < size; from++) {
         for (int into = 0; into < size; into++) {
           visitor.visit(from, into, value);
         }
       }
+    }
+
+    public ElemIterator nonDefIterator() {
+      return new ElemIterator();
     }
 
     public double total() {
@@ -164,5 +167,32 @@ public class EdgeDataFactory {
       return size;
     }
 
+    class ElemIterator implements EdgeData.ElemIterator, IteratorTuple{
+      final int len = size * size;
+      int pos = 0;
+      int posTuple = -1;
+
+      public boolean hasNext() {
+        return pos < len;
+      }
+
+      public IteratorTuple next() {
+        posTuple = pos;
+        pos++;
+        return this;
+      }
+
+      public int from() {
+        return posTuple / size;
+      }
+
+      public int into() {
+        return posTuple % size;
+      }
+
+      public double value() {
+        return value;
+      }
+    }
   }
 }

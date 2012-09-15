@@ -62,6 +62,11 @@ public abstract class BreederSoo implements Breeder {
 
     unwire(strategySoo, genomeA, genomeB, child, linkFitness, eSource, state);
 
+    if (child.getSolution().total() > strategySoo.getTotalLinkUpperLimit() * 2) {
+      log.warn("too much links: {} > {}",  child.getSolution().total(), strategySoo.getTotalLinkUpperLimit() * 2);
+    }
+
+
     return child;
   }
 
@@ -80,21 +85,50 @@ public abstract class BreederSoo implements Breeder {
     final double linksToUnwireFromA = (1 - state.getCrossoverRatio()) * linksToUnwire;
 
     child.getSolution().visitNonDef(new EdgeSubsetVisitor(unwireModel, linkFitness, genomeA, genomeB, codec));
-
+    if (unwireModel.getSize() == 0) {
+      log.warn("first unwire yields no links");
+    }
     final double[] removedRef = {0};
     remove(strategy, child, eSource, linksToUnwireFromA, removedRef);
 
     unwireModel.clear();
     child.getSolution().visitNonDef(new EdgeSubsetVisitor(unwireModel, linkFitness, genomeB, null, codec));
+    if (unwireModel.getSize() == 0) {
+      log.warn("second unwire yields no links");
+    }
 
     remove(strategy, child, eSource, linksToUnwire, removedRef);
+
+    if (
+        strategy.getSteps() == 1 &&
+        child.getSolution().total() != child.getSolution().getNonDefCount()
+    ) {
+   log.warn(
+          "EdgeData total({}) != nonDefCount({})",
+          child.getSolution().total(),
+          child.getSolution().getNonDefCount()
+      );
+    }
+
+    if (child.getSolution().total() > genomeA.getSolution().total()) {
+      log.warn(
+          "total is increasing from {} to {}",
+           genomeA.getSolution().total(),
+           child.getSolution().total()
+      );
+    }
   }
 
   protected void remove(
       GeneticStrategySoo strategy, GenomeSoo child, EntropySource eSource,
       final double unwireLimit, double[] removedRef
   ) {
-    final int modelSizeOrig = unwireModel.getSize();
+    if (unwireModel.getSize() < unwireLimit) {
+      log.warn(
+          "exhausted {} out of {} unwireModel events: extra links may appear",
+          unwireLimit, unwireModel.getSize()
+      );
+    }
     final double step = 1.0 / strategy.getSteps();
     final int[] indexRef = new int[1];
     for (; Soft.MILLI.less(removedRef[0], unwireLimit)  && unwireModel.getSize() > 0; removedRef[0] += step) {
@@ -110,17 +144,11 @@ public abstract class BreederSoo implements Breeder {
         unwireModel.removeByIndex(indexRef[0]);
       }
     }
-    if (unwireModel.getSize() == 0) {
-      log.warn(
-          "unwireModel exhausted (using {} out of {}): extra links may appear",
-          unwireLimit, modelSizeOrig
-      );
-    }
   }
 
   protected double computeLinkDiff(GenomeSoo genomeA, GenomeSoo child) {
     final double connectivityDiff = child.getSolution().total() - genomeA.getSolution().total();
-    return connectivityDiff;
+    return connectivityDiff / 2;
   }
 
   protected GenomeSoo createChild(GenomeSoo genomeA, GenomeSoo genomeB) {
@@ -162,7 +190,7 @@ public abstract class BreederSoo implements Breeder {
 
     public void visit(int from, int into, double value) {
       if (from > into) {
-        throw new IllegalStateException("wheee, VISITOR ("+from+"->"+into+")?!?!");
+        return;
       }
 
       final boolean include = Soft.MILLI.positive(included.getSolution().get(from, into));

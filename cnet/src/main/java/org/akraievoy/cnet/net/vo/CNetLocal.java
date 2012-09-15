@@ -48,6 +48,13 @@ interface Store extends Streamable {
   void fill(int fromIncl, int uptoExcl, long def);
   void fill(int fromIncl, int uptoExcl, float def);
   void fill(int fromIncl, int uptoExcl, double def);
+  int bSearch(int fromIncl, int uptoExcl, byte search);
+  int bSearch(int fromIncl, int uptoExcl, int search);
+  int bSearch(int fromIncl, int uptoExcl, long search);
+  int bSearch(int fromIncl, int uptoExcl, float search);
+  int bSearch(int fromIncl, int uptoExcl, double search);
+  void rotUp(int fromIncl, int uptoExcl);
+  void rotDown(int fromIncl, int uptoExcl);
   void del(int fromIncl, int uptoExcl);
 
   double get(int pos, double typeHint);
@@ -90,7 +97,7 @@ class StoreUtils {
     }
   }
 
-  protected static void validateDeleteOrFill(
+  protected static void validateAccess(
       final int storeSize,
       final int fromIncl,
       final int uptoExcl
@@ -109,7 +116,7 @@ class StoreUtils {
 
     if (fromIncl > uptoExcl) {
       throw new IllegalArgumentException(
-          "fromIncl(" + fromIncl + ") >= uptoExcl(" + uptoExcl + ")"
+          "fromIncl(" + fromIncl + ") > uptoExcl(" + uptoExcl + ")"
       );
     }
 
@@ -247,7 +254,7 @@ class StoreBit implements Store {
   }
 
   public void fill(int fromIncl, int uptoExcl, boolean def) {
-    StoreUtils.validateDeleteOrFill(size, fromIncl, uptoExcl);
+    StoreUtils.validateAccess(size, fromIncl, uptoExcl);
     bits.set(fromIncl, uptoExcl, def);
   }
 
@@ -271,8 +278,46 @@ class StoreBit implements Store {
     fill(fromIncl, uptoExcl, Soft.PICO.positive(def));
   }
 
+  public int bSearch(int fromIncl, int uptoExcl, byte search) {
+    throw new IllegalStateException("no binary search for StoreBit");
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, int search) {
+    throw new IllegalStateException("no binary search for StoreBit");
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, long search) {
+    throw new IllegalStateException("no binary search for StoreBit");
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, float search) {
+    throw new IllegalStateException("no binary search for StoreBit");
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, double search) {
+    throw new IllegalStateException("no binary search for StoreBit");
+  }
+
+  public void rotDown(int fromIncl, int uptoExcl) {
+    validateAccess(fromIncl, uptoExcl);
+    final boolean saved = bits.get(fromIncl);
+    for (int pos = fromIncl; pos < uptoExcl - 1; pos++) {
+      bits.set(pos, pos + 1);
+    }
+    bits.set(uptoExcl - 1, saved);
+  }
+
+  public void rotUp(int fromIncl, int uptoExcl) {
+    validateAccess(fromIncl, uptoExcl);
+    final boolean saved = bits.get(uptoExcl - 1);
+    for (int pos = uptoExcl - 1; pos > fromIncl; pos--) {
+      bits.set(pos, pos - 1);
+    }
+    bits.set(fromIncl, saved);
+  }
+
   public void del(int fromIncl, int uptoExcl) {
-    StoreUtils.validateDeleteOrFill(size, fromIncl, uptoExcl);
+    StoreUtils.validateAccess(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
 
@@ -442,7 +487,7 @@ class StoreByte implements Store {
     //  expand storage
     int newLength = arr.length;
     while (newLength < size + subSize) {
-      newLength *= 2;
+      newLength += newLength == 0 ? subSize * 2 : newLength;
     }
 
     if (newLength > arr.length) {
@@ -485,7 +530,7 @@ class StoreByte implements Store {
   }
 
   public void fill(int fromIncl, int uptoExcl, byte def) {
-    validateDeleteOrFill(size, fromIncl, uptoExcl);
+    validateAccess(size, fromIncl, uptoExcl);
     Arrays.fill(arr, fromIncl, uptoExcl, def);
   }
 
@@ -505,8 +550,42 @@ class StoreByte implements Store {
     Arrays.fill(arr, fromIncl, uptoExcl, (byte) def);
   }
 
+  public int bSearch(int fromIncl, int uptoExcl, byte search) {
+    return Arrays.binarySearch(arr, fromIncl, uptoExcl, search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, int search) {
+    return bSearch(fromIncl, uptoExcl, (byte) search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, long search) {
+    return bSearch(fromIncl, uptoExcl, (byte) search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, float search) {
+    return bSearch(fromIncl, uptoExcl, (byte) search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, double search) {
+    return bSearch(fromIncl, uptoExcl, (byte) search);
+  }
+
+  public void rotUp(int fromIncl, int uptoExcl) {
+    validateAccess(fromIncl, uptoExcl);
+    final byte saved = arr[uptoExcl - 1];
+    System.arraycopy(arr, fromIncl, arr, fromIncl + 1, uptoExcl - fromIncl - 1);
+    arr[fromIncl] = saved;
+  }
+
+  public void rotDown(int fromIncl, int uptoExcl) {
+    validateAccess(fromIncl, uptoExcl);
+    final byte saved = arr[fromIncl];
+    System.arraycopy(arr, fromIncl + 1, arr, fromIncl, uptoExcl - fromIncl - 1);
+    arr[uptoExcl - 1] = saved;
+  }
+
   public void del(int fromIncl, int uptoExcl) {
-    StoreUtils.validateDeleteOrFill(size, fromIncl, uptoExcl);
+    StoreUtils.validateAccess(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
 
@@ -667,7 +746,7 @@ class StoreInt implements Store {
     //  expand storage
     int newLength = arr.length;
     while (newLength < size + subSize) {
-      newLength *= 2;
+      newLength += newLength == 0 ? subSize * 2 : newLength;
     }
 
     if (newLength > arr.length) {
@@ -714,7 +793,7 @@ class StoreInt implements Store {
   }
 
   public void fill(int fromIncl, int uptoExcl, int def) {
-    validateDeleteOrFill(size, fromIncl, uptoExcl);
+    validateAccess(size, fromIncl, uptoExcl);
     Arrays.fill(arr, fromIncl, uptoExcl, def);
   }
 
@@ -730,8 +809,42 @@ class StoreInt implements Store {
     fill(fromIncl, uptoExcl, (int) def);
   }
 
+  public int bSearch(int fromIncl, int uptoExcl, byte search) {
+    return bSearch(fromIncl, uptoExcl, (int) search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, int search) {
+    return Arrays.binarySearch(arr, fromIncl, uptoExcl, search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, long search) {
+    return bSearch(fromIncl, uptoExcl, (int) search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, float search) {
+    return bSearch(fromIncl, uptoExcl, (int) search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, double search) {
+    return bSearch(fromIncl, uptoExcl, (int) search);
+  }
+
+  public void rotUp(int fromIncl, int uptoExcl) {
+    validateAccess(fromIncl, uptoExcl);
+    final int saved = arr[uptoExcl - 1];
+    System.arraycopy(arr, fromIncl, arr, fromIncl + 1, uptoExcl - fromIncl - 1);
+    arr[fromIncl] = saved;
+  }
+
+  public void rotDown(int fromIncl, int uptoExcl) {
+    validateAccess(fromIncl, uptoExcl);
+    final int saved = arr[fromIncl];
+    System.arraycopy(arr, fromIncl + 1, arr, fromIncl, uptoExcl - fromIncl - 1);
+    arr[uptoExcl - 1] = saved;
+  }
+
   public void del(int fromIncl, int uptoExcl) {
-    StoreUtils.validateDeleteOrFill(size, fromIncl, uptoExcl);
+    StoreUtils.validateAccess(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
 
@@ -900,7 +1013,7 @@ class StoreLong implements Store {
     //  expand storage
     int newLength = arr.length;
     while (newLength < size + subSize) {
-      newLength *= 2;
+      newLength += newLength == 0 ? subSize * 2 : newLength;
     }
 
     if (newLength > arr.length) {
@@ -951,7 +1064,7 @@ class StoreLong implements Store {
   }
 
   public void fill(int fromIncl, int uptoExcl, long def) {
-    validateDeleteOrFill(size, fromIncl, uptoExcl);
+    validateAccess(size, fromIncl, uptoExcl);
     Arrays.fill(arr, fromIncl, uptoExcl, def);
   }
 
@@ -963,8 +1076,42 @@ class StoreLong implements Store {
     fill(fromIncl, uptoExcl, (long) def);
   }
 
+  public int bSearch(int fromIncl, int uptoExcl, byte search) {
+    return bSearch(fromIncl, uptoExcl, (long) search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, int search) {
+    return bSearch(fromIncl, uptoExcl, (long) search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, long search) {
+    return Arrays.binarySearch(arr, fromIncl, uptoExcl, search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, float search) {
+    return bSearch(fromIncl, uptoExcl, (long) search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, double search) {
+    return bSearch(fromIncl, uptoExcl, (long) search);
+  }
+
+  public void rotUp(int fromIncl, int uptoExcl) {
+    validateAccess(fromIncl, uptoExcl);
+    final long saved = arr[uptoExcl - 1];
+    System.arraycopy(arr, fromIncl, arr, fromIncl + 1, uptoExcl - fromIncl - 1);
+    arr[fromIncl] = saved;
+  }
+
+  public void rotDown(int fromIncl, int uptoExcl) {
+    validateAccess(fromIncl, uptoExcl);
+    final long saved = arr[fromIncl];
+    System.arraycopy(arr, fromIncl + 1, arr, fromIncl, uptoExcl - fromIncl - 1);
+    arr[uptoExcl - 1] = saved;
+  }
+
   public void del(int fromIncl, int uptoExcl) {
-    StoreUtils.validateDeleteOrFill(size, fromIncl, uptoExcl);
+    StoreUtils.validateAccess(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
 
@@ -1133,7 +1280,7 @@ class StoreFloat implements Store {
     //  expand storage
     int newLength = arr.length;
     while (newLength < size + subSize) {
-      newLength *= 2;
+      newLength += newLength == 0 ? subSize * 2 : newLength;
     }
 
     if (newLength > arr.length) {
@@ -1152,11 +1299,11 @@ class StoreFloat implements Store {
   }
 
   public void ins(int fromIncl, int uptoExcl, long def) {
-    ins(fromIncl,uptoExcl,(float) def);
+    ins(fromIncl, uptoExcl, (float) def);
   }
 
   public void ins(int fromIncl, int uptoExcl, int def) {
-    ins(fromIncl,uptoExcl,(float) def);
+    ins(fromIncl, uptoExcl, (float) def);
   }
 
   public void ins(int fromIncl, int uptoExcl, double def) {
@@ -1188,7 +1335,7 @@ class StoreFloat implements Store {
   }
 
   public void fill(int fromIncl, int uptoExcl, float def) {
-    validateDeleteOrFill(size, fromIncl, uptoExcl);
+    validateAccess(size, fromIncl, uptoExcl);
     Arrays.fill(arr, fromIncl, uptoExcl, def);
   }
 
@@ -1196,8 +1343,42 @@ class StoreFloat implements Store {
     fill(fromIncl, uptoExcl, (float) def);
   }
 
+  public int bSearch(int fromIncl, int uptoExcl, byte search) {
+    return bSearch(fromIncl, uptoExcl, (float) search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, int search) {
+    return bSearch(fromIncl, uptoExcl, (float) search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, long search) {
+    return bSearch(fromIncl, uptoExcl, (float) search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, float search) {
+    return Arrays.binarySearch(arr, fromIncl, uptoExcl, search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, double search) {
+    return bSearch(fromIncl, uptoExcl, (float) search);
+  }
+
+  public void rotUp(int fromIncl, int uptoExcl) {
+    validateAccess(fromIncl, uptoExcl);
+    final float saved = arr[uptoExcl - 1];
+    System.arraycopy(arr, fromIncl, arr, fromIncl + 1, uptoExcl - fromIncl - 1);
+    arr[fromIncl] = saved;
+  }
+
+  public void rotDown(int fromIncl, int uptoExcl) {
+    validateAccess(fromIncl, uptoExcl);
+    final float saved = arr[fromIncl];
+    System.arraycopy(arr, fromIncl + 1, arr, fromIncl, uptoExcl - fromIncl - 1);
+    arr[uptoExcl - 1] = saved;
+  }
+
   public void del(int fromIncl, int uptoExcl) {
-    StoreUtils.validateDeleteOrFill(size, fromIncl, uptoExcl);
+    StoreUtils.validateAccess(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
 
@@ -1365,7 +1546,7 @@ class StoreDouble implements Store {
     //  expand storage
     int newLength = arr.length;
     while (newLength < size + subSize) {
-      newLength *= 2;
+      newLength += newLength == 0 ? subSize * 2 : newLength;
     }
 
     if (newLength > arr.length) {
@@ -1424,12 +1605,46 @@ class StoreDouble implements Store {
   }
 
   public void fill(int fromIncl, int uptoExcl, double def) {
-    validateDeleteOrFill(size, fromIncl, uptoExcl);
+    validateAccess(size, fromIncl, uptoExcl);
     Arrays.fill(arr, fromIncl, uptoExcl, def);
   }
 
+  public int bSearch(int fromIncl, int uptoExcl, byte search) {
+    return bSearch(fromIncl, uptoExcl, (double) search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, int search) {
+    return bSearch(fromIncl, uptoExcl, (double) search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, long search) {
+    return bSearch(fromIncl, uptoExcl, (double) search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, float search) {
+    return bSearch(fromIncl, uptoExcl, (double) search);
+  }
+
+  public int bSearch(int fromIncl, int uptoExcl, double search) {
+    return Arrays.binarySearch(arr, fromIncl, uptoExcl, search);
+  }
+
+  public void rotUp(int fromIncl, int uptoExcl) {
+    validateAccess(fromIncl, uptoExcl);
+    final double saved = arr[uptoExcl - 1];
+    System.arraycopy(arr, fromIncl, arr, fromIncl + 1, uptoExcl - fromIncl - 1);
+    arr[fromIncl] = saved;
+  }
+
+  public void rotDown(int fromIncl, int uptoExcl) {
+    validateAccess(fromIncl, uptoExcl);
+    final double saved = arr[fromIncl];
+    System.arraycopy(arr, fromIncl + 1, arr, fromIncl, uptoExcl - fromIncl - 1);
+    arr[uptoExcl - 1] = saved;
+  }
+
   public void del(int fromIncl, int uptoExcl) {
-    StoreUtils.validateDeleteOrFill(size, fromIncl, uptoExcl);
+    StoreUtils.validateAccess(size, fromIncl, uptoExcl);
 
     final int subSize = uptoExcl - fromIncl;
 

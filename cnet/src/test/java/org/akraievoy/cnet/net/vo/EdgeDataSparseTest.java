@@ -23,6 +23,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Random;
 
 public class EdgeDataSparseTest extends TestCase {
   final EdgeData eData = EdgeDataFactory.sparse(true, 0.0, 5);  //  note: this might not be enough for some tests
@@ -33,6 +34,8 @@ public class EdgeDataSparseTest extends TestCase {
   }
 
   public void testGet() throws Exception {
+    assertEquals(4, eData.getNonDefCount());
+
     assertEquals(12.0, eData.get(3, 4));
     assertEquals(11.0, eData.get(2, 4));
     assertEquals(0.0, eData.get(1, 3));
@@ -47,6 +50,8 @@ public class EdgeDataSparseTest extends TestCase {
 
     eData.set(1, 3, 13.0);
 
+    assertEquals(6, eData.getNonDefCount());
+
     assertEquals(12.0, eData.get(3, 4));
     assertEquals(11.0, eData.get(2, 4));
     assertEquals(13.0, eData.get(1, 3));
@@ -58,6 +63,29 @@ public class EdgeDataSparseTest extends TestCase {
     assertEquals(0.0, eData.get(2, 2));
     assertEquals(0.0, eData.get(2, 1));
     assertEquals(0.0, eData.get(1, 2));
+
+    final EdgeData.ElemIterator ndi = eData.nonDefIterator();
+
+    checkTuple(ndi, 1, 3, 13.0);
+    checkTuple(ndi, 2, 4, 11.0);
+    checkTuple(ndi, 3, 1, 13.0);
+    checkTuple(ndi, 3, 4, 12.0);
+    checkTuple(ndi, 4, 2, 11.0);
+    checkTuple(ndi, 4, 3, 12.0);
+    assertFalse(ndi.hasNext());
+
+    assertEquals(13.0, eData.set(1, 3, 0.0));
+    assertEquals(0.0, eData.get(1, 3));
+
+    assertEquals(4, eData.getNonDefCount());
+  }
+
+  private static void checkTuple(EdgeData.ElemIterator ndi, final int from, final int into, final double value) {
+    assertTrue(ndi.hasNext());
+    final EdgeData.IteratorTuple tuple = ndi.next();
+    assertEquals(from, tuple.from());
+    assertEquals(into, tuple.into());
+    assertEquals(value, tuple.value());
   }
 
   public void testGetSize() {
@@ -74,6 +102,8 @@ public class EdgeDataSparseTest extends TestCase {
 
     eData.set(3, 1, 2.0);
 
+    assertEquals(6, eData.getNonDefCount());
+
     assertEquals(23.0, eData.power(4));
     assertEquals(11.0, eData.power(2));
     assertEquals(14.0, eData.power(3));
@@ -81,6 +111,8 @@ public class EdgeDataSparseTest extends TestCase {
     assertEquals(0.0, eData.power(0));
 
     eData.set(0, 0, 1.0);
+
+    assertEquals(7, eData.getNonDefCount());
 
     assertEquals(23.0, eData.power(4));
     assertEquals(11.0, eData.power(2));
@@ -90,11 +122,49 @@ public class EdgeDataSparseTest extends TestCase {
 
     eData.set(4, 4, 3.0);
 
+    assertEquals(8, eData.getNonDefCount());
+
     assertEquals(26.0, eData.power(4));
     assertEquals(11.0, eData.power(2));
     assertEquals(14.0, eData.power(3));
     assertEquals(2.0, eData.power(1));
     assertEquals(1.0, eData.power(0));
+  }
+
+  public void testSetAndClear() {
+    final Random random = new Random(0xDEADBEEF);
+    final int size = 128;
+    final EdgeData d = EdgeDataFactory.sparse(true, 0.0, size);
+    final int ops = size * size / 3;
+    final int[] froms = new int[ops];
+    final int[] intos = new int[ops];
+
+    for (int op = 0; op < ops; op++) {
+      d.set(
+          froms[op] = random.nextInt(size),
+          intos[op] = random.nextInt(size),
+          1.0
+      );
+    }
+
+    assertTrue(d.getNonDefCount() > 0);
+
+    for (int op = 0; op < ops; op++) {
+      //  yup: the data is symmetric so it's akay to swap the indices
+      d.set(
+          intos[op],
+          froms[op],
+          0.0
+      );
+    }
+
+    for (int from = 0; from < size; from ++ ) {
+      for (int into = 0; into < size; into ++ ) {
+        assertEquals(0.0, d.get(from, into));
+      }
+    }
+
+    assertEquals(0, d.getNonDefCount());
   }
 
   public void testJsonSerialization() throws IOException {

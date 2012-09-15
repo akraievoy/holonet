@@ -50,10 +50,6 @@ public class GenomeSoo extends Genome {
     genomeData[0] = solution;
   }
 
-  public int getLinkNum() {
-    return solution.getNonDefCount();
-  }
-
   public Object[] getGenomeData() {
     return genomeData;
   }

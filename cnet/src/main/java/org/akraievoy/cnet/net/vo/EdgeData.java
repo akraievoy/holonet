@@ -19,6 +19,7 @@
 package org.akraievoy.cnet.net.vo;
 
 import gnu.trove.TIntArrayList;
+import org.akraievoy.base.soft.Soft;
 import org.codehaus.jackson.annotate.JsonIgnore;
 
 /**
@@ -58,6 +59,7 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 //  FIXME most efficient serialization scheme <<< active
 //  TODO compactify hook (compactify just before streaming down to DB?)
 //  TODO routes now may be optimized
+//  TODO wipe equals
 public interface EdgeData {
   class Util {
     public static String dump(EdgeData data) {
@@ -69,17 +71,34 @@ public interface EdgeData {
           final double linkVal = data.get(i, j);
           while (val < linkVal) {
             res.append("#");
-            val += 0.1;
+            val += 1;
           }
           while (val < 1) {
-            res.append(" ");
-            val += 0.1;
+            res.append("_");
+            val += 1;
           }
-          res.append("\t");
+          res.append(":");
         }
         res.append("\n");
       }
       return res.toString();
+    }
+
+    public static boolean eq(IteratorTuple t1, IteratorTuple t2) {
+      if (t1.from() != t2.from()) {
+        return false;
+      }
+
+      if (t1.into() != t2.into()) {
+        return false;
+      }
+
+      final double t1value = t1.value();
+      final double t2value = t2.value();
+      return (
+          Double.isNaN(t1value) && Double.isNaN(t2value) ||
+              Soft.PICO.equal(t1value, t2value)
+      );
     }
   }
 
@@ -121,6 +140,8 @@ public interface EdgeData {
 
   void visitNonDef(EdgeVisitor visitor);
 
+  ElemIterator nonDefIterator();
+
   double total();
 
   double similarity(EdgeData that);
@@ -130,4 +151,16 @@ public interface EdgeData {
   public static interface EdgeVisitor {
     void visit(int from, int into, double e);
   }
+
+  public static interface IteratorTuple {
+    int from();
+    int into();
+    double value();
+  }
+
+  public static interface ElemIterator {
+    boolean hasNext();
+    IteratorTuple next();
+  }
+
 }
