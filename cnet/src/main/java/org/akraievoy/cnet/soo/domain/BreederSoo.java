@@ -28,8 +28,12 @@ import org.akraievoy.cnet.opt.api.Breeder;
 import org.akraievoy.cnet.opt.api.GeneticState;
 import org.akraievoy.cnet.opt.api.GeneticStrategy;
 import org.akraievoy.cnet.opt.api.Genome;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class BreederSoo implements Breeder {
+  private static final Logger log = LoggerFactory.getLogger(BreederSoo.class);
+
   protected final IndexCodec codec;
   protected WeightedEventModelRenorm unwireModel;
 
@@ -82,8 +86,9 @@ public abstract class BreederSoo implements Breeder {
 
   protected void remove(
       GeneticStrategySoo strategy, GenomeSoo child, EntropySource eSource,
-      double unwireLimit, double[] removedRef
+      final double unwireLimit, double[] removedRef
   ) {
+    final int modelSizeOrig = unwireModel.getSize();
     final double step = 1.0 / strategy.getSteps();
     final int[] indexRef = new int[1];
     for (; Soft.MILLI.less(removedRef[0], unwireLimit)  && unwireModel.getSize() > 0; removedRef[0] += step) {
@@ -98,6 +103,12 @@ public abstract class BreederSoo implements Breeder {
       if (newValStrict == 0) {
         unwireModel.removeByIndex(indexRef[0]);
       }
+    }
+    if (unwireModel.getSize() == 0) {
+      log.warn(
+          "unwireModel exhausted (using {} out of {}): extra links may appear",
+          unwireLimit, modelSizeOrig
+      );
     }
   }
 
@@ -144,6 +155,10 @@ public abstract class BreederSoo implements Breeder {
     }
 
     public void visit(int from, int into, double value) {
+      if (from > into) {
+        throw new IllegalStateException("wheee, VISITOR ("+from+"->"+into+")?!?!");
+      }
+
       final boolean include = Soft.MILLI.positive(included.getSolution().get(from, into));
 
       if (include) {
