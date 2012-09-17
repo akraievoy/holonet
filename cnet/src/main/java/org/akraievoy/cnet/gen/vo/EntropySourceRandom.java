@@ -32,6 +32,7 @@ public class EntropySourceRandom implements EntropySource {
 
   protected final Random random;
   protected Long seed;
+  protected long consumed = 0;
 
   public EntropySourceRandom() {
     this.random = new Random();
@@ -39,47 +40,49 @@ public class EntropySourceRandom implements EntropySource {
 
   public void setSeedRef(final RefLong seed) {
     setSeed(seed.getValue());
+    consumed = 0;
   }
 
   public void setSeed(long seed) {
     random.setSeed(seed);
 
     this.seed = seed;
+    consumed = 0;
   }
 
   public int nextInt(int maxExclusive) {
+    consumed += 32;
     this.seed = null;
 
     return random.nextInt(maxExclusive);
   }
 
   public double nextDouble() {
+    consumed += 23;
     this.seed = null;
 
     return random.nextDouble();
   }
 
   public double nextGaussian() {
+    consumed += 64;
     this.seed = null;
 
     return random.nextGaussian();
   }
 
   public double nextLogGaussian() {
-    this.seed = null;
-
     return Math.exp(nextGaussian());
   }
 
   public double nextGaussian(double mean, double variance) {
+    consumed += 64;
     this.seed = null;
 
     return random.nextGaussian() * variance + mean;
   }
 
   public double nextLogGaussian(double mean, double variance) {
-    this.seed = null;
-
     return Math.exp(nextGaussian(mean, variance));
   }
 
@@ -97,6 +100,7 @@ public class EntropySourceRandom implements EntropySource {
     if (size == 0) {
       return null;
     }
+    consumed += 32 - Integer.numberOfLeadingZeros(size - 1);
 
     final int targetIndex = nextInt(size);
 
@@ -121,11 +125,18 @@ public class EntropySourceRandom implements EntropySource {
     if (size == 0) {
       return null;
     }
+    consumed += 32 - Integer.numberOfLeadingZeros(size - 1);
 
     return elements[nextInt(size)];
   }
 
   public void nextBytes(byte[] bytes) {
+    consumed += 8 * bytes.length;
+
     random.nextBytes(bytes);
+  }
+
+  public long consumedBits() {
+    return consumed;
   }
 }

@@ -226,7 +226,10 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     storeToContext(ctx, children);
     mutators.storeRatios(ctx);
     breeders.storeRatios(ctx);
-    log.info("Generation #{} filled; fitness {}", generation, fitnessReport(children));
+    log.info(
+        "Generation #{} filled; fitness {}, consumed {} bits of entropy",
+        new Object[] {generation, fitnessReport(children), eSource.consumedBits()}
+    );
   }
 
   public Optional<FitnessKey> storeToPopulation(

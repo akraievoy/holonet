@@ -42,4 +42,6 @@ public interface EntropySource {
   <E> E randomElement(E[] elements);
 
   void nextBytes(byte[] bytes);
+
+  long consumedBits();
 }
