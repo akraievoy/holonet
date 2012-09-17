@@ -18,6 +18,7 @@
 
 package org.akraievoy.cnet.metrics.domain;
 
+import com.google.common.base.Optional;
 import org.akraievoy.base.ref.RefRO;
 import org.akraievoy.cnet.gen.vo.ConnPreference;
 import org.akraievoy.cnet.gen.vo.EntropySource;
@@ -66,7 +67,7 @@ public class MetricEDataStructure extends MetricEData {
       }
     });
 
-    final WeightedEventModel eventModel = new WeightedEventModelBase();
+    final WeightedEventModel eventModel = new WeightedEventModelBase(Optional.of("structure"));
 
     double[] powers = new double[size];
     int startNode = 0;

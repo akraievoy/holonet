@@ -51,7 +51,8 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
   protected final CompositeMutator mutators = new CompositeMutator();
   protected final CompositeBreeder breeders = new CompositeBreeder();
   protected final CompositeCondition conditions = new CompositeCondition();
-  protected final WeightedEventModelRenorm events = new WeightedEventModelRenorm();
+  protected final WeightedEventModelRenorm events =
+      new WeightedEventModelRenorm(Optional.of("parents"));
 
   protected SeedSource<Genome> seedSource;
   protected GeneticState state = new GeneticState();

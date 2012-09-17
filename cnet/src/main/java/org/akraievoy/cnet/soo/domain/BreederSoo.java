@@ -18,6 +18,7 @@
 
 package org.akraievoy.cnet.soo.domain;
 
+import com.google.common.base.Optional;
 import org.akraievoy.base.soft.Soft;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.WeightedEventModel;
@@ -40,7 +41,12 @@ public abstract class BreederSoo implements Breeder {
   public BreederSoo() {
     codec = new IndexCodec(false);
 
-    unwireModel = new WeightedEventModelRenorm(!isFavoringMinimal(), 0);
+    unwireModel =
+        new WeightedEventModelRenorm(
+            !isFavoringMinimal(),
+            0,
+            Optional.of(getClass().getSimpleName()+"-unwire")
+        );
   }
 
   protected abstract boolean isFavoringMinimal();

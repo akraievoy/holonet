@@ -18,6 +18,7 @@
 
 package org.akraievoy.cnet.gen.domain;
 
+import com.google.common.base.Optional;
 import org.akraievoy.cnet.gen.vo.*;
 
 public class LocationGeneratorFractalDLA extends LocationGeneratorBase {
@@ -36,7 +37,7 @@ public class LocationGeneratorFractalDLA extends LocationGeneratorBase {
 
   public LocationGeneratorFractalDLA(final EntropySource eSource) {
     this.eSource = eSource;
-    this.eventModel = new WeightedEventModelBase();
+    this.eventModel = new WeightedEventModelBase(Optional.of("locations"));
   }
 
   public void setDimensionRatio(double dimensionRatio) {

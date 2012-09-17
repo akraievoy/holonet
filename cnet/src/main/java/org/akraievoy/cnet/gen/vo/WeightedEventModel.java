@@ -18,22 +18,42 @@
 
 package org.akraievoy.cnet.gen.vo;
 
+import com.google.common.base.Optional;
 import gnu.trove.TDoubleArrayList;
 import gnu.trove.TIntArrayList;
 import org.akraievoy.base.Die;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class WeightedEventModel {
+  private static final Logger log = LoggerFactory.getLogger(WeightedEventModel.class);
+
   public static final double MIN_WEIGHT_DEFAULT = 0.05;
   protected final TIntArrayList events = new TIntArrayList();
   protected final TDoubleArrayList weights = new TDoubleArrayList();
   //	if this is not null then weights've been renormalized and the object is now in the generation phase
   protected TDoubleArrayList sums = null;
+  protected final Optional<String> name;
+
+  protected WeightedEventModel(Optional<String> name) {
+    this.name = name;
+  }
+
+  protected WeightedEventModel() {
+    this(null);
+  }
 
   public int generate(EntropySource eSource, final boolean remove, int[] indexRef) {
     Die.ifTrue("please initialize events", events.isEmpty());
 
     if (sums == null) {
       initSums();
+      if (name.isPresent()) {
+        log.debug(
+            "WeightedEventModel({}).init() with hash == {}:{}",
+            new Object[] {name.get(), events.hashCode(), weights.hashCode()}
+        );
+      }
     }
 
     final double eventValue = eSource.nextDouble() * getSum();

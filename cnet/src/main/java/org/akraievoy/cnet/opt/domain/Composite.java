@@ -18,6 +18,7 @@
 
 package org.akraievoy.cnet.opt.domain;
 
+import com.google.common.base.Optional;
 import org.akraievoy.base.Format;
 import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.cnet.gen.vo.EntropySource;
@@ -29,7 +30,8 @@ import java.util.List;
 
 public abstract class Composite<Component> {
   protected final List<Component> elems = new ArrayList<Component>();
-  protected final WeightedEventModel elemsModel = new WeightedEventModelBase();
+  protected final WeightedEventModel elemsModel =
+      new WeightedEventModelBase(Optional.of("composite"));
   protected int[] elemFails;
   protected int[] elemUses;
   protected double[] elemRanks;

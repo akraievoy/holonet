@@ -18,6 +18,7 @@
 
 package org.akraievoy.cnet.gen.vo;
 
+import com.google.common.base.Optional;
 import gnu.trove.TDoubleArrayList;
 import org.akraievoy.base.Die;
 
@@ -26,18 +27,33 @@ public class WeightedEventModelRenorm extends WeightedEventModel {
   protected double minWeight;
   protected double amp;
 
-  public WeightedEventModelRenorm(boolean favoringMinimal, final double minWeight) {
-    this(favoringMinimal, minWeight, 1);
+  public WeightedEventModelRenorm(
+      final boolean favoringMinimal,
+      final double minWeight,
+      final Optional<String> name
+  ) {
+    this(favoringMinimal, minWeight, 1, name);
   }
 
-  public WeightedEventModelRenorm(boolean favoringMinimal, final double minWeight, final double amp) {
+  public WeightedEventModelRenorm(
+      final boolean favoringMinimal,
+      final double minWeight,
+      final double amp,
+      final Optional<String> name
+  ) {
+    super(name);
+
     this.favoringMinimal = favoringMinimal;
     this.minWeight = minWeight;
     this.amp = amp;
   }
 
+  public WeightedEventModelRenorm(final Optional<String> name) {
+    this(false, MIN_WEIGHT_DEFAULT, name);
+  }
+
   public WeightedEventModelRenorm() {
-    this(false, MIN_WEIGHT_DEFAULT);
+    this(Optional.<String>absent());
   }
 
   public void setMinWeight(double minWeight) {

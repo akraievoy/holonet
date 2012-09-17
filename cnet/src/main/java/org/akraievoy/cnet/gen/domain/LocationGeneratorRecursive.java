@@ -18,6 +18,7 @@
 
 package org.akraievoy.cnet.gen.domain;
 
+import com.google.common.base.Optional;
 import org.akraievoy.cnet.gen.vo.*;
 
 public class LocationGeneratorRecursive extends LocationGeneratorBase {
@@ -32,7 +33,7 @@ public class LocationGeneratorRecursive extends LocationGeneratorBase {
 
   public LocationGeneratorRecursive(final EntropySource eSource) {
     this.eSource = eSource;
-    this.eventModel = new WeightedEventModelBase();
+    this.eventModel = new WeightedEventModelBase(Optional.of("locationsRecursive"));
   }
 
   public void setDimensionRatio(double dimensionRatio) {

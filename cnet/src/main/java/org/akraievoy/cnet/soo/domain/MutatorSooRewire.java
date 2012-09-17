@@ -18,6 +18,7 @@
 
 package org.akraievoy.cnet.soo.domain;
 
+import com.google.common.base.Optional;
 import gnu.trove.TIntArrayList;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelRenorm;
@@ -36,8 +37,16 @@ public abstract class MutatorSooRewire implements Mutator<GenomeSoo> {
 
   protected MutatorSooRewire() {
     codec = new IndexCodec(false);
-    oldModel = new WeightedEventModelRenorm(!isFavoringMinimal(), 0);
-    newModel = new WeightedEventModelRenorm(isFavoringMinimal(), 0);
+    oldModel = new WeightedEventModelRenorm(
+        !isFavoringMinimal(),
+        0,
+        Optional.of(getClass().getSimpleName() + "-oldWires")
+    );
+    newModel = new WeightedEventModelRenorm(
+        isFavoringMinimal(),
+        0,
+        Optional.of(getClass().getSimpleName() + "-newWires")
+    );
   }
 
   public void setSymmetric(boolean symmetric) {

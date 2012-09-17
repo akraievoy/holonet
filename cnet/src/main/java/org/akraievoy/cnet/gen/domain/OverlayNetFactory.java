@@ -18,6 +18,7 @@
 
 package org.akraievoy.cnet.gen.domain;
 
+import com.google.common.base.Optional;
 import org.akraievoy.base.Die;
 import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.ref.RefRO;
@@ -90,7 +91,7 @@ public class OverlayNetFactory extends MetricVData {
     final EdgeData structure = source.getValue();
     final int nodes = structure.getSize();
 
-    final WeightedEventModel eventModel = new WeightedEventModelBase();
+    final WeightedEventModel eventModel = new WeightedEventModelBase(Optional.of("overlay"));
     for (int i = 0; i < nodes; i++) {
       eventModel.add(i, Math.pow(structure.power(i), omega));
     }

@@ -18,10 +18,15 @@
 
 package org.akraievoy.cnet.gen.vo;
 
+import com.google.common.base.Optional;
 import gnu.trove.TDoubleArrayList;
 
 public class WeightedEventModelBase extends WeightedEventModel {
   public WeightedEventModelBase() {
+  }
+
+  public WeightedEventModelBase(Optional<String> name) {
+    super(name);
   }
 
   protected void initSums() {

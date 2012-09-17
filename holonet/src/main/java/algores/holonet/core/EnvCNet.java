@@ -21,6 +21,7 @@ package algores.holonet.core;
 import algores.holonet.core.api.API;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
+import com.google.common.base.Optional;
 import org.akraievoy.base.runner.api.RefCtx;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.WeightedEventModel;
@@ -48,8 +49,8 @@ public class EnvCNet implements Env {
   protected RefEdgeData req;
   protected RefEdgeData overlay;
 
-  protected WeightedEventModel nodeModel = new WeightedEventModelBase();
-  protected WeightedEventModel requestModel = new WeightedEventModelBase();
+  protected WeightedEventModel nodeModel = new WeightedEventModelBase(Optional.of("nodes"));
+  protected WeightedEventModel requestModel = new WeightedEventModelBase(Optional.of("requests"));
   protected IndexCodec requestCodec = new IndexCodec(false);
 
   protected SortedMap<Integer, Node> nodeIndex = new TreeMap<Integer, Node>();
