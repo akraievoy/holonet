@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module MavenProjectsManager.isMavenModule="true" org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" relativePaths="true" type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_5" inherit-compiler-output="false">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_6" inherit-compiler-output="false">
     <output url="file://$MODULE_DIR$/target/classes" />
     <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
@@ -15,13 +15,14 @@
     <orderEntry type="library" name="Maven: org.akraievoy:base:1.3.1" level="project" />
     <orderEntry type="library" name="Maven: com.google.code.findbugs:jsr305:1.3.9" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.4.3" level="project" />
-    <orderEntry type="library" name="Maven: org.codehaus.jackson:jackson-mapper-asl:1.4.3" level="project" />
-    <orderEntry type="library" name="Maven: org.codehaus.jackson:jackson-core-asl:1.4.3" level="project" />
     <orderEntry type="library" name="Maven: net.sf.trove4j:trove4j:2.0.2" level="project" />
     <orderEntry type="module" module-name="base.runner" />
     <orderEntry type="module" module-name="build.versioning" />
     <orderEntry type="library" name="Maven: org.akraievoy:base-runner-spring:1.3.3" level="project" />
     <orderEntry type="library" name="Maven: org.akraievoy:couch:1.3.11" level="project" />
+    <orderEntry type="library" name="Maven: org.codehaus.jackson:jackson-mapper-asl:1.8.8" level="project" />
+    <orderEntry type="library" name="Maven: org.codehaus.jackson:jackson-core-asl:1.4.3" level="project" />
+    <orderEntry type="library" name="Maven: org.fusesource.jdbm:jdbm:2.0.1" level="project" />
     <orderEntry type="module" module-name="base.db" />
     <orderEntry type="library" name="Maven: org.slf4j:jcl104-over-slf4j:1.4.3" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-log4j12:1.4.3" level="project" />
