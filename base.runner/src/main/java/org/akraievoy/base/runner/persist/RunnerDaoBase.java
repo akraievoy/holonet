@@ -30,6 +30,7 @@ import org.akraievoy.base.Parse;
 import org.akraievoy.base.runner.domain.ParamSetEnumerator;
 import org.akraievoy.base.runner.vo.*;
 import org.akraievoy.db.QueryRegistry;
+import org.akraievoy.db.Streamable;
 import org.akraievoy.db.tx.TransactionContext;
 import org.akraievoy.db.tx.TransactionContextBase;
 import org.apache.commons.dbutils.BasicRowProcessor;
@@ -162,13 +163,25 @@ public class RunnerDaoBase implements RunnerDao {
       return updateCount > 0;
     }
 
-    final InputStream dumpInput = valueDumper.createDumpInputStream(attrValue);
+    if (!(attrValue instanceof Streamable)) {
+      throw new IllegalStateException(
+          "only Streamable implementors are supported"
+      );
+    }
 
-    final int updateCount = getCtx().getQueryRunner().update(
-        getCtx().getConn(),
-        q.getQuery("ctx.insertDumpable"),
-        new Object[]{System.currentTimeMillis(), runUid, index, path, type, dumpInput}
-    );
+    InputStream dumpInput = null;
+    final int updateCount;
+    try {
+      dumpInput = ((Streamable) attrValue).createStream();
+
+      updateCount = getCtx().getQueryRunner().update(
+          getCtx().getConn(),
+          q.getQuery("ctx.insertDumpable"),
+          new Object[]{System.currentTimeMillis(), runUid, index, path, type, dumpInput}
+      );
+    } finally {
+      Closeables.closeQuietly(dumpInput);
+    }
 
     return updateCount > 0;
   }
@@ -598,7 +611,7 @@ class CtxAttrRowProcessor extends BasicRowProcessor {
     this.valueDumper = valueDumper;
   }
 
-  public Object toBean(ResultSet rs, Class type) throws SQLException {
+  public Object toBean(final ResultSet rs, Class type) throws SQLException {
     final String attrType = rs.getString("type");
 
     final String stringVal = rs.getString("val");
@@ -609,18 +622,32 @@ class CtxAttrRowProcessor extends BasicRowProcessor {
 
     final Class attrClass = valueDumper.rsToClass(attrType);
 
+    if (!Streamable.class.isAssignableFrom(attrClass)) {
+      throw new IllegalStateException(
+          "only primitives and Streamable implementors are supported"
+      );
+    }
+
+    @SuppressWarnings("unchecked")
+    final Class<? extends Streamable> streamableClass =
+        (Class<Streamable>) attrClass;
+
     Blob blob = null;
-    BufferedReader bufferedReader = null;
-
+    InputStream binaryStream = null;
     try {
-      blob = rs.getBlob("content");
-      bufferedReader = new BufferedReader(new InputStreamReader(blob.getBinaryStream(), "UTF-8"));
 
-      return valueDumper.rsToDumpable(attrClass, bufferedReader);
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException("should not have happened", e);
+      blob = rs.getBlob("content");
+      binaryStream = blob.getBinaryStream();
+
+      final Streamable instance = streamableClass.newInstance().fromStream(
+          binaryStream
+      );
+
+      return instance;
+    } catch (Throwable e) {
+      throw new SQLException(e);
     } finally {
-      Closeables.closeQuietly(bufferedReader);
+      Closeables.closeQuietly(binaryStream);
       if (blob != null) {
         blob.free();
       }

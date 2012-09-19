@@ -1,5 +1,5 @@
 SET COMPRESS_LOB DEFLATE;
-SET MAX_LENGTH_INPLACE_LOB 512;
+SET MAX_LENGTH_INPLACE_LOB 4096;
 
 drop table "hn_ctx" if exists;
 drop table "hn_run" if exists;

@@ -18,21 +18,15 @@
 
 package org.akraievoy.base.runner.persist;
 
-import org.akraievoy.base.Startable;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.SQLException;
 
-public class ValueDumper implements Startable {
+public class ValueDumper {
   private static final Logger log = LoggerFactory.getLogger(ValueDumper.class);
-
-  protected long maxJsonDumpSize = 0;
-  private final ObjectMapper om = new ObjectMapper();
 
   protected String getType(Object attrValue) {
     return attrValue.getClass().getName();
@@ -84,38 +78,5 @@ public class ValueDumper implements Startable {
       throw new SQLException(e);
     }
     return attrClass;
-  }
-
-  @SuppressWarnings({"unchecked"})
-  protected Object rsToDumpable(Class attrClass, BufferedReader bufferedReader) throws SQLException {
-    try {
-      final Object value = om.readValue(bufferedReader, attrClass);
-
-      return value;
-    } catch (Throwable e) {
-      log.warn("deserialization failed", e);
-      throw new SQLException(e);
-    }
-  }
-
-  protected InputStream createDumpInputStream(Object attrValue) throws SQLException {
-    final ByteArrayOutputStream serialized = new ByteArrayOutputStream();
-    try {
-      om.writeValue(new OutputStreamWriter(serialized, "UTF-8"), attrValue);
-    } catch (IOException e) {
-      throw new SQLException(e);
-    }
-
-    maxJsonDumpSize = Math.max(maxJsonDumpSize, serialized.size());
-
-    return new ByteArrayInputStream(serialized.toByteArray());
-  }
-
-  public void start() {
-    //	nothing to do here
-  }
-
-  public void stop() {
-    log.info("max json dump size = {}", maxJsonDumpSize);
   }
 }

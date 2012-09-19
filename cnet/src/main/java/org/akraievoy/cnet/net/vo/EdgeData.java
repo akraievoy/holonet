@@ -20,6 +20,7 @@ package org.akraievoy.cnet.net.vo;
 
 import gnu.trove.TIntArrayList;
 import org.akraievoy.base.soft.Soft;
+import org.akraievoy.db.Streamable;
 import org.codehaus.jackson.annotate.JsonIgnore;
 
 /**
@@ -60,7 +61,7 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 //  TODO compactify hook (compactify just before streaming down to DB?)
 //  TODO routes now may be optimized
 //  TODO wipe equals
-public interface EdgeData {
+public interface EdgeData extends Streamable {
   class Util {
     public static String dump(EdgeData data) {
       final StringBuilder res = new StringBuilder();

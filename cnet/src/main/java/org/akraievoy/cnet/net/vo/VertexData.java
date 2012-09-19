@@ -18,11 +18,18 @@
 
 package org.akraievoy.cnet.net.vo;
 
-import gnu.trove.TDoubleArrayList;
-import org.codehaus.jackson.annotate.JsonIgnore;
+import com.google.common.io.Closeables;
+import org.akraievoy.db.Streamable;
 
-public class VertexData {
-  protected final TDoubleArrayList data = new TDoubleArrayList();
+import java.io.IOException;
+import java.io.InputStream;
+
+import static org.akraievoy.cnet.net.vo.StoreUtils.*;
+import static org.akraievoy.cnet.net.vo.StoreUtils.escapeByte;
+import static org.akraievoy.cnet.net.vo.StoreUtils.longBits;
+
+public class VertexData implements Streamable {
+  protected Store data = new StoreDouble();
   protected double nullElement;
 
   @Deprecated
@@ -34,31 +41,82 @@ public class VertexData {
     this(0.0, nodes);
   }
 
+  //  FIXME rename nullElement to defElem
   public VertexData(double nullElement, int size) {
     this.nullElement = nullElement;
-    for (int i = 0; i < size; i++) {
-      data.add(nullElement);
+    data.ins(0, size, nullElement);
+  }
+
+  public double[] getData() {
+    final double[] nativeArr = new double[data.size()];
+    for (int pos = 0; pos < data.size(); pos++) {
+      nativeArr[pos] = data.get(pos, .0);
     }
+    return nativeArr;
+  }
+
+  static enum StreamState {DEF, WIDTH, DATA, COMPLETE}
+
+  public InputStream createStream() {
+    return new InputStream() {
+      StreamState state = StreamState.DEF;
+      int defPos = 0;
+      byte[] defBits = new byte[8];
+      InputStream edgeStoreIn = null;
+
+      @Override
+      public int read() throws IOException {
+        switch (state) {
+          case DEF: {
+            if (defPos == 0) {
+              longBits(Double.doubleToLongBits(nullElement), defBits);
+            }
+            final byte res = defBits[defPos++];
+            if (defPos == defBits.length) {
+              state = StreamState.WIDTH;
+            }
+            return res;
+          }
+          case WIDTH:
+            state = StreamState.DATA;
+            return escapeByte((byte) data.width().ordinal());
+          case DATA: {
+            if (edgeStoreIn == null) {
+              edgeStoreIn = data.createStream();
+            }
+            int res = edgeStoreIn.read();
+
+            if (res < 0) {
+              state = StreamState.COMPLETE;
+            }
+
+            return res;
+          }
+          case COMPLETE:
+            return -1;
+          default:
+            throw new IllegalStateException(
+                "implement handling state " + state
+            );
+        }
+      }
+
+      @Override
+      public void close() throws IOException {
+        Closeables.closeQuietly(edgeStoreIn);
+      }
+    };
+  }
+
+  public VertexData fromStream(InputStream in) throws IOException {
+    nullElement = Double.longBitsToDouble(unescapeLong(in));
+    final Store.Width width = Store.Width.values()[unescapeByte(in)];
+    data = width.create().fromStream(in);
+    return this;
   }
 
   public double getNullElement() {
     return nullElement;
-  }
-
-  @SuppressWarnings({"UnusedDeclaration"})
-  public void setNullElement(double nullElement) {
-    this.nullElement = nullElement;
-  }
-
-  public double[] getData() {
-    return data.toNativeArray();
-  }
-
-  @Deprecated
-  @SuppressWarnings({"UnusedDeclaration"})
-  public void setData(double[] data) {
-    this.data.clear();
-    this.data.add(data);
   }
 
   public VertexData proto(final int size) {
@@ -69,7 +127,6 @@ public class VertexData {
     return Double.compare(getNullElement(), get(index)) == 0;
   }
 
-  @JsonIgnore
   public int getSize() {
     return data.size();
   }
@@ -79,15 +136,11 @@ public class VertexData {
       return getNullElement();
     }
 
-    return data.get(index);
+    return data.get(index, .0);
   }
 
   public double set(int index, double elem) {
-    return data.getSet(index, elem);
-  }
-
-  public void insert(int index, double elem) {
-    data.insert(index, elem);
+    return data.set(index, elem);
   }
 
   public String toString() {

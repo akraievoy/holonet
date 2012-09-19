@@ -21,6 +21,7 @@ package org.akraievoy.cnet.net.vo;
 import com.google.common.io.ByteStreams;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Random;
 
@@ -247,9 +248,9 @@ public class StoreTest {
             store.set(pos, rand.nextBoolean());
           }
 
-          final byte[] bytes = ByteStreams.toByteArray(store.toStream());
+          final byte[] bytes = ByteStreams.toByteArray(store.createStream());
           final StoreBit storeStar = new StoreBit();
-          storeStar.fromStream(ByteStreams.newInputStreamSupplier(bytes));
+          storeStar.fromStream(new ByteArrayInputStream(bytes));
 
           final int storeSize = store.size();
           final int starSize = storeStar.size();
@@ -287,9 +288,9 @@ public class StoreTest {
             }
           }
 
-          final byte[] bytes = ByteStreams.toByteArray(store.toStream());
+          final byte[] bytes = ByteStreams.toByteArray(store.createStream());
           final StoreByte storeStar = new StoreByte();
-          storeStar.fromStream(ByteStreams.newInputStreamSupplier(bytes));
+          storeStar.fromStream(new ByteArrayInputStream(bytes));
 
           final int storeSize = store.size();
           final int starSize = storeStar.size();
@@ -333,9 +334,9 @@ public class StoreTest {
             }
           }
 
-          final byte[] bytes = ByteStreams.toByteArray(store.toStream());
+          final byte[] bytes = ByteStreams.toByteArray(store.createStream());
           final StoreDouble storeStar = new StoreDouble();
-          storeStar.fromStream(ByteStreams.newInputStreamSupplier(bytes));
+          storeStar.fromStream(new ByteArrayInputStream(bytes));
 
           final int storeSize = store.size();
           final int starSize = storeStar.size();

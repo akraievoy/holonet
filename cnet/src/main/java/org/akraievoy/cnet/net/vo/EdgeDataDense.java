@@ -18,21 +18,21 @@
 
 package org.akraievoy.cnet.net.vo;
 
-import com.google.common.io.ByteStreams;
+import com.google.common.io.Closeables;
 import gnu.trove.TIntArrayList;
-import org.akraievoy.base.Die;
-import org.codehaus.jackson.annotate.JsonIgnore;
-import org.codehaus.jackson.annotate.JsonPropertyOrder;
+import org.akraievoy.db.Streamable;
+
+import static org.akraievoy.cnet.net.vo.StoreUtils.*;
 
 import java.io.IOException;
+import java.io.InputStream;
 
-@JsonPropertyOrder({"size", "nonDefCount", "defElem", "symmetric", "edges"})
 public class EdgeDataDense implements EdgeData {
 
-  protected double defElem;
   protected boolean symmetric;
   protected int size;
-  protected Store edgeStore;
+  protected double defElem;
+  protected Store edgeStore;  //  LATER rename to data
 
   @Deprecated
   public EdgeDataDense() {
@@ -56,54 +56,93 @@ public class EdgeDataDense implements EdgeData {
     }
   }
 
+  static enum StreamState {SYMM, SIZE, DEF, WIDTH, DATA, COMPLETE}
+
+  public Streamable fromStream(InputStream in) throws IOException {
+    symmetric = unescapeByte(in) > 0;
+    size = unescapeInt(in);
+    defElem = Double.longBitsToDouble(unescapeLong(in));
+    Store.Width width = Store.Width.values()[unescapeByte(in)];
+    edgeStore = width.create().fromStream(in);
+    return this;
+  }
+
+  public InputStream createStream() {
+    return new InputStream() {
+      StreamState state = StreamState.SYMM;
+      int sizePos = 0;
+      byte[] sizeBits = new byte[4];
+      int defPos = 0;
+      byte[] defBits = new byte[8];
+      InputStream edgeStoreIn = null;
+
+      @Override
+      public int read() throws IOException {
+        switch (state) {
+          case SYMM:
+            state = StreamState.SIZE;
+            return escapeByte(symmetric ? (byte) 1 : (byte) 0);
+          case SIZE: {
+            if (sizePos == 0) {
+              intBits(size, sizeBits);
+            }
+            final byte res = sizeBits[sizePos++];
+            if (sizePos == sizeBits.length) {
+              state = StreamState.DEF;
+            }
+            return res;
+          }
+          case DEF: {
+            if (defPos == 0) {
+              longBits(Double.doubleToLongBits(defElem), defBits);
+            }
+            final byte res = defBits[defPos++];
+            if (defPos == defBits.length) {
+              state = StreamState.WIDTH;
+            }
+            return res;
+          }
+          case WIDTH:
+            state = StreamState.DATA;
+            return escapeByte((byte) edgeStore.width().ordinal());
+          case DATA: {
+            if (edgeStoreIn == null) {
+              edgeStoreIn = edgeStore.createStream();
+            }
+            int res = edgeStoreIn.read();
+
+            if (res < 0) {
+              state = StreamState.COMPLETE;
+            }
+
+            return res;
+          }
+          case COMPLETE:
+            return -1;
+          default:
+            throw new IllegalStateException(
+                "implement handling state " + state
+            );
+        }
+      }
+
+      @Override
+      public void close() throws IOException {
+        Closeables.closeQuietly(edgeStoreIn);
+      }
+    };
+  }
+
   public boolean isSymmetric() {
     return symmetric;
-  }
-
-  @Deprecated
-  @SuppressWarnings({"UnusedDeclaration"})
-  public void setSymmetric(boolean symmetric) {
-    this.symmetric = symmetric;
-  }
-
-  @SuppressWarnings({"UnusedDeclaration"})
-  @Deprecated
-  public byte[] getEdgeStore() {
-    try {
-      return ByteStreams.toByteArray(edgeStore.toStream());
-    } catch (IOException e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
-  @SuppressWarnings({"UnusedDeclaration"})
-  @Deprecated
-  public void setEdgeStore(byte[] edgesBinary) {
-    try {
-      edgeStore.fromStream(ByteStreams.newInputStreamSupplier(edgesBinary));
-    } catch (IOException e) {
-      throw new IllegalStateException(e);
-    }
   }
 
   public double getDefElem() {
     return defElem;
   }
 
-  @SuppressWarnings({"UnusedDeclaration"})
-  @Deprecated
-  public void setDefElem(double defElem) {
-    this.defElem = defElem;
-  }
-
   public int getSize() {
     return size;
-  }
-
-  @SuppressWarnings({"UnusedDeclaration"})
-  @Deprecated
-  public void setSize(int size) {
-    this.size = size;
   }
 
   public boolean isDef(double elem) {
@@ -210,7 +249,6 @@ public class EdgeDataDense implements EdgeData {
     return weight;
   }
 
-  @JsonIgnore
   public int getNonDefCount() {
     int nonDefCount = 0;
     for (int from = 0; from < size; from++) {

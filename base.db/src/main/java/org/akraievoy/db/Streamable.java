@@ -17,13 +17,11 @@
  */
 package org.akraievoy.db;
 
-import com.google.common.io.InputSupplier;
-
 import java.io.IOException;
 import java.io.InputStream;
 
 public interface Streamable {
-    InputSupplier<InputStream> toStream();
+    InputStream createStream();
 
-    void fromStream(InputSupplier<? extends InputStream> inputSupplier) throws IOException;
+    Streamable fromStream(InputStream in) throws IOException;
 }

@@ -18,8 +18,6 @@
 
 package org.akraievoy.cnet.net.vo;
 
-import com.google.common.io.Closeables;
-import com.google.common.io.InputSupplier;
 import org.akraievoy.base.soft.Soft;
 import org.akraievoy.db.Streamable;
 
@@ -32,7 +30,28 @@ import static org.akraievoy.cnet.net.vo.StoreUtils.*;
 
 @SuppressWarnings("UnusedDeclaration")
 interface Store extends Streamable {
-  enum Width { BIT, BYTE, INT, LONG, FLOAT, DOUBLE }
+  enum Width {
+    BIT{
+      @Override StoreBit create() { return new StoreBit(); }
+    },
+    BYTE {
+      @Override StoreByte create() { return new StoreByte(); }
+    },
+    INT {
+      @Override StoreInt create() { return new StoreInt(); }
+    },
+    LONG {
+      @Override StoreLong create() { return new StoreLong(); }
+    },
+    FLOAT {
+      @Override StoreFloat create() { return new StoreFloat(); }
+    },
+    DOUBLE  {
+      @Override StoreDouble create() { return new StoreDouble(); }
+    };
+
+    abstract Store create();
+  }
 
   Width width();
   int size();
@@ -69,6 +88,8 @@ interface Store extends Streamable {
   byte set(int pos, byte val);
   boolean get(int pos, boolean typeHint);
   boolean set(int pos, boolean val);
+
+  Store fromStream(InputStream in) throws IOException;
 }
 
 @SuppressWarnings("UnusedDeclaration")
@@ -386,70 +407,61 @@ class StoreBit implements Store {
     return oldVal;
   }
 
-  public void fromStream(
-      InputSupplier<? extends InputStream> inputSupplier
+  public StoreBit fromStream(
+      InputStream in
   ) throws IOException {
-    InputStream input = null;
-    try {
-      input = inputSupplier.getInput();
+    size = unescapeInt(in);
 
-      size = unescapeInt(input);
-
-      byte buf = 0;
-      for (int pos = 0; pos < size; pos++) {
-        if (pos % 8 == 0) {
-          buf = unescapeByte(input);
-        }
-
-        bits.set(pos, buf < 0);
-
-        buf <<= 1;
+    byte buf = 0;
+    for (int pos = 0; pos < size; pos++) {
+      if (pos % 8 == 0) {
+        buf = unescapeByte(in);
       }
-    } finally {
-      Closeables.closeQuietly(input);
+
+      bits.set(pos, buf < 0);
+
+      buf <<= 1;
     }
+
+    return this;
   }
 
-  public InputSupplier<InputStream> toStream() {
-    return new InputSupplier<InputStream>() {
+  public InputStream createStream() {
+    return new InputStream() {
       private StreamState state = StreamState.SIZE;
       private int sizePos = 0;
       private byte[] sizeBits = new byte[4];
       private int pos = 0;
 
-      public InputStream getInput() throws IOException {
-        return new InputStream() {
-          @Override
-          public int read() throws IOException {
-            if (state == StreamState.SIZE) {
-              if (sizePos == 0) {
-                intBits(size, sizeBits);
-              }
-              final byte res = sizeBits[sizePos++];
-              if (sizePos == sizeBits.length) {
-                state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
-              }
-              return escapeByte(res);
-            } else if (state == StreamState.DATA) {
-              byte res = 0;
-              int posOld = pos;
-              while (pos - posOld < 8) {
-                res = (byte) ((res << 1) | (bits.get(pos) ? 1 : 0));
-                pos ++ ;
-              }
-              if (pos >= size) {
-                state = StreamState.COMPLETE;
-              }
-              return escapeByte(res);
-            } else if (state == StreamState.COMPLETE) {
-              return -1;
-            } else {
-              throw new IllegalStateException(
-                  "implement handling state " + state
-              );
-            }
+      @Override
+      public int read() throws IOException {
+        if (state == StreamState.SIZE) {
+          if (sizePos == 0) {
+            intBits(size, sizeBits);
           }
-        };
+          final byte res = sizeBits[sizePos++];
+          if (sizePos == sizeBits.length) {
+            state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
+          }
+          return escapeByte(res);
+        } else if (state == StreamState.DATA) {
+          byte res = 0;
+          int posOld = pos;
+          while (pos - posOld < 8) {
+            res = (byte) ((res << 1) | (bits.get(pos) ? 1 : 0));
+            pos ++ ;
+          }
+          if (pos >= size) {
+            state = StreamState.COMPLETE;
+          }
+          return escapeByte(res);
+        } else if (state == StreamState.COMPLETE) {
+          return -1;
+        } else {
+          throw new IllegalStateException(
+              "implement handling state " + state
+          );
+        }
       }
     };
   }
@@ -657,58 +669,49 @@ class StoreByte implements Store {
     return set(pos, val ? (byte) 1 : (byte) 0) != 0;
   }
 
-  public void fromStream(
-      InputSupplier<? extends InputStream> inputSupplier
+  public StoreByte fromStream(
+      InputStream in
   ) throws IOException {
-    InputStream input = null;
-    try {
-      input = inputSupplier.getInput();
-
-      size = unescapeInt(input);
-      arr = new byte[size];
-      for (int pos = 0; pos < size; pos++) {
-        arr[pos] = unescapeByte(input);
-      }
-    } finally {
-      Closeables.closeQuietly(input);
+    size = unescapeInt(in);
+    arr = new byte[size];
+    for (int pos = 0; pos < size; pos++) {
+      arr[pos] = unescapeByte(in);
     }
+
+    return this;
   }
 
-  public InputSupplier<InputStream> toStream() {
-    return new InputSupplier<InputStream>() {
+  public InputStream createStream() {
+    return new InputStream() {
       private StreamState state = StreamState.SIZE;
       private int sizePos = 0;
       private byte[] sizeBits = new byte[4];
       private int pos = 0;
 
-      public InputStream getInput() throws IOException {
-        return new InputStream() {
-          @Override
-          public int read() throws IOException {
-            if (state == StreamState.SIZE) {
-              if (sizePos == 0) {
-                intBits(size, sizeBits);
-              }
-              final byte res = sizeBits[sizePos++];
-              if (sizePos == sizeBits.length) {
-                state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
-              }
-              return escapeByte(res);
-            } else if (state == StreamState.DATA) {
-              byte res = arr[pos++];
-              if (pos == size) {
-                state = StreamState.COMPLETE;
-              }
-              return escapeByte(res);
-            } else if (state == StreamState.COMPLETE) {
-              return -1;
-            } else {
-              throw new IllegalStateException(
-                  "implement handling state " + state
-              );
-            }
+      @Override
+      public int read() throws IOException {
+        if (state == StreamState.SIZE) {
+          if (sizePos == 0) {
+            intBits(size, sizeBits);
           }
-        };
+          final byte res = sizeBits[sizePos++];
+          if (sizePos == sizeBits.length) {
+            state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
+          }
+          return escapeByte(res);
+        } else if (state == StreamState.DATA) {
+          byte res = arr[pos++];
+          if (pos == size) {
+            state = StreamState.COMPLETE;
+          }
+          return escapeByte(res);
+        } else if (state == StreamState.COMPLETE) {
+          return -1;
+        } else {
+          throw new IllegalStateException(
+              "implement handling state " + state
+          );
+        }
       }
     };
   }
@@ -916,25 +919,20 @@ class StoreInt implements Store {
     return set(pos, val ? 1 : 0) != 0;
   }
 
-  public void fromStream(
-      InputSupplier<? extends InputStream> inputSupplier
+  public StoreInt fromStream(
+      InputStream in
   ) throws IOException {
-    InputStream input = null;
-    try {
-      input = inputSupplier.getInput();
-
-      size = unescapeInt(input);
-      arr = new int[size];
-      for (int pos = 0; pos < size; pos++) {
-        arr[pos] = unescapeInt(input);
-      }
-    } finally {
-      Closeables.closeQuietly(input);
+    size = unescapeInt(in);
+    arr = new int[size];
+    for (int pos = 0; pos < size; pos++) {
+      arr[pos] = unescapeInt(in);
     }
+
+    return this;
   }
 
-  public InputSupplier<InputStream> toStream() {
-    return new InputSupplier<InputStream>() {
+  public InputStream createStream() {
+    return new InputStream() {
       private StreamState state = StreamState.SIZE;
       private int sizePos = 0;
       private byte[] sizeBits = new byte[4];
@@ -942,40 +940,36 @@ class StoreInt implements Store {
       private int byteBufPos = 0;
       private byte[] byteBuf = new byte[4];
 
-      public InputStream getInput() throws IOException {
-        return new InputStream() {
-          @Override
-          public int read() throws IOException {
-            if (state == StreamState.SIZE) {
-              if (sizePos == 0) {
-                intBits(size, sizeBits);
-              }
-              final byte res = sizeBits[sizePos++];
-              if (sizePos == sizeBits.length) {
-                state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
-              }
-              return escapeByte(res);
-            } else if (state == StreamState.DATA) {
-              if (byteBufPos == 0) {
-                intBits(arr[pos++], byteBuf);
-              }
-              byte res = byteBuf[byteBufPos++];
-              if (byteBufPos == byteBuf.length) {
-                byteBufPos = 0;
-              }
-              if (pos == size && byteBufPos == 0) {
-                state = StreamState.COMPLETE;
-              }
-              return escapeByte(res);
-            } else if (state == StreamState.COMPLETE) {
-              return -1;
-            } else {
-              throw new IllegalStateException(
-                  "implement handling state " + state
-              );
-            }
+      @Override
+      public int read() throws IOException {
+        if (state == StreamState.SIZE) {
+          if (sizePos == 0) {
+            intBits(size, sizeBits);
           }
-        };
+          final byte res = sizeBits[sizePos++];
+          if (sizePos == sizeBits.length) {
+            state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
+          }
+          return escapeByte(res);
+        } else if (state == StreamState.DATA) {
+          if (byteBufPos == 0) {
+            intBits(arr[pos++], byteBuf);
+          }
+          byte res = byteBuf[byteBufPos++];
+          if (byteBufPos == byteBuf.length) {
+            byteBufPos = 0;
+          }
+          if (pos == size && byteBufPos == 0) {
+            state = StreamState.COMPLETE;
+          }
+          return escapeByte(res);
+        } else if (state == StreamState.COMPLETE) {
+          return -1;
+        } else {
+          throw new IllegalStateException(
+              "implement handling state " + state
+          );
+        }
       }
     };
   }
@@ -1183,25 +1177,20 @@ class StoreLong implements Store {
     return set(pos, val ? (long) 1 : (long) 0) != 0;
   }
 
-  public void fromStream(
-      InputSupplier<? extends InputStream> inputSupplier
+  public StoreLong fromStream(
+      InputStream in
   ) throws IOException {
-    InputStream input = null;
-    try {
-      input = inputSupplier.getInput();
-
-      size = unescapeInt(input);
-      arr = new long[size];
-      for (int pos = 0; pos < size; pos++) {
-        arr[pos] = unescapeLong(input);
-      }
-    } finally {
-      Closeables.closeQuietly(input);
+    size = unescapeInt(in);
+    arr = new long[size];
+    for (int pos = 0; pos < size; pos++) {
+      arr[pos] = unescapeLong(in);
     }
+
+    return this;
   }
 
-  public InputSupplier<InputStream> toStream() {
-    return new InputSupplier<InputStream>() {
+  public InputStream createStream() {
+    return new InputStream() {
       private StreamState state = StreamState.SIZE;
       private int sizePos = 0;
       private byte[] sizeBits = new byte[4];
@@ -1209,40 +1198,36 @@ class StoreLong implements Store {
       private int byteBufPos = 0;
       private byte[] byteBuf = new byte[8];
 
-      public InputStream getInput() throws IOException {
-        return new InputStream() {
-          @Override
-          public int read() throws IOException {
-            if (state == StreamState.SIZE) {
-              if (sizePos == 0) {
-                intBits(size, sizeBits);
-              }
-              final byte res = sizeBits[sizePos++];
-              if (sizePos == sizeBits.length) {
-                state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
-              }
-              return escapeByte(res);
-            } else if (state == StreamState.DATA) {
-              if (byteBufPos == 0) {
-                longBits(arr[pos++], byteBuf);
-              }
-              byte res = byteBuf[byteBufPos++];
-              if (byteBufPos == byteBuf.length) {
-                byteBufPos = 0;
-              }
-              if (pos == size && byteBufPos == 0) {
-                state = StreamState.COMPLETE;
-              }
-              return escapeByte(res);
-            } else if (state == StreamState.COMPLETE) {
-              return -1;
-            } else {
-              throw new IllegalStateException(
-                  "implement handling state " + state
-              );
-            }
+      @Override
+      public int read() throws IOException {
+        if (state == StreamState.SIZE) {
+          if (sizePos == 0) {
+            intBits(size, sizeBits);
           }
-        };
+          final byte res = sizeBits[sizePos++];
+          if (sizePos == sizeBits.length) {
+            state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
+          }
+          return escapeByte(res);
+        } else if (state == StreamState.DATA) {
+          if (byteBufPos == 0) {
+            longBits(arr[pos++], byteBuf);
+          }
+          byte res = byteBuf[byteBufPos++];
+          if (byteBufPos == byteBuf.length) {
+            byteBufPos = 0;
+          }
+          if (pos == size && byteBufPos == 0) {
+            state = StreamState.COMPLETE;
+          }
+          return escapeByte(res);
+        } else if (state == StreamState.COMPLETE) {
+          return -1;
+        } else {
+          throw new IllegalStateException(
+              "implement handling state " + state
+          );
+        }
       }
     };
   }
@@ -1450,24 +1435,20 @@ class StoreFloat implements Store {
     return Float.compare(set(pos, val ? (float) 1 : (float) 0), .0f) != 0 ;
   }
 
-  public void fromStream(
-      InputSupplier<? extends InputStream> inputSupplier
+  public StoreFloat fromStream(
+      InputStream in
   ) throws IOException {
-    InputStream input = null;
-    try {
-      input = inputSupplier.getInput();
-      size = unescapeInt(input);
-      arr = new float[size];
-      for (int pos = 0; pos < size; pos++) {
-        arr[pos] = Float.intBitsToFloat(unescapeInt(input));
-      }
-    } finally {
-      Closeables.closeQuietly(input);
+    size = unescapeInt(in);
+    arr = new float[size];
+    for (int pos = 0; pos < size; pos++) {
+      arr[pos] = Float.intBitsToFloat(unescapeInt(in));
     }
+
+    return this;
   }
 
-  public InputSupplier<InputStream> toStream() {
-    return new InputSupplier<InputStream>() {
+  public InputStream createStream() {
+    return new InputStream() {
       private StreamState state = StreamState.SIZE;
       private int sizePos = 0;
       private byte[] sizeBits = new byte[4];
@@ -1475,40 +1456,36 @@ class StoreFloat implements Store {
       private int byteBufPos = 0;
       private byte[] byteBuf = new byte[4];
 
-      public InputStream getInput() throws IOException {
-        return new InputStream() {
-          @Override
-          public int read() throws IOException {
-            if (state == StreamState.SIZE) {
-              if (sizePos == 0) {
-                intBits(size, sizeBits);
-              }
-              final byte res = sizeBits[sizePos++];
-              if (sizePos == sizeBits.length) {
-                state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
-              }
-              return escapeByte(res);
-            } else if (state == StreamState.DATA) {
-              if (byteBufPos == 0) {
-                intBits(Float.floatToIntBits(arr[pos++]), byteBuf);
-              }
-              byte res = byteBuf[byteBufPos++];
-              if (byteBufPos == byteBuf.length) {
-                byteBufPos = 0;
-              }
-              if (pos == size && byteBufPos == 0) {
-                state = StreamState.COMPLETE;
-              }
-              return escapeByte(res);
-            } else if (state == StreamState.COMPLETE) {
-              return -1;
-            } else {
-              throw new IllegalStateException(
-                  "implement handling state " + state
-              );
-            }
+      @Override
+      public int read() throws IOException {
+        if (state == StreamState.SIZE) {
+          if (sizePos == 0) {
+            intBits(size, sizeBits);
           }
-        };
+          final byte res = sizeBits[sizePos++];
+          if (sizePos == sizeBits.length) {
+            state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
+          }
+          return escapeByte(res);
+        } else if (state == StreamState.DATA) {
+          if (byteBufPos == 0) {
+            intBits(Float.floatToIntBits(arr[pos++]), byteBuf);
+          }
+          byte res = byteBuf[byteBufPos++];
+          if (byteBufPos == byteBuf.length) {
+            byteBufPos = 0;
+          }
+          if (pos == size && byteBufPos == 0) {
+            state = StreamState.COMPLETE;
+          }
+          return escapeByte(res);
+        } else if (state == StreamState.COMPLETE) {
+          return -1;
+        } else {
+          throw new IllegalStateException(
+              "implement handling state " + state
+          );
+        }
       }
     };
   }
@@ -1716,25 +1693,20 @@ class StoreDouble implements Store {
     return Double.compare(set(pos, val ? (double) 1 : (double) 0), .0) != 0;
   }
 
-    public void fromStream(
-        InputSupplier<? extends InputStream> inputSupplier
-    ) throws IOException {
-    InputStream input = null;
-    try {
-      input = inputSupplier.getInput();
-
-      size = unescapeInt(input);
-      arr = new double[size];
-      for (int pos = 0; pos < size; pos++) {
-        arr[pos] = Double.longBitsToDouble(unescapeLong(input));
-      }
-    } finally {
-      Closeables.closeQuietly(input);
+  public StoreDouble fromStream(
+      InputStream in
+  ) throws IOException {
+    size = unescapeInt(in);
+    arr = new double[size];
+    for (int pos = 0; pos < size; pos++) {
+      arr[pos] = Double.longBitsToDouble(unescapeLong(in));
     }
+
+    return this;
   }
 
-  public InputSupplier<InputStream> toStream() {
-    return new InputSupplier<InputStream>() {
+  public InputStream createStream() {
+    return new InputStream() {
       private StreamState state = StreamState.SIZE;
       private int sizePos = 0;
       private byte[] sizeBits = new byte[4];
@@ -1742,40 +1714,36 @@ class StoreDouble implements Store {
       private int byteBufPos = 0;
       private byte[] byteBuf = new byte[8];
 
-      public InputStream getInput() throws IOException {
-        return new InputStream() {
-          @Override
-          public int read() throws IOException {
-            if (state == StreamState.SIZE) {
-              if (sizePos == 0) {
-                intBits(size, sizeBits);
-              }
-              final byte res = sizeBits[sizePos++];
-              if (sizePos == sizeBits.length) {
-                state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
-              }
-              return escapeByte(res);
-            } else if (state == StreamState.DATA) {
-              if (byteBufPos == 0) {
-                longBits(Double.doubleToLongBits(arr[pos++]), byteBuf);
-              }
-              byte res = byteBuf[byteBufPos++];
-              if (byteBufPos == byteBuf.length) {
-                byteBufPos = 0;
-              }
-              if (pos == size && byteBufPos == 0) {
-                state = StreamState.COMPLETE;
-              }
-              return escapeByte(res);
-            } else if (state == StreamState.COMPLETE) {
-              return -1;
-            } else {
-              throw new IllegalStateException(
-                  "implement handling state " + state
-              );
-            }
+      @Override
+      public int read() throws IOException {
+        if (state == StreamState.SIZE) {
+          if (sizePos == 0) {
+            intBits(size, sizeBits);
           }
-        };
+          final byte res = sizeBits[sizePos++];
+          if (sizePos == sizeBits.length) {
+            state = size > 0 ? StreamState.DATA : StreamState.COMPLETE;
+          }
+          return escapeByte(res);
+        } else if (state == StreamState.DATA) {
+          if (byteBufPos == 0) {
+            longBits(Double.doubleToLongBits(arr[pos++]), byteBuf);
+          }
+          byte res = byteBuf[byteBufPos++];
+          if (byteBufPos == byteBuf.length) {
+            byteBufPos = 0;
+          }
+          if (pos == size && byteBufPos == 0) {
+            state = StreamState.COMPLETE;
+          }
+          return escapeByte(res);
+        } else if (state == StreamState.COMPLETE) {
+          return -1;
+        } else {
+          throw new IllegalStateException(
+              "implement handling state " + state
+          );
+        }
       }
     };
   }

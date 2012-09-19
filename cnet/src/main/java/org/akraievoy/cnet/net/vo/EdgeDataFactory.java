@@ -18,8 +18,13 @@
 
 package org.akraievoy.cnet.net.vo;
 
+import com.google.common.io.Closeables;
 import gnu.trove.TIntArrayList;
-import org.codehaus.jackson.annotate.JsonIgnore;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+import static org.akraievoy.cnet.net.vo.StoreUtils.*;
 
 public class EdgeDataFactory {
   public static EdgeData sparse(final boolean symmetric, final int size) {
@@ -40,7 +45,6 @@ public class EdgeDataFactory {
     return dense;
   }
 
-  /** FIXME the whole mess of EdgeDatas/VertexDatas begs for some hardcore optimization */
   public static class EdgeDataConstant implements EdgeData {
     private double value;
     private int size;
@@ -62,7 +66,6 @@ public class EdgeDataFactory {
       this.value = value;
     }
 
-    @JsonIgnore
     public boolean isSymmetric() {
       return true;
     }
@@ -75,7 +78,6 @@ public class EdgeDataFactory {
       return elem;
     }
 
-    @JsonIgnore
     public double getDefElem() {
       return 0.0;
     }
@@ -131,7 +133,6 @@ public class EdgeDataFactory {
       throw new UnsupportedOperationException("not implemented yet");
     }
 
-    @JsonIgnore
     public int getNonDefCount() {
       if (isDef(value)) {
         return 0;
@@ -165,6 +166,53 @@ public class EdgeDataFactory {
 
     public int getSize() {
       return size;
+    }
+
+    static enum StreamState {SIZE, VALUE, COMPLETE}
+
+    public InputStream createStream() {
+      return new InputStream() {
+        StreamState state = StreamState.SIZE;
+        int sizePos = 0;
+        byte[] sizeBits = new byte[4];
+        int valuePos = 0;
+        byte[] valueBits = new byte[8];
+
+        @Override
+        public int read() throws IOException {
+          if (state == StreamState.SIZE) {
+            if (sizePos == 0) {
+              intBits(size, sizeBits);
+            }
+            final byte res = sizeBits[sizePos++];
+            if (sizePos == sizeBits.length) {
+              state = StreamState.VALUE;
+            }
+            return escapeByte(res);
+          } else if (state == StreamState.VALUE) {
+            if (valuePos == 0) {
+              longBits(Double.doubleToLongBits(value), valueBits);
+            }
+            final byte res = valueBits[sizePos++];
+            if (valuePos == valueBits.length) {
+              state = StreamState.COMPLETE;
+            }
+            return escapeByte(res);
+          } else if (state == StreamState.COMPLETE) {
+            return -1;
+          } else {
+            throw new IllegalStateException(
+                "implement handling state " + state
+            );
+          }
+        }
+      };
+    }
+
+    public EdgeDataConstant fromStream(InputStream in) throws IOException {
+      size = unescapeInt(in);
+      value = Double.longBitsToDouble(unescapeLong(in));
+      return this;
     }
 
     class ElemIterator implements EdgeData.ElemIterator, IteratorTuple{

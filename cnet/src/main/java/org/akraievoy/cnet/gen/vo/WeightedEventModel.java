@@ -28,6 +28,9 @@ import org.slf4j.LoggerFactory;
 public abstract class WeightedEventModel {
   private static final Logger log = LoggerFactory.getLogger(WeightedEventModel.class);
 
+  //  so that you're able to change it in any debug session with no extra bashing
+  public static boolean TRACE_HASHES = false;
+
   public static final double MIN_WEIGHT_DEFAULT = 0.05;
   protected final TIntArrayList events = new TIntArrayList();
   protected final TDoubleArrayList weights = new TDoubleArrayList();
@@ -48,7 +51,7 @@ public abstract class WeightedEventModel {
 
     if (sums == null) {
       initSums();
-      if (name.isPresent()) {
+      if (name.isPresent() && TRACE_HASHES) {
         log.debug(
             "WeightedEventModel({}).init() with hash == {}:{}",
             new Object[] {name.get(), events.hashCode(), weights.hashCode()}

@@ -18,15 +18,16 @@
 
 package org.akraievoy.cnet.net.vo;
 
-import com.google.common.io.ByteStreams;
+import com.google.common.io.Closeables;
 import gnu.trove.TIntArrayList;
 import org.akraievoy.base.Die;
-import org.codehaus.jackson.annotate.JsonIgnore;
-import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
+
+import static org.akraievoy.cnet.net.vo.StoreUtils.*;
 
 /**
  * Assymetric case:
@@ -34,7 +35,6 @@ import java.io.IOException;
  * Symmetric case:
  *   store only from->into mappings where from <= into
  */
-@JsonPropertyOrder({"defElem", "symmetric", "fiEdges"})
 public class EdgeDataSparse implements EdgeData {
   private static final Logger log = LoggerFactory.getLogger(EdgeDataSparse.class);
 
@@ -45,8 +45,6 @@ public class EdgeDataSparse implements EdgeData {
   protected Store trails;
   protected Store data;
 
-  @Deprecated
-  @SuppressWarnings("UnusedDeclaration")
   public EdgeDataSparse() {
     this(true, 0.0, 0);
   }
@@ -60,88 +58,142 @@ public class EdgeDataSparse implements EdgeData {
     this.data = new StoreDouble();
   }
 
+  static enum StreamState {SYMM, SIZE, DEF, NONDEF_ELEMS, LEADS, TRAILS, WIDTH, DATA, COMPLETE}
+
+  public EdgeDataSparse fromStream(InputStream in) throws IOException {
+    symmetric = unescapeByte(in) > 0;
+    int size = unescapeInt(in);
+    defElem = Double.longBitsToDouble(unescapeLong(in));
+    nonDefElems = unescapeInt(in);
+    leads=new int[size][2];
+    for (int lead = 0; lead < leads.length; lead++) {
+      leads[lead][0] = unescapeInt(in);
+      leads[lead][1] = unescapeInt(in);
+    }
+    trails.fromStream(in);
+    Store.Width width = Store.Width.values()[unescapeByte(in)];
+    data = width.create().fromStream(in);
+    return this;
+  }
+
+  public InputStream createStream() {
+    //  FIXME compactify the data before writing out
+
+    return new InputStream() {
+      StreamState state = StreamState.SYMM;
+      int sizePos = 0;
+      byte[] sizeBits = new byte[4];
+      int nonDefElemPos = 0;
+      byte[] nonDefElemBits = new byte[4];
+      int defPos = 0;
+      byte[] defBits = new byte[8];
+      int leadIdx = 0;
+      int leadPos = 0;
+      byte[] leadBits = new byte[4];
+      InputStream trailsStoreIn = null;
+      InputStream dataStoreIn = null;
+
+      @Override
+      public int read() throws IOException {
+        switch (state) {
+          case SYMM: {
+            state = StreamState.SIZE;
+            return escapeByte(symmetric ? (byte) 1 : (byte) 0);
+          }
+          case SIZE: {
+            if (sizePos == 0) {
+              intBits(leads.length, sizeBits);
+            }
+            final byte res = sizeBits[sizePos++];
+            if (sizePos == sizeBits.length) {
+              state = StreamState.DEF;
+            }
+            return res;
+          }
+          case DEF: {
+            if (defPos == 0) {
+              longBits(Double.doubleToLongBits(defElem), defBits);
+            }
+            final byte res = defBits[defPos++];
+            if (defPos == defBits.length) {
+              state = StreamState.NONDEF_ELEMS;
+            }
+            return res;
+          }
+          case NONDEF_ELEMS: {
+            if (nonDefElemPos == 0) {
+              intBits(nonDefElems, nonDefElemBits);
+            }
+            final byte res = nonDefElemBits[nonDefElemPos++];
+            if (nonDefElemPos == nonDefElemBits.length) {
+              state = StreamState.LEADS;
+            }
+            return res;
+          }
+          case LEADS: {
+            if (leadPos == 0) {
+              intBits(leads[leadIdx / 2][leadIdx % 2], leadBits);
+            }
+            final byte res = leadBits[leadPos++];
+            if (leadPos == leadBits.length) {
+              leadIdx += 1;
+              leadPos = 0;
+              if (leadIdx / 2 == leads.length) {
+                state = StreamState.TRAILS;
+              }
+            }
+            return escapeByte(res);
+          }
+          case TRAILS: {
+            if (trailsStoreIn == null) {
+              trailsStoreIn = trails.createStream();
+            }
+            final int res = trailsStoreIn.read();
+            if (res < 0) {
+              state = StreamState.WIDTH;
+              final int widthRes = escapeByte((byte) data.width().ordinal());
+              state = StreamState.DATA;
+              return widthRes;
+            } else {
+              return res;
+            }
+          }
+          case WIDTH:
+            throw new IllegalStateException("WIDTH state was be not reachable");
+          case DATA: {
+            if (dataStoreIn == null) {
+              dataStoreIn = data.createStream();
+            }
+            int res = dataStoreIn.read();
+
+            if (res < 0) {
+              state = StreamState.COMPLETE;
+            }
+
+            return res;
+          }
+          case COMPLETE:
+            return -1;
+          default:
+            throw new IllegalStateException(
+                "implement handling state " + state
+            );
+        }
+      }
+
+      @Override
+      public void close() throws IOException {
+        Closeables.closeQuietly(trailsStoreIn);
+        Closeables.closeQuietly(dataStoreIn);
+      }
+    };
+  }
   public boolean isSymmetric() {
     return symmetric;
   }
 
-  @Deprecated
-  @SuppressWarnings({"UnusedDeclaration"})
-  public void setSymmetric(boolean symmetric) {
-    this.symmetric = symmetric;
-  }
-
-  @Deprecated
-  @SuppressWarnings({"UnusedDeclaration"})
-  public int getNonDefElems() {
-    return nonDefElems;
-  }
-
-  @Deprecated
-  @SuppressWarnings({"UnusedDeclaration"})
-  public void setNonDefElems(int nonDefElems) {
-    this.nonDefElems = nonDefElems;
-  }
-
-  @SuppressWarnings({"UnusedDeclaration"})
-  @Deprecated
-  public int[][] getLeads() {
-    return leads;
-  }
-
-  @SuppressWarnings({"UnusedDeclaration"})
-  @Deprecated
-  public void setLeads(int[][] leads) {
-    this.leads = leads;
-  }
-
   public double getDefElem() {
     return defElem;
-  }
-
-  @SuppressWarnings({"UnusedDeclaration"})
-  @Deprecated
-  public void setDefElem(double defElem) {
-    this.defElem = defElem;
-  }
-
-  @SuppressWarnings({"UnusedDeclaration"})
-  @Deprecated
-  public byte[] getData() {
-    try {
-      return ByteStreams.toByteArray(data.toStream());
-    } catch (IOException e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
-  @SuppressWarnings({"UnusedDeclaration"})
-  @Deprecated
-  public void setData(byte[] dataBinary) {
-    try {
-      data.fromStream(ByteStreams.newInputStreamSupplier(dataBinary));
-    } catch (IOException e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
-  @SuppressWarnings({"UnusedDeclaration"})
-  @Deprecated
-  public byte[] getTrails() {
-    try {
-      return ByteStreams.toByteArray(trails.toStream());
-    } catch (IOException e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
-  @SuppressWarnings({"UnusedDeclaration"})
-  @Deprecated
-  public void setTrails(byte[] intoBinary) {
-    try {
-      trails.fromStream(ByteStreams.newInputStreamSupplier(intoBinary));
-    } catch (IOException e) {
-      throw new IllegalStateException(e);
-    }
   }
 
   public EdgeData proto(final int protoSize) {
@@ -294,7 +346,6 @@ public class EdgeDataSparse implements EdgeData {
     return data.set(elemPos, elem); //  overwrite existing position
   }
 
-  @JsonIgnore
   public int getSize() {
     return leads.length;
   }
@@ -364,7 +415,6 @@ public class EdgeDataSparse implements EdgeData {
     return weight;
   }
 
-  @JsonIgnore
   public int getNonDefCount() {
     return nonDefElems;
   }
