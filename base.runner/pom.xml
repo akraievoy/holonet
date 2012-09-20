@@ -67,11 +67,13 @@
           <version>beta-20071021</version>
         </dependency>
     -->
+    <!--
     <dependency>
       <groupId>org.fusesource.jdbm</groupId>
       <artifactId>jdbm</artifactId>
       <version>2.0.1</version>
     </dependency>
+    -->
     <dependency>
       <groupId>org.akraievoy</groupId>
       <artifactId>base.db</artifactId>
