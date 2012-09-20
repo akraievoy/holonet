@@ -229,9 +229,11 @@ public interface BatchRunner {
       if (getExperimentRunner() == null) {
         throw new IllegalStateException("experimentRunner should be wired in");
       }
+/*
       if (getCouch() == null) {
         throw new IllegalStateException("couch should be wired in");
       }
+*/
       if (getRunnerDao() == null) {
         throw new IllegalStateException("runnerDao should be wired in");
       }
