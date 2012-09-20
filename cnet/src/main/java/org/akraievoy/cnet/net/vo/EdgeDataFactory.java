@@ -56,7 +56,7 @@ public class EdgeDataFactory {
     public EdgeDataConstant(int size, double value) {
       this.value = value;
       this.size = size;
-    }
+      }
 
     public double getValue() {
       return value;

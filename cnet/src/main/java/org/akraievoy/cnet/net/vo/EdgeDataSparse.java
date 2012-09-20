@@ -44,6 +44,7 @@ public class EdgeDataSparse implements EdgeData {
   protected int[][] leads;
   protected Store trails;
   protected Store data;
+  protected boolean readonly;
 
   public EdgeDataSparse() {
     this(true, 0.0, 0);
@@ -73,6 +74,7 @@ public class EdgeDataSparse implements EdgeData {
     trails.fromStream(in);
     Store.Width width = Store.Width.values()[unescapeByte(in)];
     data = width.create().fromStream(in);
+    readonly = true;
     return this;
   }
 
@@ -278,6 +280,9 @@ public class EdgeDataSparse implements EdgeData {
   }
 
   public double set(int from, int into, double elem) {
+    if (readonly) {
+      throw new IllegalStateException("read-only mode");
+    }
     validateAccess(from, into);
 
     //  it's better to degrade writes linearly, and

@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class EdgeDataDense implements EdgeData {
-
+  protected boolean readonly = false;
   protected boolean symmetric;
   protected int size;
   protected double defElem;
@@ -64,6 +64,7 @@ public class EdgeDataDense implements EdgeData {
     defElem = Double.longBitsToDouble(unescapeLong(in));
     Store.Width width = Store.Width.values()[unescapeByte(in)];
     edgeStore = width.create().fromStream(in);
+    readonly = true;
     return this;
   }
 
@@ -176,6 +177,10 @@ public class EdgeDataDense implements EdgeData {
   }
 
   public double set(int from, int into, double elem) {
+    if (readonly) {
+      throw new IllegalStateException("read-only mode");
+    }
+
     final int index = getIndex(into, from);
     final double prevElem = edgeStore.get(index, .0);
 

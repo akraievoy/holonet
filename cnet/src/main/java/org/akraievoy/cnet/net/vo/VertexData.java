@@ -31,6 +31,7 @@ import static org.akraievoy.cnet.net.vo.StoreUtils.longBits;
 public class VertexData implements Streamable {
   protected Store data = new StoreDouble();
   protected double nullElement;
+  protected boolean readonly;
 
   @Deprecated
   public VertexData() {
@@ -112,6 +113,7 @@ public class VertexData implements Streamable {
     nullElement = Double.longBitsToDouble(unescapeLong(in));
     final Store.Width width = Store.Width.values()[unescapeByte(in)];
     data = width.create().fromStream(in);
+    readonly = true;
     return this;
   }
 
@@ -140,6 +142,9 @@ public class VertexData implements Streamable {
   }
 
   public double set(int index, double elem) {
+    if (readonly) {
+      throw new IllegalStateException("read-only mode");
+    }
     return data.set(index, elem);
   }
 

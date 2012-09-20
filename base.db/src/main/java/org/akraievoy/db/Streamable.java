@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public interface Streamable {
-    InputStream createStream();
+  InputStream createStream();
 
-    Streamable fromStream(InputStream in) throws IOException;
+  Streamable fromStream(InputStream in) throws IOException;
 }
