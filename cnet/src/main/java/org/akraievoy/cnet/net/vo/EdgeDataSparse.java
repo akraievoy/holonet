@@ -77,7 +77,28 @@ public class EdgeDataSparse implements EdgeData {
   }
 
   public InputStream createStream() {
-    //  FIXME compactify the data before writing out
+    //  compactify
+    int offset = 0;
+    for (int lead = 0; lead < leads.length; lead++) {
+      leads[lead][0] -= offset;
+      leads[lead][1] -= offset;
+
+      final int uptoExcl = leads[lead][1];
+
+      final int capacityUptoExcl =
+          lead + 1 < leads.length ? leads[lead + 1][0] - offset : trails.size();
+      final int freeCapacity = capacityUptoExcl - uptoExcl;
+
+      if (freeCapacity == 0) {
+        continue;
+      }
+      trails.del(uptoExcl, capacityUptoExcl);
+      data.del(uptoExcl, capacityUptoExcl);
+
+      offset += freeCapacity;
+    }
+    //  while we may have some extra cells allocated in the stores,
+    //    they won't get serialized anyway, so...
 
     return new InputStream() {
       StreamState state = StreamState.SYMM;
