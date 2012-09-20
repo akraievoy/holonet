@@ -34,7 +34,6 @@ public class EdgeDataDense implements EdgeData {
   protected double defElem;
   protected Store edgeStore;  //  LATER rename to data
 
-  @Deprecated
   public EdgeDataDense() {
     this(true, 0.0, 32);
   }
@@ -58,7 +57,7 @@ public class EdgeDataDense implements EdgeData {
 
   static enum StreamState {SYMM, SIZE, DEF, WIDTH, DATA, COMPLETE}
 
-  public Streamable fromStream(InputStream in) throws IOException {
+  public EdgeDataDense fromStream(InputStream in) throws IOException {
     symmetric = unescapeByte(in) > 0;
     size = unescapeInt(in);
     defElem = Double.longBitsToDouble(unescapeLong(in));

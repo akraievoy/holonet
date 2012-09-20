@@ -18,11 +18,14 @@
 
 package org.akraievoy.cnet.net.vo;
 
+import com.google.common.io.ByteStreams;
 import junit.framework.TestCase;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Arrays;
 
 public class VertexDataDoubleTest extends TestCase {
   public void testJsonSerialization() throws IOException {
@@ -32,11 +35,9 @@ public class VertexDataDoubleTest extends TestCase {
     vdd.set(1, 2.0);
     vdd.set(2, 3.0);
 
-    final ObjectMapper om = new ObjectMapper();
-    final StringWriter serialized = new StringWriter();
-    om.writeValue(serialized, vdd);
+    final byte[] bytes = ByteStreams.toByteArray(vdd.createStream());
 
-    final VertexData vertexData = om.readValue(serialized.toString(), VertexData.class);
+    final VertexData vertexData = new VertexData().fromStream(new ByteArrayInputStream(bytes));
 
     assertNotNull(vertexData);
     assertEquals(3, vertexData.getSize());

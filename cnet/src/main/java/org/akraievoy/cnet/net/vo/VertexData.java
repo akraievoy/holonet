@@ -33,7 +33,6 @@ public class VertexData implements Streamable {
   protected double nullElement;
   protected boolean readonly;
 
-  @Deprecated
   public VertexData() {
     this(0);
   }

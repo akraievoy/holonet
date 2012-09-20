@@ -18,11 +18,14 @@
 
 package org.akraievoy.cnet.net.vo;
 
+import com.google.common.io.ByteStreams;
 import junit.framework.TestCase;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.Random;
 
 public class EdgeDataSparseTest extends TestCase {
@@ -175,24 +178,15 @@ public class EdgeDataSparseTest extends TestCase {
     edd.set(1, 2, 2.0);
     edd.set(3, 2, 3.0);
 
-    ObjectMapper om = new ObjectMapper();
-    final StringWriter sw = new StringWriter();
+    final byte[] bytes = ByteStreams.toByteArray(edd.createStream());
 
-    om.writeValue(sw, edd);
+    final EdgeData res = new EdgeDataSparse().fromStream(new ByteArrayInputStream(bytes));
 
-/*
-		System.out.println(sw.toString());
-*/
+    final byte[] bytes2 = ByteStreams.toByteArray(res.createStream());
 
-    final EdgeData res = om.readValue(sw.toString(), EdgeDataSparse.class);
+    assertTrue(Arrays.equals(bytes, bytes2));
 
-    StringWriter sww = new StringWriter();
-
-    om.writeValue(sww, res);
-
-    assertEquals(sw.toString(), sww.toString());
-
-    final EdgeData res2 = om.readValue(sww.toString(), EdgeDataSparse.class);
+    final EdgeData res2 = new EdgeDataSparse().fromStream(new ByteArrayInputStream(bytes2));
 
     assertEquals(1.0, res2.get(0, 1));
     assertEquals(Double.POSITIVE_INFINITY, res2.get(1, 0));

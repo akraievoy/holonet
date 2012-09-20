@@ -82,13 +82,13 @@
     <hn:Config name="minEff17x4x64" description="MinEff: 1.7 * 4 seeds * 64 gens (fast sim corr study)">
       <hn:Param name="geneticStrategy.minEff" value="1.7"/>
       <hn:Param
-          name="entropySourceGenetics.seed" value="42600-42603"
+          name="entropySourceGenetics.seed" value="42600-42663"
           chainedStrategy="spawn" strategy="spawn"/>
       <hn:Param
-          name="ovlGenOpt.generation" value="0-63"
-          chainedStrategy="spawn" />
+          name="ovlGenOpt.generation" value="0-31"
+          chainedStrategy="use_last" />
       <hn:Param
-          name="ovlGenOpt.missLimitRatio" value="3"
+          name="ovlGenOpt.missLimitRatio" value="8"
           strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
     <hn:Config name="minEff17-smoke" description="MinEff: 1.7 (smoke)">
