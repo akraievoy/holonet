@@ -85,7 +85,7 @@
           name="entropySourceGenetics.seed" value="42600-42663"
           chainedStrategy="spawn" strategy="spawn"/>
       <hn:Param
-          name="ovlGenOpt.generation" value="0-31"
+          name="ovlGenOpt.generation" value="0-63"
           chainedStrategy="use_last" />
       <hn:Param
           name="ovlGenOpt.missLimitRatio" value="8"
