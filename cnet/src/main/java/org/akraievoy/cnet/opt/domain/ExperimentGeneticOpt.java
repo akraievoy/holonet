@@ -192,7 +192,7 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
       boolean valid = false;
       Genome child = null;
       try {
-        if (elitePointer < parents.size() && (generateCount >= missLimit || children.size() + eliteLimit >= specimenLimit) ) {
+        if (elitePointer < eliteLimit && elitePointer < parents.size() && (generateCount >= missLimit || children.size() + eliteLimit >= specimenLimit) ) {
           child = parents.get(fKeys[elitePointer++]);
         } else {
           child = generateChild(
