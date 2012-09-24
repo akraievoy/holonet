@@ -1,6 +1,9 @@
 #!/bin/bash
-mvn ${1} clean package
-mkdir $HOME/holonet.release-1.3-standalone/
+set -o nounset
+set -o errexit
+
+mvn clean package
+mkdir $HOME/holonet.release-1.3-standalone/ | echo err status suppressed
 mv holonet.release/target/holonet.release-1.3-standalone.zip $HOME/holonet.release-1.3-standalone/
 cd $HOME/holonet.release-1.3-standalone/
 rm -rfv data logs
