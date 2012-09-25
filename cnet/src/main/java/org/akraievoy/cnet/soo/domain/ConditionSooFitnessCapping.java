@@ -1,5 +1,5 @@
 /*
- Copyright 2011 Anton Kraievoy akraievoy@gmail.com
+ Copyright 2012 Anton Kraievoy akraievoy@gmail.com
  This file is part of Holonet.
 
  Holonet is free software: you can redistribute it and/or modify
@@ -18,21 +18,36 @@
 
 package org.akraievoy.cnet.soo.domain;
 
+import com.google.common.base.Optional;
 import org.akraievoy.cnet.opt.api.Condition;
 import org.akraievoy.cnet.opt.api.GeneticStrategy;
 
 import java.util.Collection;
 
-public class ConditionSooEffectiveness implements Condition<GenomeSoo> {
-  protected double minEff;
+public class ConditionSooFitnessCapping implements Condition<GenomeSoo> {
+  private Optional<Double> fitnessCap = Optional.absent();
 
-  public boolean isValid(GeneticStrategy<GenomeSoo> strategy, GenomeSoo child, Collection<GenomeSoo> generation, int generationIndex) {
+  public boolean isValid(
+      GeneticStrategy<GenomeSoo> strategy,
+      GenomeSoo child,
+      Collection<GenomeSoo> generation,
+      int generationIndex
+  ) {
     final GeneticStrategySoo strategySoo = (GeneticStrategySoo) strategy;
 
-    return strategySoo.computeEff(child) >= (minEff = strategySoo.minEff(generationIndex));
+    if (!fitnessCap.isPresent()) {
+      fitnessCap = Optional.of(
+        strategySoo.getFitnessCap() * Math.pow(
+          1.025,
+          Math.max(strategySoo.generationNum / 4 * 3 - generationIndex, 0)
+        )
+      );
+    }
+
+    return child.getOrComputeFitness(strategy) <= fitnessCap.get();
   }
 
   public String toString() {
-    return "[ Effectiveness >= " + minEff + " ]";
+    return "[ Fitness <= " + fitnessCap.get() + " ]";
   }
 }

@@ -237,7 +237,7 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
       final SortedMap<FitnessKey, Genome> population,
       final Genome genome
   ) {
-    final double fitness = strategy.computeFitness(genome);
+    final double fitness = genome.getOrComputeFitness(strategy);
     if (Double.isNaN(fitness)) {
       return Optional.absent();
     }

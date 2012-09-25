@@ -82,15 +82,16 @@
     <hn:Config name="minEff17x4x64" description="MinEff: 1.3 * 32 seeds * 64 gens (fast sim corr study)">
       <hn:Param name="geneticStrategy.minEff" value="1.3"/>
       <hn:Param
-          name="entropySourceGenetics.seed" value="42600-42631"
+          name="entropySourceGenetics.seed" value="42600-42603"
           chainedStrategy="spawn" strategy="spawn"/>
       <hn:Param name="geneticStrategy.modes" value="R"/>
+      <hn:Param name="geneticStrategy.fitnessCap" value="0.3;0.325;0.35;0.375;0.4;0.425;0.45;0.475;0.5;0.525;0.55;0.575"/>
       <hn:Param name="geneticStrategy.thetaTilde" value="0.75"/>
       <hn:Param
           name="ovlGenOpt.generation" value="0-63"
           chainedStrategy="use_last" />
-      <hn:Param name="ovlGenOpt.missLimitRatio" value="2"/>
-      <hn:Param name="ovlGenOpt.eliteRatio" value="0.0"/>
+      <hn:Param name="ovlGenOpt.missLimitRatio" value="3"/>
+      <hn:Param name="ovlGenOpt.eliteRatio" value="0.2"/>
     </hn:Config>
     <hn:Config name="minEff17-smoke" description="MinEff: 1.7 (smoke)">
       <hn:Param
@@ -243,6 +244,7 @@
 
     <property name="conditions">
       <list>
+        <bean class="org.akraievoy.cnet.soo.domain.ConditionSooFitnessCapping"/>
         <bean class="org.akraievoy.cnet.soo.domain.ConditionSooVertexDensity"/>
         <bean class="org.akraievoy.cnet.soo.domain.ConditionSooEffectiveness"/>
         <bean class="org.akraievoy.cnet.soo.domain.ConditionSooDensity"/>

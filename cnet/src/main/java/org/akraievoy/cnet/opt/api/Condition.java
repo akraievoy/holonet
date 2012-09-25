@@ -22,5 +22,5 @@ import java.util.Collection;
 import java.util.List;
 
 public interface Condition<G extends Genome> {
-  boolean isValid(GeneticStrategy strategy, G child, Collection<G> generation, int generationIndex);
+  boolean isValid(GeneticStrategy<G> strategy, G child, Collection<G> generation, int generationIndex);
 }

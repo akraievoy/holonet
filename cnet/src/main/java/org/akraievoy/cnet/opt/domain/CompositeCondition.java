@@ -42,7 +42,12 @@ public class CompositeCondition extends Composite<Condition<Genome>> {
       this.wrapped = wrapped;
     }
 
-    public boolean isValid(GeneticStrategy strategy, Genome child, Collection<Genome> generation, int generationIndex) {
+    public boolean isValid(
+        GeneticStrategy<Genome> strategy,
+        Genome child,
+        Collection<Genome> generation,
+        int generationIndex
+    ) {
       elemUses[index]++;
 
       final boolean result = wrapped.isValid(strategy, child, generation, generationIndex);

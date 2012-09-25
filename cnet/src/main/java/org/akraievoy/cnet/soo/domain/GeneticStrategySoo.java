@@ -52,6 +52,8 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
 
   //	connectivity upper limit
   protected double theta = 2;
+  protected long generationNum;
+
   public void setTheta(double theta) { this.theta = theta; }
 
   //	regularity (vertex power) lower limit
@@ -63,6 +65,7 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
   protected double minEffStart = 0;
   protected double minEffTarget = -1;
   public void setMinEff(double minEff) { this.minEff = minEff; }
+
   public double minEff(int generationIndex) {
     if (minEffTarget < 0 || minEffTarget <= generationIndex) {
       return minEff;
@@ -70,6 +73,10 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
 
     return (minEffStart * (minEffTarget - generationIndex) + generationIndex * minEff) / minEffTarget;
   }
+
+  protected double fitnessCap = Double.POSITIVE_INFINITY;
+  public double getFitnessCap() { return fitnessCap; }
+  public void setFitnessCap(double fitnessCap) { this.fitnessCap = fitnessCap; }
 
   protected RefRO<EdgeData> distSource = new RefEdgeData();
   protected RefRO<EdgeData> requestSource = new RefEdgeData();
@@ -121,6 +128,8 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
       minEffStart = minEffStartCtx;
       minEffTarget = ctx.get("minEffTarget", Double.class, backToSeed);
     }
+
+    generationNum = ctx.getCount(generationParam);
   }
 
   protected int getTotalLinkUpperLimit() {

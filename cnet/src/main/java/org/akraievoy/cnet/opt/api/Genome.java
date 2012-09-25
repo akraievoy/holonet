@@ -40,6 +40,15 @@ public abstract class Genome {
   public Double getFitness() { return fitness; }
   public void setFitness(Double fitness) { this.fitness = fitness; }
 
+  @SuppressWarnings("unchecked")
+  public <G extends Genome> double getOrComputeFitness(GeneticStrategy<G> strategy) {
+    if (fitness != null) {
+      return fitness;
+    }
+
+    return fitness = strategy.computeFitness((G) this);
+  }
+
   public Genome() {
   }
 

@@ -27,7 +27,7 @@ import java.util.Collection;
 public class ConditionSooDensity implements Condition<GenomeSoo> {
   protected int linkLimit;
 
-  public boolean isValid(GeneticStrategy strategy, GenomeSoo child, Collection<GenomeSoo> generation, int generationIndex) {
+  public boolean isValid(GeneticStrategy<GenomeSoo> strategy, GenomeSoo child, Collection<GenomeSoo> generation, int generationIndex) {
     final GeneticStrategySoo strategySoo = (GeneticStrategySoo) strategy;
 
     linkLimit = strategySoo.getTotalLinkUpperLimit();
