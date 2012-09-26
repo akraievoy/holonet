@@ -40,7 +40,7 @@
           name="ovlGenOpt.specimenIndex" value="0-90"
           chainedStrategy="use_first" strategy="use_first" />
       <hn:Param
-          name="ovlGenOpt.generateLimitRatio" value="200"
+          name="ovlGenOpt.generateLimitRatio" value="233"
           strategy="spawn" chainedStrategy="spawn"/>
       <hn:Param
           name="geneticState.maxCrossover" value="0.25"

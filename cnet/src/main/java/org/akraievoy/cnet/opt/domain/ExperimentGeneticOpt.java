@@ -145,7 +145,7 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     final SortedMap<Double, Double> glrMap = generateLimitRatios;
 
     final double scale =
-        glr / glrMap.get(glrMap.lastKey());
+        glr / glrMap.get(glrMap.firstKey());
 
     for (Map.Entry<Double, Double> glrE : glrMap.entrySet()) {
       glrMap.put(glrE.getKey(), scale * glrE.getValue());
@@ -179,7 +179,10 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
           "generateLimits = " + glMap
       );
     }
-    return glMap.get(tailMap.firstKey());
+
+    final Long genLimit = glMap.get(tailMap.firstKey());
+
+    return genLimit;
   }
 
   public void run() {
@@ -338,6 +341,7 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
           (long) Math.ceil(specimenLimit * glre.getValue())
       );
     }
+    System.out.println("generateLimits = " + generateLimits);
   }
 
   protected Genome generateChild(
