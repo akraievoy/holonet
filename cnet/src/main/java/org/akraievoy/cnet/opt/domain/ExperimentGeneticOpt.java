@@ -60,7 +60,23 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
   protected double eliteRatio = 0.05;
   protected double mutationRatio = 0.05;
   protected double crossoverRatio = 0.25;
-  protected double missLimitRatio = 60.0;
+  protected SortedMap<Double, Double> generateLimitRatios =
+      new TreeMap<Double, Double>();
+  {
+    generateLimitRatios.put(1.0, 1.0);
+    generateLimitRatios.put(0.9, 1.24);
+    generateLimitRatios.put(0.8, 2.0);
+    generateLimitRatios.put(0.7, 3.0);
+    generateLimitRatios.put(0.6, 5.0);
+    generateLimitRatios.put(0.5, 8.0);
+    generateLimitRatios.put(0.4, 13.0);
+    generateLimitRatios.put(0.3, 21.0);
+    generateLimitRatios.put(0.2, 34.0);
+    generateLimitRatios.put(0.1, 55.0);
+    generateLimitRatios.put(0.05, 89.0);
+    generateLimitRatios.put(0.01, 144.0);
+    generateLimitRatios.put(0.00, 233.0);
+  }
 
   protected int generation = 0;
   protected int specimenIndex = 0;
@@ -70,7 +86,8 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
   protected String specimenIndexParamName = "main.specimenIndex";
 
   protected long specimenLimit;
-  protected long missLimit;
+  protected SortedMap<Long, Long> generateLimits =
+      new TreeMap<Long, Long>();
   protected int eliteLimit;
 
   protected long reportPeriod = 30000;
@@ -124,8 +141,21 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     this.eliteRatio = eliteRatio;
   }
 
-  public void setMissLimitRatio(double missLimitRatio) {
-    this.missLimitRatio = missLimitRatio;
+  public void setGenerateLimitRatio(double glr) {
+    final SortedMap<Double, Double> glrMap = generateLimitRatios;
+
+    final double scale =
+        glr / glrMap.get(glrMap.lastKey());
+
+    for (Map.Entry<Double, Double> glrE : glrMap.entrySet()) {
+      glrMap.put(glrE.getKey(), scale * glrE.getValue());
+    }
+  }
+
+  public void setGenerateLimitRatios(
+      SortedMap<Double, Double> generateLimitRatios
+  ) {
+    this.generateLimitRatios = generateLimitRatios;
   }
 
   public void setMutationRatio(double mutationRatio) {
@@ -138,6 +168,18 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
 
   public void setState(GeneticState state) {
     this.state = state;
+  }
+
+  protected long generateLimit(final long childrenSize) {
+    final SortedMap<Long, Long> glMap = generateLimits;
+    final SortedMap<Long, Long> tailMap = glMap.tailMap(childrenSize);
+    if (tailMap.isEmpty()) {
+      throw new IllegalStateException(
+          "no limit for childrenSize = " + childrenSize + "\n" +
+          "generateLimits = " + glMap
+      );
+    }
+    return glMap.get(tailMap.firstKey());
   }
 
   public void run() {
@@ -183,7 +225,14 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     eliteLimit = Math.min(parents.size(), eliteLimit);
     int elitePointer = 0;
     int generateCount = 0;
-    while (children.size() < specimenLimit && (generateCount < missLimit || elitePointer < eliteLimit && elitePointer < parents.size())) {
+    boolean generateValid;
+    boolean eliteValid = false;
+    while (
+        children.size() < specimenLimit && (
+            (generateValid = generateCount < generateLimit((long) children.size())) ||
+            (eliteValid = elitePointer < eliteLimit && elitePointer < parents.size())
+        )
+    ) {
       report(lastReport);
 
       final Ref<Breeder<Genome>> breeder = new RefSimple<Breeder<Genome>>(null);
@@ -192,7 +241,7 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
       boolean valid = false;
       Genome child = null;
       try {
-        if (elitePointer < eliteLimit && elitePointer < parents.size() && (generateCount >= missLimit || children.size() + eliteLimit >= specimenLimit) ) {
+        if (eliteValid && (!generateValid || children.size() + eliteLimit >= specimenLimit) ) {
           child = parents.get(fKeys[elitePointer++]);
         } else {
           child = generateChild(
@@ -282,7 +331,13 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
 
     specimenLimit = ctx.getCount(specimenIndexParamName);
     eliteLimit = (int) Math.ceil(specimenLimit * eliteRatio);
-    missLimit = (long) Math.ceil(missLimitRatio * specimenLimit);
+    generateLimits.clear();
+    for (Map.Entry<Double, Double> glre : generateLimitRatios.entrySet()) {
+      generateLimits.put(
+          (long) Math.ceil(specimenLimit * glre.getKey()),
+          (long) Math.ceil(specimenLimit * glre.getValue())
+      );
+    }
   }
 
   protected Genome generateChild(

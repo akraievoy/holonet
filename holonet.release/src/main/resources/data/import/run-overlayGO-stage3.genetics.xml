@@ -40,7 +40,7 @@
           name="ovlGenOpt.specimenIndex" value="0-90"
           chainedStrategy="use_first" strategy="use_first" />
       <hn:Param
-          name="ovlGenOpt.missLimitRatio" value="200"
+          name="ovlGenOpt.generateLimitRatio" value="200"
           strategy="spawn" chainedStrategy="spawn"/>
       <hn:Param
           name="geneticState.maxCrossover" value="0.25"
@@ -90,7 +90,6 @@
       <hn:Param
           name="ovlGenOpt.generation" value="0-63"
           chainedStrategy="use_last" />
-      <hn:Param name="ovlGenOpt.missLimitRatio" value="3"/>
       <hn:Param name="ovlGenOpt.eliteRatio" value="0.2"/>
     </hn:Config>
     <hn:Config name="minEff17-smoke" description="MinEff: 1.7 (smoke)">
@@ -259,7 +258,7 @@
     <property name="crossoverRatio" value="0.15"/>
     <property name="mutationRatio" value="0.15"/>
 
-    <property name="missLimitRatio" value="25"/>
+    <property name="generateLimitRatio" value="25"/>
 
     <property name="generationParamName" value="ovlGenOpt.generation"/>
     <property name="specimenIndexParamName" value="ovlGenOpt.specimenIndex"/>
