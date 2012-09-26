@@ -38,7 +38,7 @@ public class ConditionSooFitnessCapping implements Condition<GenomeSoo> {
     if (!fitnessCap.isPresent()) {
       fitnessCap = Optional.of(
         strategySoo.getFitnessCap() * Math.pow(
-          1.025,
+          1.022,
           Math.max(strategySoo.generationNum / 4 * 3 - generationIndex, 0)
         )
       );
