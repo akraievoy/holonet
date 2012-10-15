@@ -28,12 +28,18 @@ import org.akraievoy.cnet.gen.vo.EntropySource;
  * so composite event sequence will be truncated on upon first failure.
  */
 public abstract class EventComposite extends Event {
+  private boolean stopOnFailure = false;
+
   /**
    * Generates next event for execution.
    *
    * @return <code>null</code> if and only if {@link EventComposite#isExhausted()} returns true.
    */
   public abstract Event generateNextEvent();
+
+  public void setStopOnFailure(boolean stopOnFailure) {
+    this.stopOnFailure = stopOnFailure;
+  }
 
   /**
    * Returns <code>true</code> if no more events will be available.
@@ -62,7 +68,11 @@ public abstract class EventComposite extends Event {
       final EventComposite.Result result = event.execute(targetNetwork, eSource);
 
       if (EventComposite.Result.FAILURE.equals(result)) {
-        return handleEventFailure(null, "Failure on nested level");
+        //  FIXME redundamcy, remove Composite in favor of Iterable and couple of iteration strategies?
+        aggregateResult = EventComposite.Result.FAILURE;
+        if (stopOnFailure) {
+          return handleEventFailure(null, "Failure on nested level");
+        }
       }
 
       if (EventComposite.Result.SUCCESS.equals(result)) {

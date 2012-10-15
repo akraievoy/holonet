@@ -192,6 +192,8 @@ public class Metrics implements NetworkInterceptor {
     ctx.put(periodName + "_lookupDelayAvg", getMeanLatency());
     ctx.put(periodName + "_lookupVsDirectRatioAvg", getLookupVsDirectRatioAvg());
     ctx.put(periodName + "_lookupVsDirectCount", getLookupVsDirectCount());
+    ctx.put(periodName + "_lookupSuccesses", lookupSuccesses);
+    ctx.put(periodName + "_lookupFailures", lookupFailures);
     ctx.put(periodName + "_lookupSuccessRatio", getLookupSuccessRatio());
     ctx.put(periodName + "_lookupCorrectRatio", getLookupConsistency());
 
