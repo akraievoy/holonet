@@ -18,6 +18,8 @@
 
 package algores.holonet.core;
 
+import algores.holonet.core.api.tier1.delivery.LookupService;
+
 /**
  * Unifies hooks for intercepting various network events.
  */
@@ -29,19 +31,19 @@ public interface NetworkInterceptor {
   /**
    * Registers a successful lookup
    *
+   * @param mode          which operation current lookup supported
    * @param latency       time elapsed on this lookup.
    * @param hopCount      network nodes transferred before lookup completed.
    * @param directLatency between source and nextHandler nodes.
+   * @param success       either true or false
    */
-  void registerLookup(double latency, long hopCount, double directLatency);
+  void registerLookup(LookupService.Mode mode, double latency, long hopCount, double directLatency, boolean success);
 
   //	----------------------------
   //	lookup failure/success ratio
   //	----------------------------
 
-  void registerLookupSuccess(boolean successfull);
-
-  void reportInconsistentLookup();
+  void reportInconsistentLookup(LookupService.Mode get);
 
   //	----------------------------
   //	RPC failure/success ratio
@@ -60,13 +62,10 @@ public interface NetworkInterceptor {
   void registerNodeDepartures(final int nodeCount);
 
   NetworkInterceptor NOOP = new NetworkInterceptor() {
-    public void registerLookup(double latency, long hopCount, double directLatency) {
+    public void registerLookup(LookupService.Mode mode, double latency, long hopCount, double directLatency, boolean success) {
     }
 
-    public void reportInconsistentLookup() {
-    }
-
-    public void registerLookupSuccess(boolean successfull) {
+    public void reportInconsistentLookup(LookupService.Mode get) {
     }
 
     public void registerNodeArrivals(int nodeCount, boolean successful) {

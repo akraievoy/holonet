@@ -375,7 +375,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   public void registerCommunicationFailure(Address calleeAddress) {
-    //	TODO fix this
+    //	TODO we don't really NEED to create an object just to do a query
     final NodeHandle dummyHandle = new NodeHandleBase(calleeAddress.getKey(), calleeAddress);
     final RoutingEntry re = getEntry(dummyHandle);
 

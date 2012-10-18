@@ -32,7 +32,9 @@ import java.util.Stack;
 public interface LookupService {
   long HOP_LIMIT = 65535;
 
-  Address lookup(Key key, boolean mustExist) throws CommunicationException;
+  enum Mode {JOIN, LEAVE, FIXFINGERS, GET, PUT}
+
+  Address lookup(Key key, boolean mustExist, Mode mode) throws CommunicationException;
 
   Address recursiveLookup(Key key, boolean mustExist, Stack<Address> traversed, List<RoutingEntry> pending) throws CommunicationException;
 }

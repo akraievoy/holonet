@@ -26,6 +26,7 @@ import algores.holonet.core.api.Key;
 import algores.holonet.core.api.KeySpace;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.storage.StorageService;
+import algores.holonet.core.api.tier1.delivery.LookupService;
 import algores.holonet.core.api.tier1.overlay.OverlayServiceBase;
 import com.google.common.base.Throwables;
 
@@ -44,7 +45,9 @@ public class RingService extends OverlayServiceBase {
       return;
     }
 
-    final Address successor = rpcToDelivery(oldNode).lookup(owner.getKey(), false);
+    final Address successor = rpcToDelivery(oldNode).lookup(
+        owner.getKey(), false, LookupService.Mode.JOIN
+    );
     getRouting().setSuccessor(new RoutingEntry(successor.getKey(), successor));
 
     stabilize();

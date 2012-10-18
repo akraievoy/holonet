@@ -23,6 +23,7 @@ import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.tier0.rpc.NetworkRpc;
 import algores.holonet.core.api.tier0.rpc.NetworkRpcBase;
+import algores.holonet.core.api.tier1.delivery.LookupService;
 import org.akraievoy.base.Stopwatch;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
@@ -213,7 +214,10 @@ public class Network {
       eSource.nextBytes(bytes);
       final Key key = API.createKey(bytes);
 
-      final Address responsibleAddress = getRandomNode(eSource).getServices().getLookup().lookup(key, false);
+      final Address responsibleAddress =
+          getRandomNode(eSource).getServices().getLookup().lookup(
+              key, false, LookupService.Mode.PUT
+          );
       final Node owner = env.getNode(responsibleAddress);
       owner.getServices().getStorage().put(key, bytes.clone());
     }
@@ -241,12 +245,16 @@ public class Network {
     metrics = newInterceptor;
   }
 
-  public void registerSuccess(final double lookupStartTime, final Stack<Address> route) {
+  public void registerLookupSuccess(
+      final LookupService.Mode mode,
+      final double lookupStartTime,
+      final Stack<Address> route,
+      final boolean success
+  ) {
     final double latency = getElapsedTime() - lookupStartTime;
     final double directLatency = 2 * route.get(0).getDistance(route.peek());
 
     final NetworkInterceptor interceptor = getInterceptor();
-    interceptor.registerLookup(latency, route.size() - 1, directLatency);
-    interceptor.registerLookupSuccess(true);
+    interceptor.registerLookup(mode, latency, route.size() - 1, directLatency, success);
   }
 }

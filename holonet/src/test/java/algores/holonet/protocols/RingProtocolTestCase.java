@@ -22,6 +22,7 @@ import algores.holonet.core.*;
 import algores.holonet.core.api.API;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
+import algores.holonet.core.api.tier1.delivery.LookupService;
 import algores.holonet.protocols.ring.RingRoutingServiceImpl;
 import algores.holonet.protocols.ring.RingService;
 import junit.framework.TestCase;
@@ -74,8 +75,14 @@ public class RingProtocolTestCase extends TestCase {
         final Node randomNode = getNetwork().getRandomNode(eSource);
         try {
           randomNode.getServices().getOverlay().stabilize();
-          final Address address = randomNode.getServices().getLookup().lookup(testKey, true);
-          assertEquals("test: " + testIndex + " loop: " + lookupCount, testValue, getNetwork().getEnv().getNode(address).getServices().getStorage().get(testKey));
+          final Address address = randomNode.getServices().getLookup().lookup(
+              testKey, true, LookupService.Mode.GET
+          );
+          assertEquals(
+              "test: " + testIndex + " loop: " + lookupCount,
+              testValue,
+              getNetwork().getEnv().getNode(address).getServices().getStorage().get(testKey)
+          );
         } catch (CommunicationException e) {
           netFailCount.getAndIncrement();
         }
@@ -107,7 +114,11 @@ public class RingProtocolTestCase extends TestCase {
 
     final String testValue = "test1";
     final Key testKey = API.createKey(testValue);
-    getNetwork().getEnv().getNode(getNetwork().getRandomNode(eSource).getServices().getLookup().lookup(testKey, false)).getServices().getStorage().put(testKey, testValue);
+    getNetwork().getEnv().getNode(
+      getNetwork().getRandomNode(eSource).getServices().getLookup().lookup(
+        testKey, false, LookupService.Mode.GET
+      )
+    ).getServices().getStorage().put(testKey, testValue);
 
     int mappingCount = countMappings();
 
@@ -117,8 +128,16 @@ public class RingProtocolTestCase extends TestCase {
       getNetwork().removeNodes(1, false, eSource);
       for (int lookupCount = 0; lookupCount < 5; lookupCount++) {
         try {
-          final Address responsible = getNetwork().getRandomNode(eSource).getServices().getLookup().lookup(testKey, true);
-          assertEquals("TestCount: " + testCount, testValue, getNetwork().getEnv().getNode(responsible).getServices().getStorage().get(testKey));
+          final Address responsible =
+              getNetwork().getRandomNode(eSource).getServices().getLookup().lookup(
+                  testKey, true, LookupService.Mode.GET
+              );
+
+          assertEquals(
+              "TestCount: " + testCount,
+              testValue,
+              getNetwork().getEnv().getNode(responsible).getServices().getStorage().get(testKey)
+          );
         } catch (CommunicationException e) {
           netFailCount.getAndIncrement();
         }
@@ -160,7 +179,11 @@ public class RingProtocolTestCase extends TestCase {
     final String testValue = "test1";
     final Key testKey = API.createKey(testValue);
 
-    getNetwork().getEnv().getNode(getNetwork().getRandomNode(eSource).getServices().getLookup().lookup(testKey, false)).getServices().getStorage().put(testKey, testValue);
+    getNetwork().getEnv().getNode(
+        getNetwork().getRandomNode(eSource).getServices().getLookup().lookup(
+            testKey, false, LookupService.Mode.GET
+        )
+    ).getServices().getStorage().put(testKey, testValue);
 
     Stopwatch stopwatch = new Stopwatch();
     final int testNum = 500;
@@ -168,8 +191,15 @@ public class RingProtocolTestCase extends TestCase {
       getNetwork().insertNodes(2, netFailCount, eSource);
       for (int lookupCount = 0; lookupCount < 10; lookupCount++) {
         try {
-          final Address responsible = getNetwork().getRandomNode(eSource).getServices().getLookup().lookup(testKey, true);
-          assertEquals("TestCount: " + testCount, testValue, getNetwork().getEnv().getNode(responsible).getServices().getStorage().get(testKey));
+          final Address responsible =
+              getNetwork().getRandomNode(eSource).getServices().getLookup().lookup(
+                  testKey, true, LookupService.Mode.GET
+              );
+          assertEquals(
+              "TestCount: " + testCount,
+              testValue,
+              getNetwork().getEnv().getNode(responsible).getServices().getStorage().get(testKey)
+          );
         } catch (CommunicationException e) {
           netFailCount.getAndIncrement();
         }
@@ -195,7 +225,11 @@ public class RingProtocolTestCase extends TestCase {
     final String testValue = "test1";
     final Key testKey = API.createKey(testValue);
 
-    getNetwork().getEnv().getNode(getNetwork().getRandomNode(eSource).getServices().getLookup().lookup(testKey, false)).getServices().getStorage().put(testKey, testValue);
+    getNetwork().getEnv().getNode(
+        getNetwork().getRandomNode(eSource).getServices().getLookup().lookup(
+            testKey, false, LookupService.Mode.GET
+        )
+    ).getServices().getStorage().put(testKey, testValue);
 
     Stopwatch stopwatch = new Stopwatch();
     final int testNum = 50;
@@ -204,8 +238,15 @@ public class RingProtocolTestCase extends TestCase {
       for (int lookupCount = 0; lookupCount < 10; lookupCount++) {
         final Node randomNode = getNetwork().getRandomNode(eSource);
         randomNode.getServices().getOverlay().stabilize();
-        final Address responsible = randomNode.getServices().getLookup().lookup(testKey, true);
-        assertEquals("TestCount: " + testCount, testValue, getNetwork().getEnv().getNode(responsible).getServices().getStorage().get(testKey));
+        final Address responsible =
+            randomNode.getServices().getLookup().lookup(
+                testKey, true, LookupService.Mode.GET
+            );
+        assertEquals(
+            "TestCount: " + testCount,
+            testValue,
+            getNetwork().getEnv().getNode(responsible).getServices().getStorage().get(testKey)
+        );
       }
 
       System.out.print(".");

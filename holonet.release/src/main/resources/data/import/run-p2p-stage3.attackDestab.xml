@@ -175,8 +175,13 @@
                   </constructor-arg>
                 </bean>
 
-                <bean class="algores.holonet.core.events.EventNetStabilize">
-                  <property name="probabilityRef" ref="tbStabProb"/>
+                <bean class="algores.holonet.core.events.EventCompositeLoop">
+                  <constructor-arg>
+                    <bean class="algores.holonet.core.events.EventNodeStabilize">
+                      <property name="probabilityRef" ref="tbStabProb"/>
+                    </bean>
+                  </constructor-arg>
+                  <property name="countRef" ref="tbNodes"/>
                 </bean>
 
                 <bean class="algores.holonet.core.events.EventCompositeLoop">

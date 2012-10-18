@@ -19,7 +19,11 @@
 package algores.holonet.testbench;
 
 import algores.holonet.core.NetworkInterceptor;
+import algores.holonet.core.api.tier1.delivery.LookupService;
 import org.akraievoy.base.runner.api.Context;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Bean that stores different network statistical metrics.
@@ -30,81 +34,106 @@ public class Metrics implements NetworkInterceptor {
 
   private Metrics(String newPeriodName) {
     periodName = newPeriodName;
+    for (LookupService.Mode mode : LookupService.Mode.values()) {
+      modeToLookups.put(mode, new LookupMetrics());
+    }
   }
 
   public String getPeriodName() {
     return periodName;
   }
 
-  //	---------------------------
-  //	hopcount/latency aggregates
-  //	---------------------------
-  private long totalHopCount;
-  private long totalRequests;
-  private double totalLatency;
-  private double lookupVsDirectTotal;
-  private long lookupVsDirectCount;
+  //	----------------------------------------------------------
+  //	hopcount/latency aggregates + lookup failure/success ratio
+  //	----------------------------------------------------------
+  static class LookupMetrics {
+    long totalHopCount;
+    long lookupCount;
+    double totalLatency;
+    double lookupVsDirectTotal;
+    long lookupVsDirectCount;
+    long lookupSuccesses;
+    long lookupFailures;
+    long inconsistentLookups;
 
-  public double getMeanLatency() {
-    return totalLatency / totalRequests;
-  }
-
-  public double getMeanPathLength() {
-    return (double) totalHopCount / totalRequests;
-  }
-
-  public long getTotalRequests() {
-    return totalRequests;
-  }
-
-  public double getLookupVsDirectRatioAvg() {
-    return lookupVsDirectTotal / lookupVsDirectCount;
-  }
-
-  public long getLookupVsDirectCount() {
-    return lookupVsDirectCount;
-  }
-
-  public void registerLookup(final double latency, final long hopCount, final double directLatency) {
-    totalLatency += latency;
-    totalHopCount += hopCount;
-    if (hopCount > 0 && directLatency > 1.0e-3) {
-      lookupVsDirectTotal += latency / directLatency;
-      lookupVsDirectCount++; 
+    public double getMeanLatency() {
+      return totalLatency / lookupSuccesses;
     }
-    totalRequests++;
-  }
 
-  //	----------------------------
-  //	lookup failure/success ratio
-  //	----------------------------
-  private long lookupSuccesses;
-  private long lookupFailures;
-  private long inconsistentLookups;
-
-  public void registerLookupSuccess(final boolean successfull) {
-    if (successfull) {
-      lookupSuccesses += 1.0;
-    } else {
-      lookupFailures += 1.0;
+    public double getMeanPathLength() {
+      return (double) totalHopCount / lookupSuccesses;
     }
+
+    public long getLookupCount() {
+      return lookupCount;
+    }
+
+    public double getLookupVsDirectRatioAvg() {
+      return lookupVsDirectTotal / lookupVsDirectCount;
+    }
+
+    public long getLookupVsDirectCount() {
+      return lookupVsDirectCount;
+    }
+
+    public void registerLookup(
+        final double latency,
+        final long hopCount,
+        final double directLatency,
+        boolean success
+    ) {
+      if (success) {
+        totalLatency += latency;
+        totalHopCount += hopCount;
+        if (hopCount > 0 && directLatency > 1.0e-3) {
+          lookupVsDirectTotal += latency / directLatency;
+          lookupVsDirectCount++;
+        }
+        lookupSuccesses += 1.0;
+      } else {
+        lookupFailures += 1.0;
+      }
+      lookupCount++;
+    }
+
+    public void reportInconsistentLookup() {
+      inconsistentLookups += 1;
+    }
+
+    public double getLookupConsistency() {
+      return 1 - (double) inconsistentLookups / lookupSuccesses;
+    }
+
+    public double getLookupSuccessRatio() {
+      return (double) lookupSuccesses / (lookupSuccesses + lookupFailures);
+    }
+
+    public double getLookupFailureRatio() {
+      return (double) lookupFailures / (lookupSuccesses + lookupFailures);
+    }
+
   }
 
-  public void reportInconsistentLookup() {
-    inconsistentLookups += 1;
+  public void registerLookup(
+      final LookupService.Mode mode,
+      final double latency,
+      final long hopCount,
+      final double directLatency,
+      boolean success
+  ) {
+    modeToLookups.get(mode).registerLookup(
+        latency, hopCount, directLatency, success
+    );
   }
 
-  public double getLookupConsistency() {
-    return 1 - (double) inconsistentLookups / lookupSuccesses;
+  public void reportInconsistentLookup(LookupService.Mode mode) {
+    modeToLookups.get(mode).reportInconsistentLookup();
   }
 
-  public double getLookupSuccessRatio() {
-    return (double) lookupSuccesses / (lookupSuccesses + lookupFailures);
-  }
-
-  public double getLookupFailureRatio() {
-    return (double) lookupFailures / (lookupSuccesses + lookupFailures);
-  }
+  private Map<LookupService.Mode, LookupMetrics> modeToLookups =
+    new HashMap<LookupService.Mode, LookupMetrics>(
+        2*LookupService.Mode.values().length
+    );
 
   //	----------------------------
   //	RPC failure/success ratio
@@ -187,15 +216,50 @@ public class Metrics implements NetworkInterceptor {
     ctx.put(periodName + "_leaveCount", getNodeDepartures());
     ctx.put(periodName + "_failCount", getNodeFailures());
 
-    ctx.put(periodName + "_lookupCount", getTotalRequests());
-    ctx.put(periodName + "_lookupHopAvg", getMeanPathLength());
-    ctx.put(periodName + "_lookupDelayAvg", getMeanLatency());
-    ctx.put(periodName + "_lookupVsDirectRatioAvg", getLookupVsDirectRatioAvg());
-    ctx.put(periodName + "_lookupVsDirectCount", getLookupVsDirectCount());
-    ctx.put(periodName + "_lookupSuccesses", lookupSuccesses);
-    ctx.put(periodName + "_lookupFailures", lookupFailures);
-    ctx.put(periodName + "_lookupSuccessRatio", getLookupSuccessRatio());
-    ctx.put(periodName + "_lookupCorrectRatio", getLookupConsistency());
+    for (LookupService.Mode mode : LookupService.Mode.values()) {
+      final LookupMetrics lookups = modeToLookups.get(mode);
+      final String prefix = "_lookup_" + mode.toString().toLowerCase();
+      ctx.put(
+          periodName + prefix + "_count",
+          lookups.getLookupCount()
+      );
+      ctx.put(
+          periodName + prefix + "_hopAvg",
+          lookups.getMeanPathLength()
+      );
+      ctx.put(
+          periodName + prefix + "_delayAvg",
+          lookups.getMeanLatency()
+      );
+      ctx.put(
+          periodName + prefix + "_vsDirectRatioAvg",
+          lookups.getLookupVsDirectRatioAvg()
+      );
+      ctx.put(
+          periodName + prefix + "_vsDirectCount",
+          lookups.getLookupVsDirectCount()
+      );
+      ctx.put(
+          periodName + prefix + "_successes",
+          lookups.lookupSuccesses
+      );
+      ctx.put(
+          periodName + prefix + "_failures",
+          lookups.lookupFailures
+      );
+      ctx.put(
+          periodName + prefix + "_successRatio",
+          lookups.getLookupSuccessRatio()
+      );
+      ctx.put(
+          periodName + prefix + "_successRatioTimesHopsAvg",
+          lookups.getLookupSuccessRatio() * lookups.getMeanPathLength()
+      );
+      ctx.put(
+          periodName + prefix + "_correctRatio",
+          lookups.getLookupConsistency()
+      );
+    }
 
     ctx.put(periodName + "_rpcCount", getRpcCallsTotal());
     ctx.put(periodName + "_rpcSuccessRatio", getRpcSuccessRatio());

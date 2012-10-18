@@ -29,7 +29,6 @@ import algores.holonet.core.api.tier1.delivery.LookupService;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Lookup entry event.
@@ -51,7 +50,9 @@ class EventNetLookup extends Event {
 
       final Address address;
       try {
-        address = lookupSvc.lookup(mapping.getKey(), true);
+        address = lookupSvc.lookup(
+            mapping.getKey(), true, LookupService.Mode.GET
+        );
       } catch (CommunicationException e) {
         if (!aggregateResult.equals(EventComposite.Result.FAILURE)) {
           aggregateResult = handleEventFailure(e, null);
@@ -67,7 +68,7 @@ class EventNetLookup extends Event {
               || !(value instanceof byte[])
               || !mapping.getKey().equals(API.createKey((byte[]) value))
       ) {
-        network.getInterceptor().reportInconsistentLookup();
+        network.getInterceptor().reportInconsistentLookup(LookupService.Mode.GET);
       }
 
       aggregateResult = EventComposite.Result.SUCCESS;

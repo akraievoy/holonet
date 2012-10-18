@@ -42,13 +42,15 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
   /**
    * An iterative lookup algorithm, starting from startingAddr.
    *
+   *
    * @param key       to be looked up.
    * @param mustExist would not search the replicas if current node is responsible for the key and does not have it
+   * @param mode which operation this lookup supports
    * @return the final address that is responsible for the key.
    * @throws algores.holonet.core.CommunicationException
    *          propagated
    */
-  public Address lookup(Key key, boolean mustExist) throws CommunicationException {
+  public Address lookup(Key key, boolean mustExist, Mode mode) throws CommunicationException {
     double lookupStartTime = getOwner().getNetwork().getElapsedTime();
     final Stack<Address> route = new Stack<Address>();
 
@@ -56,16 +58,16 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
       final Address recursiveLookupResult = recursiveLookup(key, mustExist, route, null);
 
       if (recursiveLookupResult != null) {
-        getOwner().getNetwork().registerSuccess(lookupStartTime, route);
+        getOwner().getNetwork().registerLookupSuccess(mode, lookupStartTime, route, true);
         return recursiveLookupResult;
       }
 
     } catch (CommunicationException nfe) {
-      getOwner().getNetwork().getInterceptor().registerLookupSuccess(false);
+      getOwner().getNetwork().registerLookupSuccess(mode, lookupStartTime, route, false);
       throw nfe;
     }
 
-    getOwner().getNetwork().getInterceptor().registerLookupSuccess(false);
+    getOwner().getNetwork().registerLookupSuccess(mode, lookupStartTime, route, false);
     throw new CommunicationException("No route for '" + key + "', " + route.size() + " nodes traversed");
   }
 

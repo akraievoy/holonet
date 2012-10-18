@@ -25,6 +25,7 @@ import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.KeySpace;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
+import algores.holonet.core.api.tier1.delivery.LookupService;
 import algores.holonet.protocols.ring.RingService;
 
 public class ChordServiceBase extends RingService implements ChordService {
@@ -48,7 +49,9 @@ public class ChordServiceBase extends RingService implements ChordService {
       getRouting().setPredecessor(ownRoute);
       return;
     } else {
-      final Address successor = rpcToDelivery(dhtNodeAddress).lookup(owner.getKey(), false);
+      final Address successor = rpcToDelivery(dhtNodeAddress).lookup(
+          owner.getKey(), false, LookupService.Mode.JOIN
+      );
       getRouting().setSuccessor(rpcToRouting(successor).getOwnRoute());
     }
 
@@ -102,7 +105,9 @@ public class ChordServiceBase extends RingService implements ChordService {
     //	TODO omit queries in case finger is responsible for multiple powers
     for (int power = 0; power < Key.BITNESS; power++) {
       try {
-        final Address address = owner.getServices().getLookup().lookup(ownerKey.next(power), false);
+        final Address address = owner.getServices().getLookup().lookup(
+            ownerKey.next(power), false, LookupService.Mode.FIXFINGERS
+        );
 
         //  it's possible that finger ends up pointing to the same node
         //    especially this is true for initial stages

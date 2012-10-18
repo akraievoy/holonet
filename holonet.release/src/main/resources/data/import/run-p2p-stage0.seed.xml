@@ -37,12 +37,20 @@
           name="tbRunSeed.value" value="7654321"
           strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
-    <hn:Config name="3x7" description="7 inits * 3 runs">
+    <hn:Config name="7x3" description="7 inits * 3 runs">
       <hn:Param
           name="tbInitSeed.value" value="7654321;91032843;8574829;1029389;9193782;74754832;68492834"
           strategy="spawn" chainedStrategy="spawn"/>
       <hn:Param
           name="tbRunSeed.value" value="1234567;1928483;9348492"
+          strategy="spawn" chainedStrategy="spawn"/>
+    </hn:Config>
+    <hn:Config name="7x42" description="7 inits * 42 runs">
+      <hn:Param
+          name="tbInitSeed.value" value="7654321;91032843;8574829;1029389;9193782;74754832;68492834"
+          strategy="spawn" chainedStrategy="spawn"/>
+      <hn:Param
+          name="tbRunSeed.value" value="9348492-9348533"
           strategy="spawn" chainedStrategy="spawn"/>
     </hn:Config>
     <hn:Config name="3x2" description="3 inits * 2 runs">

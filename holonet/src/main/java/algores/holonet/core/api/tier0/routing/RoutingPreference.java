@@ -22,8 +22,6 @@ import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.Range;
 
-import java.util.Comparator;
-
 /**
  * Defines an algorithm to select next hop.
  * This class should be stateless.
