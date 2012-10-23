@@ -51,6 +51,17 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
    *          propagated
    */
   public Address lookup(Key key, boolean mustExist, Mode mode) throws CommunicationException {
+/*
+    for (long seed = 135600; seed < 136600; seed++) {
+      try {
+        setUp();
+        testHopCount0(135930, 4);
+        tearDown();
+      } catch (Throwable e) {
+        System.err.println("seed " + seed + "-> " + e.getMessage());
+      }
+    }
+*/
     double lookupStartTime = getOwner().getNetwork().getElapsedTime();
     final Stack<Address> route = new Stack<Address>();
 

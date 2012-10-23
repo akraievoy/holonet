@@ -43,77 +43,6 @@ public class Metrics implements NetworkInterceptor {
     return periodName;
   }
 
-  //	----------------------------------------------------------
-  //	hopcount/latency aggregates + lookup failure/success ratio
-  //	----------------------------------------------------------
-  static class LookupMetrics {
-    long totalHopCount;
-    long lookupCount;
-    double totalLatency;
-    double lookupVsDirectTotal;
-    long lookupVsDirectCount;
-    long lookupSuccesses;
-    long lookupFailures;
-    long inconsistentLookups;
-
-    public double getMeanLatency() {
-      return totalLatency / lookupSuccesses;
-    }
-
-    public double getMeanPathLength() {
-      return (double) totalHopCount / lookupSuccesses;
-    }
-
-    public long getLookupCount() {
-      return lookupCount;
-    }
-
-    public double getLookupVsDirectRatioAvg() {
-      return lookupVsDirectTotal / lookupVsDirectCount;
-    }
-
-    public long getLookupVsDirectCount() {
-      return lookupVsDirectCount;
-    }
-
-    public void registerLookup(
-        final double latency,
-        final long hopCount,
-        final double directLatency,
-        boolean success
-    ) {
-      if (success) {
-        totalLatency += latency;
-        totalHopCount += hopCount;
-        if (hopCount > 0 && directLatency > 1.0e-3) {
-          lookupVsDirectTotal += latency / directLatency;
-          lookupVsDirectCount++;
-        }
-        lookupSuccesses += 1.0;
-      } else {
-        lookupFailures += 1.0;
-      }
-      lookupCount++;
-    }
-
-    public void reportInconsistentLookup() {
-      inconsistentLookups += 1;
-    }
-
-    public double getLookupConsistency() {
-      return 1 - (double) inconsistentLookups / lookupSuccesses;
-    }
-
-    public double getLookupSuccessRatio() {
-      return (double) lookupSuccesses / (lookupSuccesses + lookupFailures);
-    }
-
-    public double getLookupFailureRatio() {
-      return (double) lookupFailures / (lookupSuccesses + lookupFailures);
-    }
-
-  }
-
   public void registerLookup(
       final LookupService.Mode mode,
       final double latency,
@@ -121,13 +50,18 @@ public class Metrics implements NetworkInterceptor {
       final double directLatency,
       boolean success
   ) {
-    modeToLookups.get(mode).registerLookup(
+    modeToLookups(mode).registerLookup(
         latency, hopCount, directLatency, success
     );
   }
 
+  @Override
+  public LookupMetrics modeToLookups(LookupService.Mode mode) {
+    return modeToLookups.get(mode);
+  }
+
   public void reportInconsistentLookup(LookupService.Mode mode) {
-    modeToLookups.get(mode).reportInconsistentLookup();
+    modeToLookups(mode).reportInconsistentLookup();
   }
 
   private Map<LookupService.Mode, LookupMetrics> modeToLookups =
@@ -217,7 +151,7 @@ public class Metrics implements NetworkInterceptor {
     ctx.put(periodName + "_failCount", getNodeFailures());
 
     for (LookupService.Mode mode : LookupService.Mode.values()) {
-      final LookupMetrics lookups = modeToLookups.get(mode);
+      final LookupMetrics lookups = modeToLookups(mode);
       final String prefix = "_lookup_" + mode.toString().toLowerCase();
       ctx.put(
           periodName + prefix + "_count",
@@ -241,11 +175,11 @@ public class Metrics implements NetworkInterceptor {
       );
       ctx.put(
           periodName + prefix + "_successes",
-          lookups.lookupSuccesses
+          lookups.getLookupSuccesses()
       );
       ctx.put(
           periodName + prefix + "_failures",
-          lookups.lookupFailures
+          lookups.getLookupFailures()
       );
       ctx.put(
           periodName + prefix + "_successRatio",

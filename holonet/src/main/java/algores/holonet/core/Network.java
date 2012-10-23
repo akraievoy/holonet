@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Network {
   protected Env env = new EnvSimple();
@@ -75,13 +76,14 @@ public class Network {
   /**
    * Generate a node with random address, let it join the DHT, and save it in my hash table.
    *
+   *
    * @param newParent          one of the old nodes in the DHT for bootstrapping the new one.
    *                           <code>null</code> if the DHT has no node yet.
    * @param eSource
    * @param nodeFailureCounter swallows (if set) NodeFailureExceptions (if thrown)  @return the newly generated node, <code>null</code> if the generation fails.
    * @throws SimulatorException escalated
    */
-  public Node generateNode(Node newParent, EntropySource eSource, AtomicInteger nodeFailureCounter) throws SimulatorException {
+  public Node generateNode(Node newParent, EntropySource eSource, AtomicLong nodeFailureCounter) throws SimulatorException {
     final Address parentAddress = newParent != null ? newParent.getAddress() : null;
 
     final Node newNode = createNode(eSource);
@@ -182,7 +184,7 @@ public class Network {
   //	aggregate manipulations
   //	-----------------------
 
-  public void insertNodes(int count, AtomicInteger failCounter, final EntropySource eSource) throws SimulatorException {
+  public void insertNodes(int count, AtomicLong failCounter, final EntropySource eSource) throws SimulatorException {
     if (count > 50) {
       System.out.println("inserting " + count + " nodes");
     }

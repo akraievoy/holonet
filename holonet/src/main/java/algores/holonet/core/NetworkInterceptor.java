@@ -62,6 +62,8 @@ public interface NetworkInterceptor {
   void registerNodeDepartures(final int nodeCount);
 
   NetworkInterceptor NOOP = new NetworkInterceptor() {
+    private final LookupMetrics mockLookups = new LookupMetrics();
+
     public void registerLookup(LookupService.Mode mode, double latency, long hopCount, double directLatency, boolean success) {
     }
 
@@ -79,5 +81,90 @@ public interface NetworkInterceptor {
 
     public void registerRpcCallResult(boolean successful) {
     }
+
+    @Override
+    public LookupMetrics modeToLookups(LookupService.Mode mode) {
+      return mockLookups;
+    }
   };
+
+  LookupMetrics modeToLookups(LookupService.Mode mode);
+
+  //	----------------------------------------------------------
+  //	hopcount/latency aggregates + lookup failure/success ratio
+  //	----------------------------------------------------------
+  public static class LookupMetrics {
+    private long totalHopCount;
+    private long lookupCount;
+    private double totalLatency;
+    private double lookupVsDirectTotal;
+    private long lookupVsDirectCount;
+    private long lookupSuccesses;
+    private long lookupFailures;
+    private long inconsistentLookups;
+
+    public double getMeanLatency() {
+      return totalLatency / lookupSuccesses;
+    }
+
+    public double getMeanPathLength() {
+      return (double) totalHopCount / lookupSuccesses;
+    }
+
+    public long getLookupCount() {
+      return lookupCount;
+    }
+
+    public double getLookupVsDirectRatioAvg() {
+      return lookupVsDirectTotal / lookupVsDirectCount;
+    }
+
+    public long getLookupVsDirectCount() {
+      return lookupVsDirectCount;
+    }
+
+    public void registerLookup(
+        final double latency,
+        final long hopCount,
+        final double directLatency,
+        boolean success
+    ) {
+      if (success) {
+        totalLatency += latency;
+        totalHopCount += hopCount;
+        if (hopCount > 0 && directLatency > 1.0e-3) {
+          lookupVsDirectTotal += latency / directLatency;
+          lookupVsDirectCount++;
+        }
+        lookupSuccesses += 1.0;
+      } else {
+        lookupFailures += 1.0;
+      }
+      lookupCount++;
+    }
+
+    public void reportInconsistentLookup() {
+      inconsistentLookups += 1;
+    }
+
+    public double getLookupConsistency() {
+      return 1 - (double) inconsistentLookups / lookupSuccesses;
+    }
+
+    public double getLookupSuccessRatio() {
+      return (double) lookupSuccesses / (lookupSuccesses + lookupFailures);
+    }
+
+    public double getLookupFailureRatio() {
+      return (double) lookupFailures / (lookupSuccesses + lookupFailures);
+    }
+
+    public long getLookupSuccesses() {
+      return lookupSuccesses;
+    }
+
+    public long getLookupFailures() {
+      return lookupFailures;
+    }
+  }
 }

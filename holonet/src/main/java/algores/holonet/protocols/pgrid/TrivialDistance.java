@@ -1,5 +1,5 @@
 /*
- Copyright 2011 Anton Kraievoy akraievoy@gmail.com
+ Copyright 2012 Anton Kraievoy akraievoy@gmail.com
  This file is part of Holonet.
 
  Holonet is free software: you can redistribute it and/or modify
@@ -22,21 +22,18 @@ import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.KeySpace;
 import algores.holonet.core.api.Range;
-import algores.holonet.core.api.tier0.routing.RoutingPreference;
+import algores.holonet.core.api.tier0.routing.RoutingDistance;
 
-class TrivialPreference implements RoutingPreference {
-  public boolean isPreferred(Address localAddress, Key target, Address curAddress, Range curRange, Address bestAddress, Range bestRange) {
-    final int curPrefix = KeySpace.getCommonPrefixLen(curRange.getKey(), target, Key.BITNESS);
-    final int bestPrefix = KeySpace.getCommonPrefixLen(bestRange.getKey(), target, Key.BITNESS);
+class TrivialDistance implements RoutingDistance {
+  public double apply(
+      Address localAddress,
+      Key target,
+      Address curAddress,
+      Range curRange
+  ) {
+    final int curPrefix =
+        KeySpace.getCommonPrefixLen(curRange.getKey(), target, Key.BITNESS);
 
-    final int prefixPreference = curPrefix - bestPrefix;
-
-    if (prefixPreference != 0) {
-      return prefixPreference > 0;
-    }
-
-    final int bitsPreference = curRange.getBits() - bestRange.getBits();
-
-    return bitsPreference > 0;
+    return Key.BITNESS - curPrefix;
   }
 }

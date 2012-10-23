@@ -1,5 +1,5 @@
 /*
- Copyright 2011 Anton Kraievoy akraievoy@gmail.com
+ Copyright 2012 Anton Kraievoy akraievoy@gmail.com
  This file is part of Holonet.
 
  Holonet is free software: you can redistribute it and/or modify
@@ -16,32 +16,36 @@
  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package algores.holonet.core;
+package algores.holonet.protocols.ring;
 
 import algores.holonet.core.api.Address;
+import algores.holonet.core.api.Key;
+import algores.holonet.core.api.Range;
 import algores.holonet.core.api.tier0.routing.RoutingDistance;
-import org.akraievoy.cnet.gen.vo.EntropySource;
 
-import java.util.Collection;
+import java.math.BigInteger;
 
 /**
- * Network environment.
+ * Used for ring topology.
  */
-public interface Env extends RoutingDistance {
-  Address createNetworkAddress(EntropySource eSource);
+public class RingRoutingDistance implements RoutingDistance {
+  final long BITNESS = BigInteger.ONE.shiftLeft(Key.BITNESS).longValue();
 
-  Node getNode(Address address);
+  public double apply(
+      Address localAddress,
+      Key target,
+      Address curAddress,
+      Range curRange
+  ) {
+    final long distance =
+        curRange.getRKey().toLong() - target.toLong();
+    final long distanceClockwise;
+    if (distance < 0) {
+      distanceClockwise = distance + BITNESS;
+    } else {
+      distanceClockwise = distance;
+    }
 
-  void putNode(Node newNode, Address address);
-
-  void removeNode(Address address);
-
-  Collection<Node> getAllNodes();
-
-  /**
-   * Beware: init checks lots of context injectables, which are not set up if Spring calls it as a start-method.
-   */
-  void init();
-
-  EnvMappings getMappings();
+    return distanceClockwise;
+  }
 }

@@ -193,12 +193,20 @@ public class RoutingEntry extends NodeHandleBase {
     return false;
   }
 
-  public Range selectRange(Address localAddress, Key target, final RoutingPreference routingPreference) {
+  public Range selectRange(
+      Address localAddress, Key target, final RoutingDistance routingDistance
+  ) {
     Range bestRange = getNodeIdRange();
+    double bestDist =
+        routingDistance.apply(localAddress, target, address, bestRange);
 
     for (Range r : ranges) {
-      if (routingPreference.isPreferred(localAddress, target, address, r, address, bestRange)) {
+      final double curDist =
+          routingDistance.apply(localAddress, target, address, r);
+
+      if (curDist < bestDist) {
         bestRange = r;
+        bestDist = curDist;
       }
     }
 

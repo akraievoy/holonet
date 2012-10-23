@@ -22,8 +22,8 @@ import algores.holonet.capi.Event;
 import algores.holonet.core.Node;
 import algores.holonet.core.api.Range;
 import algores.holonet.core.api.RangeBase;
+import algores.holonet.core.api.tier0.routing.RoutingDistance;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
-import algores.holonet.core.api.tier0.routing.RoutingPreference;
 import algores.holonet.core.api.tier0.routing.RoutingServiceBase;
 import org.akraievoy.base.Die;
 
@@ -31,20 +31,20 @@ import org.akraievoy.base.Die;
  * Default implementation.
  */
 public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRoutingService {
-  protected RoutingPreference routingPreference;
+  protected RoutingDistance routingDistance;
 
   protected RoutingEntry successor;
   protected RoutingEntry predecessor;
 
   public RingRoutingServiceImpl() {
-    routingPreference = new RingRoutingPreference();
+    routingDistance = new RingRoutingDistance();
   }
 
   public RingRoutingServiceImpl copy() {
     final RingRoutingServiceImpl copy = new RingRoutingServiceImpl();
 
     copy.setRedundancy(getRedundancy());
-    copy.setRoutingPreference(getRoutingPreference());
+    copy.setRoutingDistance(getRoutingDistance());
 
     return copy;
   }
@@ -65,12 +65,12 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
     setRedundancy(3);
   }
 
-  public RoutingPreference getRoutingPreference() {
-    return routingPreference;
+  public RoutingDistance getRoutingDistance() {
+    return routingDistance;
   }
 
-  public void setRoutingPreference(RoutingPreference routingPreference) {
-    this.routingPreference = routingPreference;
+  public void setRoutingDistance(RoutingDistance routingDistance) {
+    this.routingDistance = routingDistance;
   }
 
   public RoutingEntry getSuccessor() {

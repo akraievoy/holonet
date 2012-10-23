@@ -19,6 +19,8 @@
 package algores.holonet.core;
 
 import algores.holonet.core.api.Address;
+import algores.holonet.core.api.Key;
+import algores.holonet.core.api.Range;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 import java.util.Collection;
@@ -61,8 +63,12 @@ public class EnvSimple implements Env {
     //	nothing to do
   }
 
-  public boolean isPreferred(Address localAddress, Address currentAddress, Address bestAddress) {
-    return false;
+  @Override
+  public double apply(
+      Address localAddress, Key target,
+      Address curAddress, Range curRange
+  ) {
+    return 0;
   }
 
   public EnvMappings getMappings() {

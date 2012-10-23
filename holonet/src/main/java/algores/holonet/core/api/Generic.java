@@ -156,7 +156,7 @@ class Generic {
   }
 
   protected static int compareBitSubsets(BitSet thisKeyData, BitSet thatKeyData, int maxBits) {
-    for (int atBit = Key.BITNESS - 1; atBit >= Key.BITNESS - maxBits; atBit--) {
+    for (int atBit = maxBits - 1; atBit >= 0; atBit--) {
       final boolean thisBit = thisKeyData.get(atBit);
       final boolean thatBit = thatKeyData.get(atBit);
       if (thisBit ^ thatBit) {
@@ -167,13 +167,46 @@ class Generic {
     return 0;
   }
 
+  private static BigInteger[] masksBigInt = createMasksBigInt();
+  private static long[] masksLong = createMasksLong();
+
+  private static long[] createMasksLong() {
+    final long[] masks = new long[63];
+    for (int i = 0; i < masks.length; i++) {
+      masks[i] = i == 0 ? 1 : masks[i-1] << 1;
+    }
+    return masks;
+  }
+
+  private static BigInteger[] createMasksBigInt() {
+    final BigInteger[] masks = new BigInteger[Key.BITNESS];
+    for (int i = 0; i < masks.length; i++) {
+      masks[i] = i == 0 ? BigInteger.ONE : masks[i-1].shiftLeft(1);
+    }
+    return masks;
+  }
+
   protected static BigInteger bitSet2BigInt(final BitSet bits) {
     BigInteger result = BigInteger.ZERO;
 
     int atBit = 0;
     while (atBit < bits.length()) {
       final int lowestSetBit = bits.nextSetBit(atBit);
-      result = result.add(BigInteger.ONE.shiftLeft(lowestSetBit));
+      result = result.add(masksBigInt[lowestSetBit]);
+
+      atBit = lowestSetBit + 1;
+    }
+
+    return result;
+  }
+
+  protected static long bitSet2long(final BitSet bits) {
+    long result = 0;
+
+    int atBit = 0;
+    while (atBit < bits.length()) {
+      final int lowestSetBit = bits.nextSetBit(atBit);
+      result = result + masksLong[lowestSetBit];
 
       atBit = lowestSetBit + 1;
     }

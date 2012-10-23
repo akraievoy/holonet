@@ -100,6 +100,14 @@ class KeyBase implements Key {
     return Generic.bitSet2BigInt(keyData);
   }
 
+  @Override
+  public long toLong() {
+    if (BITNESS > 63) {
+      throw new IllegalStateException("unable to convert key to long as BITNESS > 63");
+    }
+    return Generic.bitSet2long(keyData);
+  }
+
   public KeyBase set(int atBit, boolean value) {
     Die.ifFalse("atBit < BITNESS", atBit < BITNESS);
     final BitSet newKeyData = new BitSet(keyData.length());

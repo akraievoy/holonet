@@ -16,21 +16,30 @@
  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package algores.holonet.protocols.ring;
+package algores.holonet.core.api.tier0.routing;
 
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
-import algores.holonet.core.api.KeySpace;
 import algores.holonet.core.api.Range;
-import algores.holonet.core.api.tier0.routing.RoutingPreference;
 
 /**
- * Used for ring topology.
+ * Defines an algorithm to select next hop.
+ * This class should be stateless.
  */
-public class RingRoutingPreference implements RoutingPreference {
-  public boolean isPreferred(Address localAddress, Key target, Address curAddress, Range curRange, Address bestAddress, Range bestRange) {
-    final boolean preferred = KeySpace.isInOpenRightRange(target, bestRange.getRKey(), curRange.getRKey());
-
-    return preferred;
-  }
+public interface RoutingDistance {
+  /**
+   * Evaluates estimated routing distance via
+   * <code>curAddress.curRange</code> to <code>target</code>.
+   *
+   *
+   * @param localAddress for which preference is evaluated
+   * @param target    the Key we route towards
+   * @param curAddress address of the range we are looking at
+   * @param curRange  range we are looking at
+   * @return an estimate as double
+   */
+  double apply(
+      Address localAddress, Key target,
+      Address curAddress, Range curRange
+  );
 }

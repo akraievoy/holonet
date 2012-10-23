@@ -19,6 +19,7 @@
 package algores.holonet.core.api.tier0.routing;
 
 import algores.holonet.capi.Event;
+import algores.holonet.core.Env;
 import algores.holonet.core.api.*;
 import org.akraievoy.base.Die;
 
@@ -84,16 +85,13 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   protected void localLookupInternal(Key key, List<RoutingEntry> result) {
-    final RoutingPreference pref = getRoutingPreference();
+    final RoutingDistance pref = getRoutingDistance();
     final Comparator<RoutingEntry> comparator = preferenceComparator(key, pref);
 
     Collections.sort(
         result,
         comparator
     );
-
-    //  most preferred are at the tail, as comparator assigns them more weight
-    Collections.reverse(result);
   }
 
   protected void filterSafeRoutes(List<RoutingEntry> result) {
@@ -165,10 +163,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       }
     }
 
-    Collections.sort(result, preferenceComparator(key, getRoutingPreference()));
-
-    //  most preferred are at the tail, as comparator assigns them more weight
-    Collections.reverse(result);
+    Collections.sort(result, preferenceComparator(key, getRoutingDistance()));
 
     return result;
   }
@@ -362,7 +357,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     maintainRedundancyRatio();
   }
 
-  public abstract RoutingPreference getRoutingPreference();
+  public abstract RoutingDistance getRoutingDistance();
 
   public List<RoutingEntry> getRoutes() {
     final ArrayList<RoutingEntry> routesRes = new ArrayList<RoutingEntry>(routes);
@@ -386,33 +381,24 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     }
   }
 
-  protected Comparator<RoutingEntry> preferenceComparator(final Key key, final RoutingPreference pref) {
+  protected Comparator<RoutingEntry> preferenceComparator(final Key key, final RoutingDistance dist) {
     final Address localAddress = owner.getAddress();
-    @SuppressWarnings({"UnnecessaryLocalVariable"})
-    final RoutingPreference preference = pref;
 
     return new Comparator<RoutingEntry>() {
       public int compare(RoutingEntry r1, RoutingEntry r2) {
-        final Range bestR1 = r1.selectRange(localAddress, key, preference);
-        final Range bestR2 = r2.selectRange(localAddress, key, preference);
+        final Range bestR1 = r1.selectRange(localAddress, key, dist);
+        final Range bestR2 = r2.selectRange(localAddress, key, dist);
 
-        if (owner.getNetwork().getEnv().isPreferred(localAddress, r1.getAddress(), r2.getAddress())) {
-          return 1;
-        }
+        final Env envDist = owner.getNetwork().getEnv();
+        final double r1dist =
+            dist.apply(localAddress, key, r1.getAddress(), bestR1) +
+            envDist.apply(localAddress, key, r1.getAddress(), bestR1);
 
-        if (owner.getNetwork().getEnv().isPreferred(localAddress, r2.getAddress(), r1.getAddress())) {
-          return -1;
-        }
+        final double r2dist =
+            dist.apply(localAddress, key, r2.getAddress(), bestR2) +
+            envDist.apply(localAddress, key, r2.getAddress(), bestR2);
 
-        if (preference.isPreferred(localAddress, key, r1.getAddress(), bestR1, r2.getAddress(), bestR2)) {
-          return 1;
-        }
-
-        if (preference.isPreferred(localAddress, key, r2.getAddress(), bestR2, r1.getAddress(), bestR1)) {
-          return -1;
-        }
-
-        return 0;
+        return Double.compare(r1dist, r2dist);
       }
     };
   }

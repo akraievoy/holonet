@@ -21,15 +21,15 @@ package algores.holonet.protocols.pgrid;
 import algores.holonet.core.Node;
 import algores.holonet.core.api.Range;
 import algores.holonet.core.api.RangeBase;
+import algores.holonet.core.api.tier0.routing.RoutingDistance;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
-import algores.holonet.core.api.tier0.routing.RoutingPreference;
 import algores.holonet.core.api.tier0.routing.RoutingServiceBase;
 
 class PGridRouting extends RoutingServiceBase {
   protected static final int MAX_SAME_PATHS = 5;
   protected static final int MAX_SAME_COMPLEMENT = 7;
 
-  protected final TrivialPreference routingPreference = new TrivialPreference();
+  protected final TrivialDistance routingPreference = new TrivialDistance();
 
   public PGridRouting() {
     super();
@@ -67,7 +67,7 @@ class PGridRouting extends RoutingServiceBase {
     return "complement:" + commonPrefixLen;
   }
 
-  public RoutingPreference getRoutingPreference() {
+  public RoutingDistance getRoutingDistance() {
     return routingPreference;
   }
 

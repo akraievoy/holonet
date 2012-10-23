@@ -37,6 +37,8 @@ public interface Key extends KeySource, algores.holonet.capi.Key {
 
   BigInteger toNumber();
 
+  long toLong();
+
   boolean get(int atBit);
 
   Key set(int atBit, boolean value);

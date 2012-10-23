@@ -21,6 +21,7 @@ package algores.holonet.core;
 import algores.holonet.core.api.API;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
+import algores.holonet.core.api.Range;
 import com.google.common.base.Optional;
 import org.akraievoy.base.runner.api.RefCtx;
 import org.akraievoy.cnet.gen.vo.EntropySource;
@@ -40,6 +41,8 @@ import java.util.*;
 
 public class EnvCNet implements Env {
   private static final Logger log = LoggerFactory.getLogger(EnvCNet.class);
+
+  public static final double DIST_PENALTY = Math.pow(2.0, Key.BITNESS);
 
   protected RefVertexData locX;
   protected RefVertexData locY;
@@ -119,27 +122,23 @@ public class EnvCNet implements Env {
     });
   }
 
-  public boolean isPreferred(Address localAddress, Address currentAddress, Address bestAddress) {
+  @Override
+  public double apply(
+      Address localAddress, Key target,
+      Address curAddress, Range curRange
+  ) {
     if (fallback != null) {
-      return fallback.isPreferred(localAddress, currentAddress, bestAddress);
+      return fallback.apply(localAddress, target, curAddress, curRange);
     }
 
     final AddressCNet local = (AddressCNet) localAddress;
-    final AddressCNet curr = (AddressCNet) currentAddress;
-    final AddressCNet best = (AddressCNet) bestAddress;
-
-    if (curr.equals(best)) {
-      return false;
-    }
-
-    if (local.equals(best)) {
-      return false;
-    }
+    final AddressCNet curr = (AddressCNet) curAddress;
 
     final EdgeData overlayEdges = overlay.getValue();
-    final int localIdx = local.getNodeIdx();
+    final double overlayEdge =
+        overlayEdges.get(local.getNodeIdx(), curr.getNodeIdx());
 
-    return overlayEdges.get(localIdx, curr.getNodeIdx()) > overlayEdges.get(localIdx, best.getNodeIdx());
+    return (1 - overlayEdge) * DIST_PENALTY;
   }
 
   public Address createNetworkAddress(EntropySource eSource) {

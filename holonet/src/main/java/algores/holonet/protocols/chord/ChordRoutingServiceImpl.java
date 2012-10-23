@@ -35,7 +35,7 @@ public class ChordRoutingServiceImpl extends RingRoutingServiceImpl implements C
     final ChordRoutingServiceImpl copy = new ChordRoutingServiceImpl();
 
     copy.setRedundancy(getRedundancy());
-    copy.setRoutingPreference(getRoutingPreference());
+    copy.setRoutingDistance(getRoutingDistance());
 
     return copy;
   }

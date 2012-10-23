@@ -18,16 +18,18 @@
 
 package algores.holonet.protocols;
 
-import algores.holonet.core.ServiceFactorySpring;
-import algores.holonet.core.SimulatorException;
+import algores.holonet.protocols.chord.ChordRoutingServiceImpl;
+import algores.holonet.protocols.chord.ChordServiceBase;
 
 public class ChordProtocolTestCase extends RingProtocolTestCase {
-  public void setUp() {
-    super.setUp();
-    getNetwork().setFactory(new ServiceFactorySpring());
+  @Override
+  protected TextContextMeta createContextMeta() {
+    return super.createContextMeta()
+        .withRouting(new ChordRoutingServiceImpl())
+        .withOverlay(new ChordServiceBase());
   }
 
-  public void testJoin() throws SimulatorException {
-    super.testJoin();
+  public void testHopCount() throws Throwable {
+    testHopCount0(135930, 4);
   }
 }
