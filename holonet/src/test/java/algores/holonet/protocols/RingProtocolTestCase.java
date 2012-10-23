@@ -46,7 +46,7 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
   }
 
   public void testGeneric() throws Throwable {
-    final TestContext ctx = createContextMeta().create(-123L);
+    final Context ctx = createContextMeta().create(-123L);
     final Network net = ctx.net();
 
     net.generateNode(null, ctx.getEntropy(), null);
@@ -101,7 +101,7 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
       return;
     }
 
-    final TestContext ctx = createContextMeta().create(-123L);
+    final Context ctx = createContextMeta().create(-123L);
     final Network net = ctx.net();
 
     net.insertNodes(1, null, ctx.getEntropy());
@@ -167,7 +167,7 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
       return;
     }
 
-    final TestContext ctx = createContextMeta().create(-123L);
+    final Context ctx = createContextMeta().create(-123L);
     final Network net = ctx.net();
 
     net.generateNode(null, ctx.getEntropy(), null);
@@ -216,7 +216,7 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
       return;
     }
 
-    final TestContext ctx = createContextMeta().create(-123L);
+    final Context ctx = createContextMeta().create(-123L);
     final Network net = ctx.net();
 
     net.generateNode(null, ctx.getEntropy(), null);

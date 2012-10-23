@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class TestContext {
+public class Context {
   public static final String METRICS = "test";
 
   private final Network net;
@@ -35,7 +35,7 @@ public class TestContext {
   private final EntropySource entropy;
   private final Map<String, Metrics> nameToMetrics = new HashMap<String,Metrics>();
 
-  public TestContext(EntropySource entropy, Network net) {
+  public Context(EntropySource entropy, Network net) {
     this.entropy = entropy;
     this.net = net;
 

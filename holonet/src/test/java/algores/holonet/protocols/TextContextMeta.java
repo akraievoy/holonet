@@ -41,13 +41,13 @@ public class TextContextMeta {
     return this;
   }
 
-  public TestContext create(final long seed) {
+  public Context create(final long seed) {
     final EntropySourceRandom eSource = new EntropySourceRandom();
     eSource.setSeed(seed);
 
     final Network net = new Network();
     net.setFactory(services);
 
-    return new TestContext(eSource, net);
+    return new Context(eSource, net);
   }
 }

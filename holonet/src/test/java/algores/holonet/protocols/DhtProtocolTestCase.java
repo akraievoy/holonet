@@ -35,7 +35,7 @@ public abstract class DhtProtocolTestCase extends TestCase {
   protected void testHopCount0(final long seed, final int nodes) {
     System.out.println(String.format("testHopCount0(%d, %d)", seed, nodes));
 
-    final TestContext ctx = createContextMeta().create(seed);
+    final Context ctx = createContextMeta().create(seed);
     final Network net = ctx.net();
     net.generateNode(null, ctx.getEntropy(), null);
     net.insertNodes(nodes - 1, ctx.getNetFailCount(), ctx.getEntropy());
