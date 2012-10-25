@@ -51,17 +51,6 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
    *          propagated
    */
   public Address lookup(Key key, boolean mustExist, Mode mode) throws CommunicationException {
-/*
-    for (long seed = 135600; seed < 136600; seed++) {
-      try {
-        setUp();
-        testHopCount0(135930, 4);
-        tearDown();
-      } catch (Throwable e) {
-        System.err.println("seed " + seed + "-> " + e.getMessage());
-      }
-    }
-*/
     double lookupStartTime = getOwner().getNetwork().getElapsedTime();
     final Stack<Address> route = new Stack<Address>();
 
@@ -115,7 +104,7 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
 
     final List<RoutingEntry> pending = callerPending != null ? callerPending : new ArrayList<RoutingEntry>();
     int addedCount = addNewRoutes(pending, routes);
-
+    //  FIXME this breaks the distance injection in lots of ways
     if (callerPending != null && addedCount * 2 <= pending.size()) {
       //	this effectively returns extra local routes to the caller
       //	here aliasing allows to keep code cleaner (but not simpler of course)
@@ -124,6 +113,8 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
       return null;
     }
 
+    //  memorize route count before iterative phase
+    final int pendingSize = pending.size();
     CommunicationException nfe = null;
     while (!pending.isEmpty()) {
       final RoutingEntry route = pending.remove(0);
@@ -133,7 +124,9 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
 
       try {
         final LookupService remoteLookup = getOwner().getServices().getRpc().rpcTo(route, LookupService.class);
-        final Address address = remoteLookup.recursiveLookup(key, mustExist, traversed, pending);
+        final Address address = remoteLookup.recursiveLookup(
+            key, mustExist, traversed, pending
+        );
 
         if (address != null) {
           return address;
@@ -147,7 +140,10 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     }
 
     if (nfe != null) {
-      throw nfe;
+      throw new CommunicationException(
+          String.format("no result or errors for all of %d routes", pendingSize),
+          nfe
+      );
     }
     return null;
   }

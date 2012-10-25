@@ -78,13 +78,6 @@ public class RingService extends OverlayServiceBase {
     }
     rpcToRouting(routing.getSuccessor()).setPredecessor(routing.getOwnRoute());
 
-    if (routing.getPredecessor().getKey().equals(owner.getKey())) {
-      throw new CommunicationException("Duplicated with predecessor: " + owner.getKey());
-    }
-    if (routing.getSuccessor().getKey().equals(owner.getKey())) {
-      throw new CommunicationException("Duplicated with successor: " + owner.getKey());
-    }
-
     final StorageService succStorage = rpcToStorage(routing.getSuccessor());
     final Map<Key, Object> ownData = succStorage.filter(routing.getPredecessor().getKey(), false, owner.getKey(), true);
     owner.getServices().getStorage().putAll(ownData);

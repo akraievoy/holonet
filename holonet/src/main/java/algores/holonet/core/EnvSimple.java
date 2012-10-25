@@ -68,7 +68,7 @@ public class EnvSimple implements Env {
       Address localAddress, Key target,
       Address curAddress, Range curRange
   ) {
-    return 0;
+    return 1;
   }
 
   public EnvMappings getMappings() {

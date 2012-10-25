@@ -24,7 +24,6 @@ import algores.holonet.core.api.Key;
 import algores.holonet.core.api.tier0.rpc.NetworkRpc;
 import algores.holonet.core.api.tier0.rpc.NetworkRpcBase;
 import algores.holonet.core.api.tier1.delivery.LookupService;
-import org.akraievoy.base.Stopwatch;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 import java.util.Collection;
@@ -36,6 +35,8 @@ public class Network {
 
   protected Env env = new EnvSimple();
   protected ServiceFactorySpring factory = new ServiceFactorySpring();
+  protected ProgressMeta progressMeta =
+      ProgressMeta.DEFAULT;
 
   public Network() {
   }
@@ -46,6 +47,10 @@ public class Network {
 
   public Env getEnv() {
     return env;
+  }
+
+  public void setProgressMeta(ProgressMeta progressMeta) {
+    this.progressMeta = progressMeta;
   }
 
   //	---------------
@@ -189,22 +194,13 @@ public class Network {
   //	-----------------------
 
   public void insertNodes(int count, AtomicLong failCounter, final EntropySource eSource) throws SimulatorException {
-    if (count > 50) {
-      System.out.println("inserting " + count + " nodes");
-    }
-    Stopwatch stopwatch = new Stopwatch();
+    final Progress progress =
+        progressMeta.progress("inserting nodes", count).start();
     for (int i = 0; i < count; i++) {
       generateNode(getRandomNode(eSource), eSource, failCounter);
-      if (count > 50) {
-        System.out.print(".");
-        if (i % 25 == 24) {
-          System.out.println(" " + (i + 1) + " of " + count + " @ " + stopwatch.diff(i % 25 + 1) + " ms per node");
-        }
-      }
+      progress.iter(i);
     }
-    if (count > 50) {
-      System.out.println("complete");
-    }
+    progress.stop();
   }
 
   public void removeNodes(int count, final boolean forceFailure, final EntropySource eSource) throws CommunicationException {
@@ -215,7 +211,8 @@ public class Network {
 
   public void putDataEntries(int n, final EntropySource eSource) throws SimulatorException {
     final byte[] bytes = new byte[20];
-
+    final Progress progress =
+        progressMeta.progress("inserting data", n).start();
     for (int i = 0; i < n; i++) {
       eSource.nextBytes(bytes);
       final Key key = API.createKey(bytes);
@@ -226,7 +223,9 @@ public class Network {
           );
       final Node owner = env.getNode(responsibleAddress);
       owner.getServices().getStorage().put(key, bytes.clone());
+      progress.iter(i);
     }
+    progress.stop();
   }
 
   //  ----------------------------------------

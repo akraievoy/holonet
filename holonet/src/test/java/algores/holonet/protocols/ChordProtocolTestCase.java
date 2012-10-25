@@ -21,15 +21,45 @@ package algores.holonet.protocols;
 import algores.holonet.protocols.chord.ChordRoutingServiceImpl;
 import algores.holonet.protocols.chord.ChordServiceBase;
 
-public class ChordProtocolTestCase extends RingProtocolTestCase {
+public class ChordProtocolTestCase extends DhtProtocolTestCase {
   @Override
-  protected TextContextMeta createContextMeta() {
-    return super.createContextMeta()
+  protected ContextMeta createContextMeta() {
+    return new ContextMeta()
         .withRouting(new ChordRoutingServiceImpl())
         .withOverlay(new ChordServiceBase());
   }
 
   public void testHopCount() throws Throwable {
-    testHopCount0(135930, 4);
+    testHopCount0(135930, 4, 2);
+    testHopCount0(388934, 4, 2);
+    testHopCount0(909845, 4, 2);
+    testHopCount0(135930, 16, 4);
+    testHopCount0(230474, 16, 4);
+    testHopCount0(847598, 16, 4);
+    testHopCount0(135930, 32, 5);
+    testHopCount0(874934, 32, 5);
+    testHopCount0(129874, 32, 5);
+    testHopCount0(830388, 64, 6);
+    testHopCount0(135930, 256, 8);
+    testHopCount0(238479, 256, 8);
+    testHopCount0(983430, 512, 9);
+  }
+
+  public void testJoinLeave() throws Throwable {
+    testJoinLeave0(135930, 4);
+    testJoinLeave0(388934, 4);
+    testJoinLeave0(909845, 4);
+    //  FIXME new failing test case found
+//    testJoinLeave0(136279, 5);
+    testJoinLeave0(135930, 16);
+    testJoinLeave0(230474, 16);
+    testJoinLeave0(847598, 16);
+//    testJoinLeave0(135930, 32);
+    testJoinLeave0(874934, 32);
+    testJoinLeave0(129874, 32);
+//    testJoinLeave0(830388, 64);
+//    testJoinLeave0(135930, 256);
+//    testJoinLeave0(238479, 256);
+//    testJoinLeave0(983430, 512);
   }
 }

@@ -18,76 +18,146 @@
 
 package algores.holonet.protocols;
 
-import algores.holonet.core.CommunicationException;
-import algores.holonet.core.Network;
-import algores.holonet.core.Node;
+import algores.holonet.core.*;
+import algores.holonet.core.api.API;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.tier0.storage.StorageService;
 import algores.holonet.core.api.tier1.delivery.LookupService;
 import algores.holonet.testbench.Metrics;
 import junit.framework.TestCase;
-import org.akraievoy.base.Stopwatch;
 
 public abstract class DhtProtocolTestCase extends TestCase {
-  protected abstract TextContextMeta createContextMeta();
+  protected abstract ContextMeta createContextMeta();
 
-  protected void testHopCount0(final long seed, final int nodes) {
+  protected ProgressMeta progressMeta() { return ProgressMeta.DEFAULT; }
+
+  protected void testHopCount0(final long seed, final int nodes, final int avgHopLimit) {
     System.out.println(String.format("testHopCount0(%d, %d)", seed, nodes));
 
     final Context ctx = createContextMeta().create(seed);
     final Network net = ctx.net();
     net.generateNode(null, ctx.getEntropy(), null);
     net.insertNodes(nodes - 1, ctx.getNetFailCount(), ctx.getEntropy());
-    net.putDataEntries(256, ctx.getEntropy());
 
-    Stopwatch stopwatch = new Stopwatch();
-    System.out.println("stabilizing:");
+    assertEquals(0, ctx.getNetFailCount().get());
+
+    net.putDataEntries(256, ctx.getEntropy());
+    final Progress stabilizeProgress =
+        progressMeta().progress("stabilize", nodes).start();
     int nodesStabilized = 0;
     for(Node node : net.getAllNodes()){
       node.getServices().getOverlay().stabilize();
-
-      nodesStabilized += 1;
-      System.out.print(".");
-      if (nodesStabilized % 25 == 24) {
-        System.out.println(" " + nodesStabilized + " of " + nodes + " @ " + stopwatch.diff(nodesStabilized % 25 + 1) + " ms per stabilize");
-      }
+      stabilizeProgress.iter(nodesStabilized++);
     }
-    System.out.println("COMPLETE"); //  FIXME collapse all this reporting
+    stabilizeProgress.stop();
 
     final Metrics testMetrics = Metrics.createInstance("test");
     net.setInterceptor(testMetrics);
 
-    int testCount = nodes * nodes;
-    stopwatch = new Stopwatch();
+    int testCount = (int) Math.ceil(nodes * Math.log(nodes) / Math.log(2));
+    final Progress lookupProgress =
+        progressMeta().progress("lookup", testCount).start();
     for (int testIndex = 0; testIndex < testCount; testIndex++) {
-        final Node client = net.getRandomNode(ctx.getEntropy());
-        final Node server = net.getRandomNode(ctx.getEntropy());
-        final Key request;
-        final StorageService serverStorage = server.getServices().getStorage();
-        if (serverStorage.getEntryCount() > 0) {
-          request = ctx.getEntropy().randomElement(serverStorage.getKeys());
-        } else {
-          request = server.getKey();
-        }
+      final Node client = net.getRandomNode(ctx.getEntropy());
+      final Node server = net.getRandomNode(ctx.getEntropy());
+      final Key request;
+      final StorageService serverStorage = server.getServices().getStorage();
+      if (serverStorage.getEntryCount() > 0) {
+        request = ctx.getEntropy().randomElement(serverStorage.getKeys());
+      } else {
+        request = server.getKey();
+      }
       final Address lookup;
       try {
         lookup = client.getServices().getLookup().lookup(
             request, false, LookupService.Mode.GET
         );
       } catch (CommunicationException e) {
-        throw new AssertionError("failed at test # " + testIndex);
+        throw new IllegalStateException("failed at test # " + testIndex, e);
       }
       assertEquals("test: " + testIndex, server.getAddress(), lookup);
-
-        System.out.print(".");
-        if (testIndex % 25 == 24) {
-          System.out.println(" " + (testIndex + 1) + " of " + testCount + " @ " + stopwatch.diff(testIndex % 25 + 1) + " ms per test");
-        }
+      lookupProgress.iter(testIndex);
     }
-    System.out.println("COMPLETE");
-    System.out.println("average hops for " + nodes + " nodes = " + testMetrics.modeToLookups(LookupService.Mode.GET).getMeanPathLength());
-    System.out.println("net fail count: " + ctx.getNetFailCount().get());
+    lookupProgress.stop();
 
+    final double avgHopLimitActual =
+        testMetrics.modeToLookups(LookupService.Mode.GET).getMeanPathLength();
+    assertTrue(
+        String.format(
+            "average hops for %d nodes should be less than %d, but is %g",
+            nodes,
+            avgHopLimit,
+            avgHopLimitActual
+        ),
+        avgHopLimitActual < avgHopLimit
+    );
+    assertEquals(0, ctx.getNetFailCount().get());
   }
+
+  protected void testJoinLeave0(final long seed, final int nodes) {
+    final Context ctx = createContextMeta().create(seed);
+    final Network net = ctx.net();
+
+    net.generateNode(null, ctx.getEntropy(), null);
+    net.putDataEntries(nodes * 5, ctx.getEntropy());
+    final String testValue = "test1";
+    final Key testKey = API.createKey(testValue);
+    net.getRandomNode(ctx.getEntropy()).getServices().getStorage().put(testKey, testValue);
+
+    net.insertNodes(nodes - 1, ctx.getNetFailCount(), ctx.getEntropy());
+
+    final Progress lookupProgress =
+        progressMeta().progress("lookup/join/leave", nodes).start();
+    for (int testIndex = 0; testIndex < nodes; testIndex++) {
+      final String testMessage = "failed at test # " + testIndex;
+      //  lookup the test key from random node
+      final Node randomNode = net.getRandomNode(ctx.getEntropy());
+      assertNotNull(testMessage, randomNode);
+      try {
+        randomNode.getServices().getOverlay().stabilize();
+        final Address address = randomNode.getServices().getLookup().lookup(
+            testKey, true, LookupService.Mode.GET
+        );
+        assertEquals(
+            testMessage,
+            testValue,
+            net.getEnv().getNode(address).getServices().getStorage().get(testKey)
+        );
+      } catch (CommunicationException e) {
+        throw new IllegalStateException(testMessage, e);
+      }
+      //  lookup a random server key from random client node
+      final Node client = net.getRandomNode(ctx.getEntropy());
+      final Node server = net.getRandomNode(ctx.getEntropy());
+      final Key request;
+      final StorageService serverStorage = server.getServices().getStorage();
+      if (serverStorage.getEntryCount() > 0) {
+        request = ctx.getEntropy().randomElement(serverStorage.getKeys());
+      } else {
+        request = server.getKey();
+      }
+      final Address lookup;
+      try {
+        lookup = client.getServices().getLookup().lookup(
+            request, false, LookupService.Mode.GET
+        );
+      } catch (CommunicationException e) {
+        throw new IllegalStateException(testMessage, e);
+      }
+      assertEquals(testMessage, server.getAddress(), lookup);
+
+      try {
+        net.putDataEntries(5, ctx.getEntropy());
+        net.insertNodes(2, ctx.getNetFailCount(), ctx.getEntropy());
+        net.removeNodes(3, false, ctx.getEntropy());
+      } catch (CommunicationException e) {
+        throw new IllegalStateException(testMessage, e);
+      }
+      assertEquals(testMessage, 0, ctx.getNetFailCount().get());
+      lookupProgress.iter(testIndex);
+    }
+    lookupProgress.stop();
+  }
+
 }

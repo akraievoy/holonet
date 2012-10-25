@@ -81,13 +81,6 @@ public class ChordServiceBase extends RingService implements ChordService {
     }
     rpcToRouting(getRouting().getSuccessor()).setPredecessor(getRouting().getOwnRoute());
 
-    if (getRouting().getPredecessor().getAddress().getKey().equals(owner.getKey())) {
-      throw new CommunicationException("Duplicated with predecessor: " + owner.getKey());
-    }
-    if (getRouting().getSuccessor().getAddress().getKey().equals(owner.getKey())) {
-      throw new CommunicationException("Duplicated with successor: " + owner.getKey());
-    }
-
     owner.getServices().getStorage().putAll(rpcToStorage(getRouting().getSuccessor()).filter(getRouting().getPredecessor(), false, owner.getKey(), true));
 
     fixFingers();

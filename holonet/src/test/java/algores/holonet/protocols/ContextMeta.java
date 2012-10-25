@@ -24,19 +24,19 @@ import algores.holonet.core.api.tier0.routing.RoutingService;
 import algores.holonet.core.api.tier1.overlay.OverlayService;
 import org.akraievoy.cnet.gen.vo.EntropySourceRandom;
 
-public class TextContextMeta {
+public class ContextMeta {
   private final ServiceFactorySpring services = new ServiceFactorySpring();
 
-  public TextContextMeta() {
+  public ContextMeta() {
     //  nothing to do here
   }
 
-  public TextContextMeta withRouting(RoutingService routing) {
+  public ContextMeta withRouting(RoutingService routing) {
     services.setRouting(routing);
     return this;
   }
 
-  public TextContextMeta withOverlay(OverlayService overlay) {
+  public ContextMeta withOverlay(OverlayService overlay) {
     services.setOverlay(overlay);
     return this;
   }

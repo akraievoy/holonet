@@ -18,10 +18,7 @@
 
 package algores.holonet.protocols;
 
-import algores.holonet.core.CommunicationException;
-import algores.holonet.core.Network;
-import algores.holonet.core.Node;
-import algores.holonet.core.SimulatorException;
+import algores.holonet.core.*;
 import algores.holonet.core.api.API;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
@@ -36,64 +33,18 @@ import java.util.Set;
 
 public class RingProtocolTestCase extends DhtProtocolTestCase {
   @Override
-  protected TextContextMeta createContextMeta() {
-    return new TextContextMeta()
+  protected ContextMeta createContextMeta() {
+    return new ContextMeta()
         .withRouting(new RingRoutingServiceImpl())
         .withOverlay(new RingService());
   }
 
-  public void tearDown() {
-  }
-
   public void testGeneric() throws Throwable {
-    final Context ctx = createContextMeta().create(-123L);
-    final Network net = ctx.net();
-
-    net.generateNode(null, ctx.getEntropy(), null);
-    net.putDataEntries(600, ctx.getEntropy());
-    final String testValue = "test1";
-    final Key testKey = API.createKey(testValue);
-    net.getRandomNode(ctx.getEntropy()).getServices().getStorage().put(testKey, testValue);
-
-    net.insertNodes(120, ctx.getNetFailCount(), ctx.getEntropy());
-
-    int testCount = 100;
-    Stopwatch stopwatch = new Stopwatch();
-    for (int testIndex = 0; testIndex < testCount; testIndex++) {
-      for (int lookupCount = 0; lookupCount < 10; lookupCount++) {
-        final Node randomNode = net.getRandomNode(ctx.getEntropy());
-        try {
-          randomNode.getServices().getOverlay().stabilize();
-          final Address address = randomNode.getServices().getLookup().lookup(
-              testKey, true, LookupService.Mode.GET
-          );
-          assertEquals(
-              "test: " + testIndex + " loop: " + lookupCount,
-              testValue,
-              net.getEnv().getNode(address).getServices().getStorage().get(testKey)
-          );
-        } catch (CommunicationException e) {
-          ctx.getNetFailCount().getAndIncrement();
-        }
-      }
-
-      try {
-        net.putDataEntries(5, ctx.getEntropy());
-        net.removeNodes(3, false, ctx.getEntropy());
-        net.insertNodes(2, ctx.getNetFailCount(), ctx.getEntropy());
-      } catch (CommunicationException e) {
-        ctx.getNetFailCount().getAndIncrement();
-      }
-      System.out.print(".");
-      if (testIndex % 25 == 24) {
-        System.out.println(" " + (testIndex + 1) + " of " + testCount + " @ " + stopwatch.diff(testIndex % 25 + 1) + " ms per test");
-      }
-    }
-    System.out.println("complete");
+    testJoinLeave0(-123L, 120);
   }
 
   public void testHopCount() throws Throwable {
-    testHopCount0(135930, 4);
+    testHopCount0(135930, 4, 1024);
   }
 
   public void testLeave() throws SimulatorException {
@@ -118,8 +69,9 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
 
     int mappingCount = countMappings(net);
 
-    Stopwatch stopwatch = new Stopwatch();
     long testNum = 600 - ctx.getNetFailCount().get();
+    final Progress lookupProgress =
+        progressMeta().progress("lookup/join/leave", testNum).start();
     for (int testCount = 0; testCount < testNum; testCount++) {
       net.removeNodes(1, false, ctx.getEntropy());
       for (int lookupCount = 0; lookupCount < 5; lookupCount++) {
@@ -138,12 +90,9 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
           ctx.getNetFailCount().getAndIncrement();
         }
       }
-      System.out.print(".");
-      if (testCount % 25 == 24) {
-        System.out.println(" " + (testCount + 1) + " of " + testNum + " @ " + stopwatch.diff(testCount % 25 + 1) + " ms per test");
-      }
+      lookupProgress.iter(testCount);
     }
-    System.out.println("complete");
+    lookupProgress.stop();
 
     assertEquals(1, net.getAllNodes().size());
     if (mappingCount != countMappings(net)) {
@@ -184,8 +133,9 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
         )
     ).getServices().getStorage().put(testKey, testValue);
 
-    Stopwatch stopwatch = new Stopwatch();
     final int testNum = 500;
+    final Progress lookupProgress =
+        progressMeta().progress("lookup/join/leave", testNum).start();
     for (int testCount = 0; testCount < testNum; testCount++) {
       net.insertNodes(2, ctx.getNetFailCount(), ctx.getEntropy());
       for (int lookupCount = 0; lookupCount < 10; lookupCount++) {
@@ -203,12 +153,9 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
           ctx.getNetFailCount().getAndIncrement();
         }
       }
-      System.out.print(".");
-      if (testCount % 25 == 24) {
-        System.out.println(" " + (testCount + 1) + " of " + testNum + " @ " + stopwatch.diff(testCount % 25 + 1) + " ms per test");
-      }
+      lookupProgress.iter(testCount);
     }
-    System.out.println("complete");
+    lookupProgress.stop();
   }
 
   public void testStabilize() throws SimulatorException {
@@ -233,8 +180,9 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
         )
     ).getServices().getStorage().put(testKey, testValue);
 
-    Stopwatch stopwatch = new Stopwatch();
     final int testNum = 50;
+    final Progress lookupProgress =
+        progressMeta().progress("lookup/join/leave", testNum).start();
     for (int testCount = 0; testCount < testNum; testCount++) {
       net.insertNodes(2, ctx.getNetFailCount(), ctx.getEntropy());
       for (int lookupCount = 0; lookupCount < 10; lookupCount++) {
@@ -250,12 +198,8 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
             net.getEnv().getNode(responsible).getServices().getStorage().get(testKey)
         );
       }
-
-      System.out.print(".");
-      if (testCount % 25 == 24) {
-        System.out.println(" " + (testCount + 1) + " of " + testNum + " @ " + stopwatch.diff(testCount % 25 + 1) + " ms per test");
-      }
+      lookupProgress.iter(testCount);
     }
-    System.out.println("complete");
+    lookupProgress.stop();
   }
 }

@@ -61,8 +61,7 @@ public class RpcServiceBase extends LocalServiceBase implements RpcService {
     Die.ifNull("calleeAddress", calleeAddress);
 
     if (owner.getAddress().equals(calleeAddress)) {
-      System.err.println("rpcTo() is used to communicate with local protocol");
-      Thread.dumpStack();
+      return owner.getServices().resolveService(service);
     }
 
     return owner.getNetwork().getRpc().getProxy(owner, calleeAddress.getAddress(), service);

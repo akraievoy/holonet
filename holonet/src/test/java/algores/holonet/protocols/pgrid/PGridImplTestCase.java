@@ -18,15 +18,13 @@
 
 package algores.holonet.protocols.pgrid;
 
-import algores.holonet.core.Network;
-import algores.holonet.core.ServiceFactorySpring;
+import algores.holonet.protocols.ContextMeta;
 import algores.holonet.protocols.DhtProtocolTestCase;
-import algores.holonet.protocols.TextContextMeta;
 
 public abstract class PGridImplTestCase extends DhtProtocolTestCase {
   @Override
-  protected TextContextMeta createContextMeta() {
-    return new TextContextMeta()
+  protected ContextMeta createContextMeta() {
+    return new ContextMeta()
         .withRouting(new PGridRouting())
         .withOverlay(new PGridImpl());
   }
