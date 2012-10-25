@@ -74,4 +74,14 @@ public class EnvSimple implements Env {
   public EnvMappings getMappings() {
     return mappings;
   }
+
+  @Override
+  public RequestPair generateRequestPair(EntropySource entropy) {
+    final Collection<Node> allNodes = getAllNodes();
+
+    return new RequestPair(
+      entropy.randomElement(allNodes),
+      entropy.randomElement(allNodes)
+    );
+  }
 }

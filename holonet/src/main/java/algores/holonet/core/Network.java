@@ -30,10 +30,10 @@ import org.akraievoy.cnet.gen.vo.EntropySource;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Stack;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Network {
+
   protected Env env = new EnvSimple();
   protected ServiceFactorySpring factory = new ServiceFactorySpring();
 
@@ -63,6 +63,10 @@ public class Network {
       return null;
     }
     return eSource.randomElement(allNodes);
+  }
+
+  public RequestPair generateRequestPair(EntropySource entropy) {
+    return getEnv().generateRequestPair(entropy);
   }
 
   public void dispose() {

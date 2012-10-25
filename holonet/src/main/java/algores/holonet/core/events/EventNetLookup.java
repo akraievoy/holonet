@@ -21,6 +21,7 @@ package algores.holonet.core.events;
 import algores.holonet.core.CommunicationException;
 import algores.holonet.core.Network;
 import algores.holonet.core.Node;
+import algores.holonet.core.RequestPair;
 import algores.holonet.core.api.API;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
@@ -28,7 +29,7 @@ import algores.holonet.core.api.tier0.storage.StorageService;
 import algores.holonet.core.api.tier1.delivery.LookupService;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
-import java.util.Map;
+import java.util.Collection;
 
 /**
  * Lookup entry event.
@@ -37,16 +38,24 @@ class EventNetLookup extends Event {
   protected int retries = 1;
 
   public EventComposite.Result executeInternal(final Network network, final EntropySource eSource) {
-    final Map.Entry<Key, Object> mapping = network.selectMapping(eSource);
-    if (mapping == null) {
-      //  network has no mappings
-      return EventComposite.Result.PASSIVE;
-    }
-
     EventComposite.Result aggregateResult = EventComposite.Result.PASSIVE;
     for (int sequentialIndex = 0; sequentialIndex < retries; sequentialIndex++) {
-      final Node lookupSource = network.getRandomNode(eSource);
-      final LookupService lookupSvc = lookupSource.getServices().getLookup();
+      RequestPair request =
+          network.generateRequestPair(eSource);
+      Collection<Key> serverKeys =
+          request.server.getServices().getStorage().getKeys();
+      int tryCount = 32;
+      while (tryCount-- >= 0 && serverKeys.isEmpty()) { //  server has no mappings
+        request =
+            network.generateRequestPair(eSource);
+        serverKeys =
+            request.server.getServices().getStorage().getKeys();
+      }
+
+      final Key mapping =
+          eSource.randomElement(serverKeys);
+      final LookupService lookupSvc =
+          request.client.getServices().getLookup();
 
       final Address address;
       try {
@@ -60,13 +69,9 @@ class EventNetLookup extends Event {
         continue;
       }
 
-      final Node storageNode = network.getEnv().getNode(address);
-      final StorageService storage = storageNode.getServices().getStorage();
-      Object value = storage.get(mapping.getKey());
+      final Node lookupResult = network.getEnv().getNode(address);
       if (
-          value == null
-              || !(value instanceof byte[])
-              || !mapping.getKey().equals(API.createKey((byte[]) value))
+        !lookupResult.equals(request.server)
       ) {
         network.getInterceptor().reportInconsistentLookup(LookupService.Mode.GET);
       }

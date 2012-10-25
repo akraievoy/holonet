@@ -57,8 +57,6 @@ import org.codehaus.jackson.annotate.JsonIgnore;
  *     which is 53.3 links for 1024 nodes , or 10.6 links for 256 nodes
  */
 //  TODO tighten the exposed API area
-//  FIXME most efficient serialization scheme <<< active
-//  TODO compactify hook (compactify just before streaming down to DB?)
 //  TODO routes now may be optimized
 //  TODO wipe equals
 public interface EdgeData extends Streamable {

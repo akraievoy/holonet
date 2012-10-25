@@ -391,12 +391,12 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
         final Env envDist = owner.getNetwork().getEnv();
         final double r1dist =
-            dist.apply(localAddress, key, r1.getAddress(), bestR1) +
-            envDist.apply(localAddress, key, r1.getAddress(), bestR1);
+            Math.pow(dist.apply(localAddress, key, r1.getAddress(), bestR1),2) *
+            Math.pow(envDist.apply(localAddress, key, r1.getAddress(), bestR1), 2);
 
         final double r2dist =
-            dist.apply(localAddress, key, r2.getAddress(), bestR2) +
-            envDist.apply(localAddress, key, r2.getAddress(), bestR2);
+            Math.pow(dist.apply(localAddress, key, r2.getAddress(), bestR2), 2) *
+            Math.pow(envDist.apply(localAddress, key, r2.getAddress(), bestR2), 2);
 
         return Double.compare(r1dist, r2dist);
       }

@@ -27,6 +27,9 @@ import org.akraievoy.base.runner.api.RefCtx;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.WeightedEventModel;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelBase;
+import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
+import org.akraievoy.cnet.metrics.domain.MetricEDataRouteLen;
+import org.akraievoy.cnet.metrics.domain.MetricRoutesFloydWarshall;
 import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.ref.RefVertexData;
 import org.akraievoy.cnet.net.vo.EdgeData;
@@ -42,8 +45,6 @@ import java.util.*;
 public class EnvCNet implements Env {
   private static final Logger log = LoggerFactory.getLogger(EnvCNet.class);
 
-  public static final double DIST_PENALTY = Math.pow(2.0, Key.BITNESS);
-
   protected RefVertexData locX;
   protected RefVertexData locY;
   protected RefVertexData density;
@@ -51,6 +52,8 @@ public class EnvCNet implements Env {
   protected RefEdgeData dist;
   protected RefEdgeData req;
   protected RefEdgeData overlay;
+  protected RefEdgeData overlayDist = new RefEdgeData();
+  protected double overlayDistDiameter;
 
   protected WeightedEventModel nodeModel = new WeightedEventModelBase(Optional.of("nodes"));
   protected WeightedEventModel requestModel = new WeightedEventModelBase(Optional.of("requests"));
@@ -101,6 +104,23 @@ public class EnvCNet implements Env {
       return;
     }
 
+    final MetricEDataRouteLen metricEDataRouteLen =
+        new MetricEDataRouteLen(new MetricRoutesFloydWarshall());
+    metricEDataRouteLen.getRoutes().setDistSource(dist);
+    metricEDataRouteLen.getRoutes().setSource(overlay);
+
+    overlayDist.setValue(
+        (EdgeData) MetricResultFetcher.fetch(metricEDataRouteLen)
+    );
+    final double[] overlayDistDiam = { 0.0 };
+    overlayDist.getValue().visitNonDef(new EdgeData.EdgeVisitor() {
+      @Override
+      public void visit(int from, int into, double e) {
+        overlayDistDiam[0] = Math.max(overlayDistDiam[0], e);
+      }
+    });
+    overlayDistDiameter = overlayDistDiam[0];
+
     final VertexData density = this.density.getValue();
     final int size = density.getSize();
 
@@ -110,7 +130,6 @@ public class EnvCNet implements Env {
     renewRequestModel();
   }
 
-  //  FIXME ouch, this now hangs with no integration!
   protected void renewRequestModel() {
     requestModel.clear();
     req.getValue().visitNonDef(new EdgeData.EdgeVisitor() {
@@ -134,11 +153,12 @@ public class EnvCNet implements Env {
     final AddressCNet local = (AddressCNet) localAddress;
     final AddressCNet curr = (AddressCNet) curAddress;
 
-    final EdgeData overlayEdges = overlay.getValue();
+    final EdgeData overlayEdges = overlayDist.getValue();
     final double overlayEdge =
         overlayEdges.get(local.getNodeIdx(), curr.getNodeIdx());
+    final double overlayEdgeDist = overlayEdge / overlayDistDiameter;
 
-    return (1 - overlayEdge) * DIST_PENALTY;
+    return 1+overlayEdgeDist/8;
   }
 
   public Address createNetworkAddress(EntropySource eSource) {
@@ -202,6 +222,19 @@ public class EnvCNet implements Env {
 
   public EnvMappings getMappings() {
     return mappings;
+  }
+
+  @Override
+  public RequestPair generateRequestPair(EntropySource entropy) {
+    final int pairId = requestModel.generate(entropy, false, null);
+
+    final int clientId = requestCodec.id2leading(pairId);
+    final int serverId = requestCodec.id2trailing(pairId);
+
+    return new RequestPair(
+        nodeIndex.get(clientId),
+        nodeIndex.get(serverId)
+    );
   }
 
   protected static final NumberFormat nf = createNumberFormat();

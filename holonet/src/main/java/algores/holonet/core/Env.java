@@ -44,4 +44,6 @@ public interface Env extends RoutingDistance {
   void init();
 
   EnvMappings getMappings();
+
+  RequestPair generateRequestPair(EntropySource entropy);
 }
