@@ -25,8 +25,8 @@ import algores.holonet.core.api.Key;
 import algores.holonet.core.api.LocalServiceBase;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.routing.RoutingService;
+import algores.holonet.core.api.tier0.rpc.ServiceRegistry;
 import com.google.common.base.Optional;
-import org.akraievoy.base.Die;
 
 import java.util.*;
 
@@ -51,151 +51,196 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
    *          propagated
    */
   public Address lookup(Key key, boolean mustExist, Mode mode) throws CommunicationException {
-    double lookupStartTime = getOwner().getNetwork().getElapsedTime();
-    final Stack<Address> route = new Stack<Address>();
+    final double lookupStartTime = getOwner().getNetwork().getElapsedTime();
+    RecursiveLookupState state = new RecursiveLookupState(
+        getOwner().getServices().getRouting().getOwnRoute()
+    );
 
     try {
-      final Address recursiveLookupResult = recursiveLookup(key, mustExist, route, null);
+      state = recursiveLookup(key, mustExist, state);
 
-      if (recursiveLookupResult != null) {
-        getOwner().getNetwork().registerLookupSuccess(mode, lookupStartTime, route, true);
-        return recursiveLookupResult;
+      if (state.replicaOpt.isPresent()) {
+        getOwner().getNetwork().registerLookupSuccess(
+            mode, lookupStartTime, state.replicaPath, true
+        );
+        return state.replicaOpt.get();
       }
 
     } catch (CommunicationException nfe) {
-      getOwner().getNetwork().registerLookupSuccess(mode, lookupStartTime, route, false);
+      getOwner().getNetwork().registerLookupSuccess(
+          mode, lookupStartTime, state.replicaPath, false
+      );
       throw nfe;
     }
 
-    getOwner().getNetwork().registerLookupSuccess(mode, lookupStartTime, route, false);
-    throw new CommunicationException("No route for '" + key + "', " + route.size() + " nodes traversed");
+    getOwner().getNetwork().registerLookupSuccess(
+        mode, lookupStartTime, state.replicaPath, false
+    );
+    throw new CommunicationException(
+        String.format(
+            "No route for '%s', %d nodes traversed",
+            key,
+            state.replicaPath.size()
+        )
+    );
   }
 
-  public Address recursiveLookup(
+  public RecursiveLookupState recursiveLookup(
       Key key,
       boolean mustExist,
-      Stack<Address> traversed,
-      List<RoutingEntry> callerPending
+      RecursiveLookupState state
   ) throws CommunicationException {
-    if (traversed.size() >= HOP_LIMIT) {
+    if (state.hopCount >= HOP_LIMIT) {
       throw new RoutingException("Hop limit exceeded");
     }
 
     final Address ownerAddress = getOwner().getAddress();
-    traversed.push(ownerAddress);
-
-    
-    //  LATER expand this to chain of routing state snapshots at each hop
-    //  also, P-Grid does not presume fixed mapping : address -> node rank-0 key
-    //    so this debug thingy would not be as useful
-/*
-    final List<String> routeForDebug = new ArrayList<String>();
-    for (Address addr : traversed) {
-      routeForDebug.add(addr.toString());
-      routeForDebug.add(addr.getKey().toString());
-    }
-    routeForDebug.size(); // here you add a breakpoint with message: key.toString() + ": " + routeForDebug.toString()
-*/
-
-    if (getOwner().getServices().getStorage().getKeys().contains(key)) {
-      return ownerAddress;
-    }
-    //  LATER !mustExist looks like a redundant/misleading check
-    if (!mustExist && owner.getServices().getRouting().getOwnRoute().isReplicaFor(key, (byte) 0)) {
-      return ownerAddress;
+    final ServiceRegistry services = getOwner().getServices();
+    final RoutingService routing = services.getRouting();
+    if (
+        services.getStorage().getKeys().contains(key) ||
+        !mustExist && routing.getOwnRoute().isReplicaFor(key, (byte) 0)
+    ) {
+      return updateRoutes(new RecursiveLookupState(
+          Optional.of(ownerAddress),
+          state.replicaPath,
+          state.traversals,
+          state.hopCount,
+          state.hopDistance
+      ));
     }
 
-    final List<RoutingEntry> routes = lookupRoutes(key);
-    Die.ifNull("routes", routes);
+    List<RoutingEntry> replicaPath = state.replicaPath;
+    Optional<Address> replicaOpt = Optional.absent();
 
-    final List<RoutingEntry> pending = callerPending != null ? callerPending : new ArrayList<RoutingEntry>();
-    int addedCount = addNewRoutes(pending, routes);
+    final List<Traversal> localTraversals =
+        new ArrayList<Traversal>(state.traversals);
+    final List<RoutingEntry> localRoutes =
+        routing.replicaSet(key, Byte.MAX_VALUE);
+    final List<RoutingEntry> fingers = routing.localLookup(key, 0, true);
+    fingers.removeAll(localRoutes);
+    localRoutes.addAll(fingers);
 
-    if (callerPending != null && addedCount * 2 <= pending.size()) {
-      //	this effectively returns extra local routes to the caller
-      //	here aliasing allows to keep code cleaner (but not simpler of course)
-      //	so we switch from growing the simulator call stack by recursion to iterative lookup version
-      //	LATER here we have a nice injection point for lots of strategies
-      return null;
-    }
-
-    final RoutingService routing = getOwner().getServices().getRouting();
-    //  memorize route count before iterative phase
-    int pendingSize = 0;
-    CommunicationException nfe = null;
-    while (!pending.isEmpty()) {
-      Collections.sort(pending, routing.getLivenessOrder());
-      Collections.sort(pending, routing.distanceOrder(key));
-      pendingSize = Math.max(pendingSize, pending.size());
-      final RoutingEntry route = pending.remove(0);
-      if (traversed.contains(route.getAddress())) {
-        continue;
+    for (Traversal t : localTraversals) {
+      //  remove traversed previously
+      if (t.called()) {
+        final int localIndex = localRoutes.indexOf(t.re);
+        if (localIndex >= 0) {
+          localRoutes.remove(localIndex);
+        }
       }
+    }
+    //  add new routes to traversal history
+    for (RoutingEntry re : localRoutes) {
+      localTraversals.add(new Traversal(re, state.hopCount, -1, Event.DISCOVERED));
+    }
+    for (Traversal t : localTraversals) {
+      //  some of globally pending routes became closer?
+      if (!t.called()) {
+        if (routing.routingDistance(t.re, key) < state.hopDistance) {
+          final int localIndex = localRoutes.indexOf(t.re);
+          if (localIndex <= 0) {
+            localRoutes.add(t.re);
+          }
+        }
+      }
+    }
+    Collections.sort(localRoutes, routing.getLivenessOrder());
+    Collections.sort(localRoutes, routing.distanceOrder(key));
+
+    while (!localRoutes.isEmpty()) {
+      final RoutingEntry route = localRoutes.remove(0);
 
       try {
         final Optional<LookupService> remoteLookupOpt =
-            getOwner().getServices().getRpc().rpcTo(route, LookupService.class);
+            services.getRpc().rpcTo(route, LookupService.class);
         if (remoteLookupOpt.isPresent()) {
-          final Address address = remoteLookupOpt.get().recursiveLookup(
-              key, mustExist, traversed, pending
-          );
-          routing.update(route, Event.HEART_BEAT);
-          if (address != null) {
-            return address;
+          //  mark called
+          for (int i = 0, size = localTraversals.size(); i < size; i++) {
+            Traversal t = localTraversals.get(i);
+            if (t.re.equals(route)) {
+              localTraversals.set(
+                  i,
+                  new Traversal(
+                      t.re, t.hopAdded, state.hopCount, Event.HEART_BEAT
+                  )
+              );
+              break;
+            }
+          }
+          final ArrayList<RoutingEntry> remoteReplicaPath =
+              new ArrayList<RoutingEntry>(state.replicaPath);
+          remoteReplicaPath.add(route);
+          final RecursiveLookupState remoteState =
+              remoteLookupOpt.get().recursiveLookup(
+                  key, mustExist,
+                  new RecursiveLookupState(
+                      replicaOpt,
+                      remoteReplicaPath,
+                      localTraversals,
+                      state.hopCount + 1,
+                      routing.routingDistance(route, key)
+                  )
+              );
+          //  remote may invoke some fraction of our local queue,
+          //    so we have to renew localTraversals completely
+          localTraversals.clear();
+          localTraversals.addAll(remoteState.traversals);
+          if (remoteState.replicaOpt.isPresent()) {
+            replicaOpt = remoteState.replicaOpt;
+            replicaPath = remoteState.replicaPath;
+            break;
+          } else {
+            //  remote may invoke some fraction of our local queue,
+            //    so we also have to analyse the localRoutes
+            for (Traversal t : localTraversals) {
+              //  remove traversed previously
+              if (t.called()) {
+                final int localIndex = localRoutes.indexOf(t.re);
+                if (localIndex >= 0) {
+                  localRoutes.remove(localIndex);
+                }
+              }
+            }
           }
         } else {
-          routing.registerCommunicationFailure(route.getAddress());
-          traversed.add(route.getAddress());
+          //  mark failed
+          for (int i = 0, size = localTraversals.size(); i < size; i++) {
+            Traversal t = localTraversals.get(i);
+            if (t.re.equals(route)) {
+              localTraversals.set(
+                  i,
+                  new Traversal(
+                      t.re, t.hopAdded, state.hopCount, Event.CONNECTION_FAILED
+                  )
+              );
+              break;
+            }
+          }
         }
       } catch (CommunicationException myNfe) {
-        nfe = myNfe;
+        throw myNfe;
       } catch (StackOverflowError soe) {
-        System.err.println(traversed.toString());
         throw new RuntimeException(soe);
       }
     }
 
-    if (nfe != null) {
-      throw new CommunicationException(
-          String.format("no result or errors for all of %d routes", pendingSize),
-          nfe
-      );
+    return updateRoutes(new RecursiveLookupState(
+        replicaOpt,
+        replicaPath,
+        localTraversals,
+        state.hopCount,
+        state.hopDistance
+    ));
+  }
+
+  protected RecursiveLookupState updateRoutes(RecursiveLookupState state) {
+    final RoutingService routing = getOwner().getServices().getRouting();
+
+    for (Traversal t : state.traversals) {
+        routing.update(t.re, t.event);
     }
-    return null;
-  }
 
-  protected static int addNewRoutes(
-      List<RoutingEntry> globalQueue, 
-      List<RoutingEntry> localRoutes
-  ) {
-    int globalQueueSizeBefore = globalQueue.size();
-
-    //  remove any stale dupes:
-    //    global queue is more likely to be stale, as localized
-    //    overlay data/structure tends to be more up-to-date
-    globalQueue.removeAll(localRoutes);
-
-    //  FIXME NOW remove the traversed?
-
-    //  we need to add fresh recommendations to the head of the pending list
-    //    otherwise convergence of the search degrades to Ring instead of Chord
-    //    as stale global routing choices obscure more efficient local ones
-    globalQueue.subList(0,0).addAll(localRoutes);
-
-    return globalQueue.size() - globalQueueSizeBefore;
-  }
-
-  public List<RoutingEntry> lookupRoutes(Key key) throws CommunicationException {
-    final List<RoutingEntry> replicas = getRouting().replicaSet(key, Byte.MAX_VALUE);
-    final List<RoutingEntry> nodeHandles = getRouting().localLookup(key, 0, true);
-
-    nodeHandles.removeAll(replicas);
-    replicas.addAll(nodeHandles);
-
-    return replicas;
-  }
-
-  protected RoutingService getRouting() {
-    return getOwner().getServices().getRouting();
+    return state;
   }
 }

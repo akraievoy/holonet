@@ -94,4 +94,6 @@ public interface RoutingService extends RoutingState<RoutingEntry, Key> {
   Comparator<RoutingEntry> distanceOrder(Key key);
 
   Comparator<RoutingEntry> getLivenessOrder();
+
+  double routingDistance(RoutingEntry r1, Key key);
 }

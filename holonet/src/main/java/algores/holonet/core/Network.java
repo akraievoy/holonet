@@ -21,12 +21,14 @@ package algores.holonet.core;
 import algores.holonet.core.api.API;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
+import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.rpc.NetworkRpc;
 import algores.holonet.core.api.tier0.rpc.NetworkRpcBase;
 import algores.holonet.core.api.tier1.delivery.LookupService;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicLong;
@@ -253,13 +255,17 @@ public class Network {
   public void registerLookupSuccess(
       final LookupService.Mode mode,
       final double lookupStartTime,
-      final Stack<Address> route,
+      final List<RoutingEntry> route,
       final boolean success
   ) {
     final double latency = getElapsedTime() - lookupStartTime;
-    final double directLatency = 2 * route.get(0).getDistance(route.peek());
+    final Address firstAddr = route.get(0).getAddress();
+    final Address lastAddr = route.get(route.size() - 1).getAddress();
+    final double directLatency = 2 * firstAddr.getDistance(lastAddr);
 
     final NetworkInterceptor interceptor = getInterceptor();
-    interceptor.registerLookup(mode, latency, route.size() - 1, directLatency, success);
+    interceptor.registerLookup(
+        mode, latency, route.size() - 1, directLatency, success
+    );
   }
 }

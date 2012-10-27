@@ -96,8 +96,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
   @Override
   public Comparator<RoutingEntry> distanceOrder(Key key) {
-    final RoutingDistance pref = getRoutingDistance();
-    return preferenceComparator(key, pref);
+    return preferenceComparator(key);
   }
 
   @Override
@@ -174,7 +173,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       }
     }
 
-    Collections.sort(result, preferenceComparator(key, getRoutingDistance()));
+    Collections.sort(result, preferenceComparator(key));
 
     return result;
   }
@@ -408,26 +407,28 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     }
   }
 
-  protected Comparator<RoutingEntry> preferenceComparator(final Key key, final RoutingDistance dist) {
-    final Address localAddress = owner.getAddress();
-
+  protected Comparator<RoutingEntry> preferenceComparator(final Key key) {
     return new Comparator<RoutingEntry>() {
       public int compare(RoutingEntry r1, RoutingEntry r2) {
-        final Range bestR1 = r1.selectRange(localAddress, key, dist);
-        final Range bestR2 = r2.selectRange(localAddress, key, dist);
-
-        final Env envDist = owner.getNetwork().getEnv();
-        final double r1dist =
-            Math.pow(dist.apply(localAddress, key, r1.getAddress(), bestR1),2) *
-            Math.pow(envDist.apply(localAddress, key, r1.getAddress(), bestR1), 2);
-
-        final double r2dist =
-            Math.pow(dist.apply(localAddress, key, r2.getAddress(), bestR2), 2) *
-            Math.pow(envDist.apply(localAddress, key, r2.getAddress(), bestR2), 2);
-
+        final double r1dist = routingDistance(r1, key);
+        final double r2dist = routingDistance(r2, key);
         return Double.compare(r1dist, r2dist);
       }
     };
+  }
+
+  @Override
+  public double routingDistance(RoutingEntry r1, Key key) {
+    final Address localAddress = owner.getAddress();
+    final Env env = owner.getNetwork().getEnv();
+    final RoutingDistance dist = getRoutingDistance();
+    //  LATER why we select range by routing metric only?
+    final Range bestRange = r1.selectRange(localAddress, key, dist);
+    final double routingDist =
+        dist.apply(localAddress, key, r1.getAddress(), bestRange);
+    final double envDist =
+        env.apply(localAddress, key, r1.getAddress(), bestRange);
+    return Math.pow(routingDist,2) * Math.pow(envDist, 2);
   }
 
   protected static class LivenessComparator implements Comparator<RoutingEntry> {

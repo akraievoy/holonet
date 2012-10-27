@@ -39,6 +39,8 @@ class KeyBase implements Key {
 
   protected KeyBase next;
   protected KeyBase prev;
+  private final BigInteger numberVal;
+  private final long longVal;
 
   protected KeyBase(byte[] digestData) {
     this(new BigInteger(digestData).abs());
@@ -64,6 +66,11 @@ class KeyBase implements Key {
 
     keyData = newKeyData;
     hashCode = newKeyData.hashCode();
+    numberVal = Generic.bitSet2BigInt(keyData);
+    //noinspection ConstantConditions
+    if (BITNESS < 64) {
+      longVal = Generic.bitSet2long(keyData);
+    }
   }
 
   public boolean get(int atBit) {
@@ -95,17 +102,18 @@ class KeyBase implements Key {
   }
 
   public BigInteger toNumber() {
-    return Generic.bitSet2BigInt(keyData);
+    return numberVal;
   }
 
   @Override
   public long toLong() {
+    //noinspection ConstantConditions
     if (BITNESS > 63) {
       throw new IllegalStateException(
           "unable to convert key to long as BITNESS > 63"
       );
     }
-    return Generic.bitSet2long(keyData);
+    return longVal;
   }
 
   public KeyBase set(int atBit, boolean value) {
