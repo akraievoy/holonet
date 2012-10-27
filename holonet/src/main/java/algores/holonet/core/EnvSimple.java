@@ -19,24 +19,33 @@
 package algores.holonet.core;
 
 import algores.holonet.core.api.Address;
+import algores.holonet.core.api.AddressMeta;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.Range;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class EnvSimple implements Env {
-  protected final Map<Address, Node> addressToNode = new HashMap<Address, Node>();
+  protected final Map<Address, Node> addressToNode =
+      new HashMap<Address, algores.holonet.core.Node>(128, 0.25f);
   protected final EnvMappings mappings = new EnvMappings();
+  protected final AddressMeta addressMeta = new PlanarAddressMeta();
 
   public Address createNetworkAddress(EntropySource eSource) {
-    final Address address = new PlanarAddress();
+    return addressMeta.create(eSource);
+  }
 
-    address.init(eSource);
-
-    return address;
+  @Override
+  public SortedMap<Key, Node> keyToNode() {
+    final TreeMap<Key, Node> keyToNode = new TreeMap<Key, Node>();
+    for (Map.Entry<Address, Node> addrToNode : this.addressToNode.entrySet()) {
+      keyToNode.put(
+          addrToNode.getValue().getKey(),
+          addrToNode.getValue()
+      );
+    }
+    return keyToNode;
   }
 
   public Node getNode(Address address) {

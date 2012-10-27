@@ -25,9 +25,11 @@ import algores.holonet.core.api.AddressSource;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.KeySpace;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
+import algores.holonet.core.api.tier0.rpc.RpcService;
 import algores.holonet.core.api.tier0.storage.StorageService;
 import algores.holonet.core.api.tier1.delivery.LookupService;
 import algores.holonet.core.api.tier1.overlay.OverlayServiceBase;
+import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 
 import java.util.Map;
@@ -64,12 +66,16 @@ public class RingService extends OverlayServiceBase {
   }
 
   public void stabilize() throws CommunicationException {
-    final RingRoutingService routing = getRouting();
-    if (!owner.getServices().getRpc().isAlive(routing.getSuccessor().getAddress())) {
+    final RpcService rpc = owner.getServices().getRpc();
+    final Address succAddr = getRouting().getSuccessor().getAddress();
+    final Optional<RingRoutingService> succRoutingOpt =
+        rpc.rpcTo(succAddr, RingRoutingService.class);
+    if (!succRoutingOpt.isPresent()) {
       throw new CommunicationException("Successor is not alive, stabilize (possibly on join) failed.");
     }
 
-    final RoutingEntry succPred = rpcToRouting(routing.getSuccessor()).getPredecessor();
+    final RoutingEntry succPred = succRoutingOpt.get().getPredecessor();
+    final RingRoutingService routing = getRouting();
     if (KeySpace.isInOpenRange(succPred, routing.getSuccessor().getAddress(), owner.getAddress())) {
       routing.setPredecessor(succPred);
       rpcToRouting(succPred).setSuccessor(routing.getOwnRoute());
@@ -84,7 +90,17 @@ public class RingService extends OverlayServiceBase {
   }
 
   protected RingRoutingService rpcToRouting(final AddressSource target) throws CommunicationException {
-    return owner.getServices().getRpc().rpcTo(target.getAddress(), RingRoutingService.class);
+    final RpcService rpc = owner.getServices().getRpc();
+    final Optional<RingRoutingService> rsOpt =
+        rpc.rpcTo(target.getAddress(), RingRoutingService.class);
+    if (rsOpt.isPresent()) {
+      return rsOpt.get();
+    } else {
+      getRouting().registerCommunicationFailure(getCaller());
+      throw new CommunicationException(
+          String.format("%s is offline", target)
+      );
+    }
   }
 
   protected RingRoutingService getRouting() {

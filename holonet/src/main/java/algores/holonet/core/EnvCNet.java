@@ -59,7 +59,7 @@ public class EnvCNet implements Env {
   protected WeightedEventModel requestModel = new WeightedEventModelBase(Optional.of("requests"));
   protected IndexCodec requestCodec = new IndexCodec(false);
 
-  protected SortedMap<Integer, Node> nodeIndex = new TreeMap<Integer, Node>();
+  protected HashMap<Integer, Node> addressIdxToNode = new HashMap<Integer, Node>(256, 0.25f);
   protected final EnvMappings mappings = new EnvMappings();
 
   protected EnvSimple fallback = null;
@@ -134,7 +134,7 @@ public class EnvCNet implements Env {
     requestModel.clear();
     req.getValue().visitNonDef(new EdgeData.EdgeVisitor() {
       public void visit(int from, int into, double e) {
-        if (nodeIndex.containsKey(from) && nodeIndex.containsKey(into)) {
+        if (addressIdxToNode.containsKey(from) && addressIdxToNode.containsKey(into)) {
           requestModel.add(requestCodec.fi2id(from, into), e);
         }
       }
@@ -171,6 +171,18 @@ public class EnvCNet implements Env {
     return new AddressCNet(nodeIdx);
   }
 
+  @Override
+  public SortedMap<Key, Node> keyToNode() {
+    final TreeMap<Key, Node> keyToNode = new TreeMap<Key, Node>();
+    for (Map.Entry<Integer, Node> addrToNode : this.addressIdxToNode.entrySet()) {
+      keyToNode.put(
+          addrToNode.getValue().getKey(),
+          addrToNode.getValue()
+      );
+    }
+    return keyToNode;
+  }
+
   public Node getNode(Address address) {
     if (fallback != null) {
       return fallback.getNode(address);
@@ -179,7 +191,7 @@ public class EnvCNet implements Env {
     final AddressCNet addrCNet = (AddressCNet) address;
     final int idx = addrCNet.getNodeIdx();
 
-    return nodeIndex.get(idx);
+    return addressIdxToNode.get(idx);
   }
 
   public void putNode(Node newNode, Address address) {
@@ -192,7 +204,7 @@ public class EnvCNet implements Env {
 
     final int idx = addrCNet.getNodeIdx();
 
-    nodeIndex.put(idx, newNode);
+    addressIdxToNode.put(idx, newNode);
     renewRequestModel();
   }
 
@@ -204,7 +216,7 @@ public class EnvCNet implements Env {
 
     final AddressCNet addrCNet = (AddressCNet) address;
     final int idx = addrCNet.getNodeIdx();
-    nodeIndex.remove(idx);
+    addressIdxToNode.remove(idx);
     renewRequestModel();
 
     //	return this slot to event model
@@ -217,7 +229,7 @@ public class EnvCNet implements Env {
       return fallback.getAllNodes();
     }
 
-    return nodeIndex.values();
+    return addressIdxToNode.values();
   }
 
   public EnvMappings getMappings() {
@@ -232,8 +244,8 @@ public class EnvCNet implements Env {
     final int serverId = requestCodec.id2trailing(pairId);
 
     return new RequestPair(
-        nodeIndex.get(clientId),
-        nodeIndex.get(serverId)
+        addressIdxToNode.get(clientId),
+        addressIdxToNode.get(serverId)
     );
   }
 
@@ -263,10 +275,6 @@ public class EnvCNet implements Env {
       return dist.getValue().get(nodeIdx, addrCNet.nodeIdx);
     }
 
-    public void init(EntropySource eSource) {
-
-    }
-
     public Address getAddress() {
       return this;
     }
@@ -288,6 +296,7 @@ public class EnvCNet implements Env {
     public int compareTo(algores.holonet.capi.Address that) {
       final AddressCNet addrCNet = (AddressCNet) that;
 
+      //  FIXME should this order be compatible with order of keys?
       return this.nodeIdx - addrCNet.nodeIdx;
     }
 

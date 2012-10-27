@@ -40,10 +40,11 @@ public class ChordRoutingServiceImpl extends RingRoutingServiceImpl implements C
     return copy;
   }
 
-  protected String flavorize(RoutingEntry owner, RoutingEntry entry) {
-    final String superFlavor = super.flavorize(owner, entry);
+  @Override
+  protected FlavorTuple flavorize(RoutingEntry owner, RoutingEntry entry) {
+    final FlavorTuple superFlavor = super.flavorize(owner, entry);
 
-    if (!FLAVOR_EXTRA.equals(superFlavor)) {
+    if (!FLAVOR_EXTRA.equals(superFlavor.flavor)) {
       return superFlavor;
     }
 
@@ -52,6 +53,6 @@ public class ChordRoutingServiceImpl extends RingRoutingServiceImpl implements C
     final BigInteger distance = fromKey.distance(toKey);
     final String flavor = FLAVORBASE_FINGER + ":" + (distance.bitLength() - 1);
 
-    return flavor;
+    return new FlavorTuple(flavor, false);
   }
 }

@@ -28,5 +28,4 @@ import org.akraievoy.cnet.gen.vo.EntropySource;
 public interface Address extends KeySource, AddressSource, algores.holonet.capi.Address {
   double getDistance(Address address);
 
-  void init(EntropySource eSource);
 }

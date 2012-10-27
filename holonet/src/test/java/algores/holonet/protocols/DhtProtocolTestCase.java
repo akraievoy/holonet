@@ -152,7 +152,7 @@ public abstract class DhtProtocolTestCase extends TestCase {
         net.insertNodes(2, ctx.getNetFailCount(), ctx.getEntropy());
         net.removeNodes(3, false, ctx.getEntropy());
       } catch (CommunicationException e) {
-        throw new IllegalStateException(testMessage, e);
+        throw new IllegalStateException(testMessage + " (maintenance)", e);
       }
       assertEquals(testMessage, 0, ctx.getNetFailCount().get());
       lookupProgress.iter(testIndex);

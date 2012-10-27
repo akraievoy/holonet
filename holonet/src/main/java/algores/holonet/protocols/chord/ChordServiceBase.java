@@ -25,8 +25,11 @@ import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.KeySpace;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
+import algores.holonet.core.api.tier0.rpc.RpcService;
 import algores.holonet.core.api.tier1.delivery.LookupService;
+import algores.holonet.protocols.ring.RingRoutingService;
 import algores.holonet.protocols.ring.RingService;
+import com.google.common.base.Optional;
 
 public class ChordServiceBase extends RingService implements ChordService {
   public ChordServiceBase copy() {
@@ -60,19 +63,23 @@ public class ChordServiceBase extends RingService implements ChordService {
 
   public void leave() throws CommunicationException {
     rpcToStorage(getRouting().getSuccessor()).putAll(owner.getServices().getStorage().getDataEntries());
-    rpcToRouting(getRouting().getPredecessor()).setSuccessor(getRouting().getSuccessor());
-    rpcToRouting(getRouting().getSuccessor()).setPredecessor(getRouting().getPredecessor());
+    final RoutingEntry updatedSuccessor = rpcToRouting(getRouting().getSuccessor()).setPredecessor(getRouting().getPredecessor());
+    rpcToRouting(getRouting().getPredecessor()).setSuccessor(updatedSuccessor);
   }
 
   /**
    * For maintaining finger table/link purpose
    */
   public void stabilize() throws CommunicationException {
-    if (!owner.getServices().getRpc().isAlive(getRouting().getSuccessor().getAddress())) {
+    final RpcService rpc = owner.getServices().getRpc();
+    final Address succAddr = getRouting().getSuccessor().getAddress();
+    final Optional<RingRoutingService> succRoutingOpt =
+        rpc.rpcTo(succAddr, RingRoutingService.class);
+    if (!succRoutingOpt.isPresent()) {
       throw new CommunicationException("Successor is not alive, stabilize (possibly on join) failed.");
     }
 
-    final RoutingEntry succPred = rpcToRouting(getRouting().getSuccessor()).getPredecessor();
+    final RoutingEntry succPred = succRoutingOpt.get().getPredecessor();
     if (KeySpace.isInOpenRange(succPred, getRouting().getSuccessor(), owner.getAddress())) {
       getRouting().setPredecessor(succPred);
       rpcToRouting(getRouting().getPredecessor()).setSuccessor(getRouting().getOwnRoute());
@@ -116,7 +123,4 @@ public class ChordServiceBase extends RingService implements ChordService {
     }
   }
 
-  public ChordService rpcTo(Address target) throws CommunicationException {
-    return owner.getServices().getRpc().rpcTo(target, ChordService.class);
-  }
 }

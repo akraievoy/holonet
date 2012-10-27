@@ -26,33 +26,27 @@ import algores.holonet.core.api.tier0.routing.RoutingService;
 import algores.holonet.core.api.tier0.rpc.RpcService;
 import algores.holonet.core.api.tier0.storage.StorageService;
 import algores.holonet.core.api.tier1.delivery.LookupService;
+import com.google.common.base.Optional;
 
 /**
  * Base implementation.
  */
 public abstract class OverlayServiceBase extends LocalServiceBase implements OverlayService {
-  protected OverlayService rpcTo(final AddressSource target) throws CommunicationException {
-    if (target.equals(owner.getAddress())) {
-      return this;
-    }
-
-    return getRpc().rpcTo(target.getAddress(), OverlayService.class);
-  }
 
   protected StorageService rpcToStorage(final AddressSource target) throws CommunicationException {
     if (target.equals(owner.getAddress())) {
       return getStorage();
     }
 
-    return getRpc().rpcTo(target.getAddress(), StorageService.class);
-  }
-
-  protected RoutingService rpcToRouting(final AddressSource target) throws CommunicationException {
-    if (target.equals(owner.getAddress())) {
-      return getRouting();
+    final Optional<StorageService> storageOpt = getRpc().rpcTo(target.getAddress(), StorageService.class);
+    if (storageOpt.isPresent()) {
+      return storageOpt.get();
+    } else {
+      getRouting().registerCommunicationFailure(target.getAddress());
+      throw new CommunicationException(
+          String.format("%s is offline", target)
+      );
     }
-
-    return getRpc().rpcTo(target.getAddress(), RoutingService.class);
   }
 
   protected LookupService rpcToDelivery(AddressSource address) throws CommunicationException {
@@ -60,7 +54,16 @@ public abstract class OverlayServiceBase extends LocalServiceBase implements Ove
       return getDelivery();
     }
 
-    return getRpc().rpcTo(address.getAddress(), LookupService.class);
+    final Optional<LookupService> lsOpt =
+        getRpc().rpcTo(address.getAddress(), LookupService.class);
+    if (lsOpt.isPresent()) {
+      return lsOpt.get();
+    } else {
+      getRouting().registerCommunicationFailure(address.getAddress());
+      throw new CommunicationException(
+          String.format("%s is offline", address)
+      );
+    }
   }
 
   public Address getCaller() {

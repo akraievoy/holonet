@@ -36,5 +36,5 @@ public interface RingRoutingService extends RoutingService {
 
   RoutingEntry getPredecessor() throws CommunicationException;
 
-  void setPredecessor(RoutingEntry predecessor) throws CommunicationException;
+  RoutingEntry setPredecessor(RoutingEntry predecessor) throws CommunicationException;
 }

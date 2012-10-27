@@ -27,6 +27,7 @@ import algores.holonet.core.api.Range;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.storage.StorageService;
 import algores.holonet.core.api.tier1.overlay.OverlayServiceBase;
+import com.google.common.base.Optional;
 
 import java.util.*;
 
@@ -383,7 +384,16 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
   }
 
   public PGrid rpc(final Address target) throws CommunicationException {
-    return owner.getServices().getRpc().rpcTo(target, PGrid.class);
+    final Optional<PGrid> pgOpt =
+        owner.getServices().getRpc().rpcTo(target, PGrid.class);
+    if (pgOpt.isPresent()) {
+      return pgOpt.get();
+    } else {
+      getRouting().registerCommunicationFailure(getCaller());
+      throw new CommunicationException(
+          String.format("%s is offline", target)
+      );
+    }
   }
 
   protected static class SplitData {

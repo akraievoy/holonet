@@ -43,16 +43,17 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   /**
    * collects all known entry flavors
    */
-  protected List<String> flavors = new ArrayList<String>();
+  protected final SortedMap<String, Integer> flavorToCount =
+      new TreeMap<String, Integer>();
   /**
    * should we store duplicates of enries of the same flavor, this value might be fractional, like 1.75
    */
-  protected double redundancy = 1.75;
+  protected double redundancy = 2.25;
   /**
    * Comparator defining which redundant entries would be be dropped: less means drop, greater means keep.
-   * Default strategy is based on sole liveness value, which is itself adjusted by failures and usage frequence.
+   * Default strategy is based on sole liveness value, which is itself adjusted by failures and usage frequency.
    */
-  protected Comparator<RoutingEntry> redundancyComparator = new LivenessComparator();
+  protected Comparator<RoutingEntry> livenessOrder = new LivenessComparator();
 
   protected RoutingServiceBase() {
   }
@@ -77,7 +78,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
     localLookupInternal(key, result);
 
-    if (result.size() > num) {
+    if (num > 0 && result.size() > num) {
       result.subList(num, result.size()).clear();
     }
 
@@ -85,13 +86,23 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   protected void localLookupInternal(Key key, List<RoutingEntry> result) {
-    final RoutingDistance pref = getRoutingDistance();
-    final Comparator<RoutingEntry> comparator = preferenceComparator(key, pref);
+    final Comparator<RoutingEntry> distanceOrder = distanceOrder(key);
 
     Collections.sort(
         result,
-        comparator
+        distanceOrder
     );
+  }
+
+  @Override
+  public Comparator<RoutingEntry> distanceOrder(Key key) {
+    final RoutingDistance pref = getRoutingDistance();
+    return preferenceComparator(key, pref);
+  }
+
+  @Override
+  public Comparator<RoutingEntry> getLivenessOrder() {
+    return livenessOrder;
   }
 
   protected void filterSafeRoutes(List<RoutingEntry> result) {
@@ -224,7 +235,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   public void update(RoutingEntry[] entries, Event event) {
     Die.ifNull("ownRoute", ownRoute);
 
-    boolean added = false;
+    FlavorTuple tuple = null;
 
     for (RoutingEntry upEntry : entries) {
       if (upEntry.getAddress().equals(ownRoute.getAddress())) {
@@ -250,14 +261,17 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
         continue;
       }
 
-      added = true;
-
       final RoutingEntry newRe = upEntry.copy();
       newRe.updateLiveness(event);
+      tuple = flavorize(getOwnRoute(), newRe);
+      if (!tuple.requireFullReflavor) {
+        final Integer oldCount = flavorToCount.get(tuple.flavor);
+        flavorToCount.put(tuple.flavor, oldCount == null ? 1 : oldCount + 1);
+      }
     }
 
-    if (added) {
-      maintainRedundancyRatio();
+    if (tuple != null && tuple.requireFullReflavor) {
+      fullReflavor();
     }
   }
 
@@ -282,66 +296,80 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     }
 
     final RoutingEntry newRe = upEntry.copy();
-    storeFlavor(flavorize(ownRoute, newRe));
     newRe.updateLiveness(event);
     routes.add(newRe);
-
-    maintainRedundancyRatio();
-  }
-
-  protected void reflavor() {
-    flavors.clear();
-
-    for (RoutingEntry re : routes) {
-      storeFlavor(flavorize(ownRoute, re));
+    final FlavorTuple tuple = flavorize(getOwnRoute(), newRe);
+    if (tuple.requireFullReflavor) {
+      fullReflavor();
+    } else {
+      final Integer oldCount = flavorToCount.get(tuple.flavor);
+      flavorToCount.put(tuple.flavor, oldCount == null ? 1 : oldCount + 1);
     }
   }
 
-  protected void maintainRedundancyRatio() {
-    final double trigger = flavors.size() * redundancy * MAINTENANCE_THRESHOLD;
+  private Map<RoutingEntry, String> entryToFlavorCache;
+
+  protected void fullReflavor() {
+    //  allocate the map lazily, basing on actual load on the data structure
+    if (entryToFlavorCache == null) {
+      entryToFlavorCache =
+          new HashMap<RoutingEntry, String>(routes.size() * 4, 0.25f);
+    }
+
+    flavorToCount.clear();
+    for (RoutingEntry re : routes) {
+      final FlavorTuple tuple = flavorize(ownRoute, re);
+      entryToFlavorCache.put(re, tuple.flavor);
+      final Integer countPrev = flavorToCount.get(tuple.flavor);
+      flavorToCount.put(
+          tuple.flavor,
+          countPrev == null ? 1 : countPrev + 1
+      );
+    }
+
+    final double trigger = flavorToCount.size() * redundancy * MAINTENANCE_THRESHOLD;
     if (routes.size() > trigger) {
-      final Map<RoutingEntry, String> entryToFlavor = new HashMap<RoutingEntry, String>();
-      for (RoutingEntry re : routes) {
-        entryToFlavor.put(re, flavorize(ownRoute, re));
-      }
 
-      Collections.sort(routes, redundancyComparator);
+      Collections.sort(routes, livenessOrder);
 
-      final int totalMax = (int) Math.ceil(flavors.size() * redundancy);
+      final int totalMax = (int) Math.ceil(flavorToCount.size() * redundancy);
       final int redundancyMin = (int) Math.floor(redundancy);
       final int redundancyMax = (int) Math.ceil(redundancy);
 
-      final TreeSet<String> flavorSet = new TreeSet<String>(entryToFlavor.values());
-      final String[] flavorIndex = flavorSet.toArray(new String[flavorSet.size()]);
-
-      int keptTotal = 0;
-      final int[] keptCount = new int[flavorIndex.length];
-
+      int keptTotal = routes.size();
       for (int curIndex = routes.size() - 1; curIndex >= 0; curIndex--) {
         final RoutingEntry re = routes.get(curIndex);
-        final String flavor = entryToFlavor.get(re);
-        final int flavorIdx = Arrays.binarySearch(flavorIndex, flavor);
-
-        if (keptCount[flavorIdx] >= redundancyMax) {
+        final String flavor = entryToFlavorCache.get(re);
+        final int count = flavorToCount.get(flavor);
+        if (
+            count >= redundancyMax ||
+            count > redundancyMin && keptTotal > totalMax
+        ) {
           routes.remove(curIndex);
-        } else if (keptCount[flavorIdx] >= redundancyMin && keptTotal > totalMax) {
-          routes.remove(curIndex);
-        } else {
-          keptTotal++;
-          keptCount[flavorIdx]++;
+          keptTotal--;
+          flavorToCount.put(flavor, count - 1);
         }
       }
     }
+
+    entryToFlavorCache.clear();
   }
 
-  protected abstract String flavorize(RoutingEntry owner, RoutingEntry created);
+  protected static class FlavorTuple {
+    public final String flavor;
+    public final boolean requireFullReflavor;
 
-  protected void storeFlavor(String flavor) {
-    final int insertionIndex = Collections.binarySearch(flavors, flavor);
-    if (insertionIndex < 0) {
-      flavors.add(-(insertionIndex + 1), flavor);
+    public FlavorTuple(final String flavor) {
+      this(flavor, false);
+    }
+
+    public FlavorTuple(final String flavor, final boolean fullReflavor1) {
+      this.flavor = flavor;
+      this.requireFullReflavor = fullReflavor1;
     }
   }
+
+  protected abstract FlavorTuple flavorize(RoutingEntry owner, RoutingEntry created);
 
   public RoutingEntry getOwnRoute() {
     return ownRoute;
@@ -353,8 +381,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
     this.ownRoute = owner;
 
-    reflavor();
-    maintainRedundancyRatio();
+    fullReflavor();
   }
 
   public abstract RoutingDistance getRoutingDistance();
@@ -405,7 +432,9 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
   protected static class LivenessComparator implements Comparator<RoutingEntry> {
     public int compare(RoutingEntry o1, RoutingEntry o2) {
-      return o1.getLiveness() - o2.getLiveness();
+      final float l1 = o1.getLiveness();
+      final float l2 = o2.getLiveness();
+      return -Float.compare(l1, l2);
     }
   }
 }

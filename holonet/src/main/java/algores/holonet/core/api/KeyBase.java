@@ -35,6 +35,7 @@ class KeyBase implements Key {
   public static final BigInteger UPPERLIMIT = BigInteger.ONE.shiftLeft(BITNESS);
 
   protected final BitSet keyData;
+  protected final int hashCode;
 
   protected KeyBase next;
   protected KeyBase prev;
@@ -62,6 +63,7 @@ class KeyBase implements Key {
     Die.ifFalse("newKeyData.length <= BITNESS", newKeyData.length() <= BITNESS);
 
     keyData = newKeyData;
+    hashCode = newKeyData.hashCode();
   }
 
   public boolean get(int atBit) {
@@ -81,11 +83,7 @@ class KeyBase implements Key {
   }
 
   public int compareTo(algores.holonet.capi.Key o) {
-    if (o instanceof KeyBase) {
-      return Generic.compareBitSets(keyData, ((KeyBase) o).keyData);
-    }
-
-    return toBinaryString().compareTo(o.toBinaryString());
+    return Generic.compareBitSets(keyData, ((KeyBase) o).keyData);
   }
 
   public boolean equals(Object o) {
@@ -93,7 +91,7 @@ class KeyBase implements Key {
   }
 
   public int hashCode() {
-    return keyData.hashCode();
+    return hashCode;
   }
 
   public BigInteger toNumber() {
@@ -103,7 +101,9 @@ class KeyBase implements Key {
   @Override
   public long toLong() {
     if (BITNESS > 63) {
-      throw new IllegalStateException("unable to convert key to long as BITNESS > 63");
+      throw new IllegalStateException(
+          "unable to convert key to long as BITNESS > 63"
+      );
     }
     return Generic.bitSet2long(keyData);
   }

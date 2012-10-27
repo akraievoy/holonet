@@ -38,23 +38,37 @@ public class RoutingEntry extends NodeHandleBase {
    * yep, that's a Fibonachi number here
    */
   public static final int LIVENESS_DEFAULT = 55;
-  public static final int RANGE_COUNT_DEFAULT = 1;
+  public static final float LIVENESS_COMM_FAIL_PENALTY =
+      (float) Math.pow((1 + Math.sqrt(5)) / 2, -0.25);
+  public static final float LIVENESS_COMM_SUCCESS_REWARD =
+      (float) Math.pow(LIVENESS_COMM_FAIL_PENALTY, -0.25);
+  static {
+    if (LIVENESS_COMM_FAIL_PENALTY >= 1) {
+      throw new IllegalStateException(
+          String.format(
+              "LIVENESS_COMM_FAIL_PENALTY(%g) >= 1",
+              LIVENESS_COMM_FAIL_PENALTY
+          )
+      );
+    }
+    if (LIVENESS_COMM_SUCCESS_REWARD <= 1) {
+      throw new IllegalStateException(
+          String.format(
+              "LIVENESS_COMM_SUCCESS_REWARD(%g) <= 1",
+              LIVENESS_COMM_SUCCESS_REWARD
+          )
+      );
+    }
+  }
 
-  /**
-   * the golden ratio.
-   */
-  public final double phi = (1 + Math.sqrt(5)) / 2;
-  /**
-   * the inverted golden ratio.
-   */
-  public final double PHI = 2 / (1 + Math.sqrt(5));
+  public static final int RANGE_COUNT_DEFAULT = 1;
 
   //	TODO later change this to model time
   protected static final AtomicLong vmStamp = new AtomicLong(1);
 
   protected final List<Range> ranges = new ArrayList<Range>(RANGE_COUNT_DEFAULT);
   protected int entryCount;
-  protected byte liveness = LIVENESS_DEFAULT;
+  protected float liveness = LIVENESS_DEFAULT;
 
   /**
    * Essentially this field allows for controlling stale routing data.
@@ -89,12 +103,8 @@ public class RoutingEntry extends NodeHandleBase {
     return stamp;
   }
 
-  public byte getLiveness() {
+  public float getLiveness() {
     return liveness;
-  }
-
-  public void setLiveness(byte liveness) {
-    this.liveness = liveness;
   }
 
   public int getEntryCount() {
@@ -149,10 +159,10 @@ public class RoutingEntry extends NodeHandleBase {
   public void updateLiveness(Event event) {
     if (event == Event.DISCOVERED) {
       //	recover/improve linearly
-      liveness = liveness < 127 ? (byte) (liveness + 0x01) : 127;
+      liveness += 1;
     } else if (event == Event.CONNECTION_FAILED) {
       //	penalize exponentially
-      liveness = renormLiveness(PHI * liveness);
+      liveness *= LIVENESS_COMM_FAIL_PENALTY;
     } else if (event == Event.JOINED) {
       //	reset
       liveness = LIVENESS_DEFAULT;
@@ -161,22 +171,10 @@ public class RoutingEntry extends NodeHandleBase {
       liveness = 1;
     } else if (event == Event.HEART_BEAT) {
       //	improve exponentially
-      liveness = renormLiveness(phi * liveness);
+      liveness *= LIVENESS_COMM_SUCCESS_REWARD;
     } else {
       throw Die.unexpected("event", event);
     }
-  }
-
-  protected byte renormLiveness(double value) {
-    if (value <= 1) {
-      return 1;
-    }
-
-    if (value >= 127) {
-      return 127;
-    }
-
-    return (byte) Math.round(value);
   }
 
   public boolean update(long newStamp, int newEntryCount, List<Range> newRanges) {

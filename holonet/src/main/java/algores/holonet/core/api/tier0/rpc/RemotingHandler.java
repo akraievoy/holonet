@@ -55,7 +55,7 @@ public class RemotingHandler implements InvocationHandler {
     }
 
     try {
-      Node target = ctx.lookupTarget();
+      Node target = ctx.onCallStarted();
       return method.invoke(resolveService(target.getServices()), args);
     } catch (InvocationTargetException e) {
       throw e.getCause();
@@ -63,7 +63,7 @@ public class RemotingHandler implements InvocationHandler {
       throw e.getCause();
     } finally {
       try {
-        ctx.onCallCompletion();
+        ctx.onCallCompleted();
       } catch (Exception e) {
         e.printStackTrace();
       }
@@ -72,6 +72,6 @@ public class RemotingHandler implements InvocationHandler {
 
   @SuppressWarnings({"unchecked"})
   protected Object resolveService(ServiceRegistry target) {
-    return target.resolveService(ctx.getCall().getService());
+    return target.resolveService(ctx.getActiveRequest().get().getService());
   }
 }

@@ -21,6 +21,7 @@ package algores.holonet.core.api.tier0.rpc;
 import algores.holonet.core.CommunicationException;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.AddressSource;
+import com.google.common.base.Optional;
 
 /**
  * RPC facility.
@@ -32,23 +33,23 @@ public interface RpcService {
    * @param anotherAddress address to ping
    * @return true if node is alive
    */
+  //  FIXME recode this
   boolean isAlive(Address anotherAddress);
 
   /**
-   * The way to simulate RPC method invocation.
+   * Simulating RPC method invocation.
    * <p/>
    * Each thread maintains only one RPC proxy, which is reset dynamically upon call if this method.
    * <p/>
-   * So, the best way to work with RPC calls is to call rpcTo(aNode).neededMethod(),
+   * RPC calls should be done via call rpcTo(aNode, serviceClass).serviceMethod(),
    * without storing remote proxy instance for future use as only one call is possible at a time.
    *
    * @param calleeAddress to talk to.
    * @param service       service interface class to query for, see {@link algores.holonet.core.api.tier0.rpc.ServiceRegistry#resolveService(Class)}
-   * @return proxy of protocol running on callee, that will automatically register all method invocations as RPC calls.
-   * @throws algores.holonet.core.CommunicationException
-   *          propagated
+   * @return proxy to protocol running on callee, registering only one method invocation as RPC call and failing subsequent ones, or null if node is offline.
+   * @throws algores.holonet.core.CommunicationException propagated
    */
-  <E> E rpcTo(AddressSource calleeAddress, Class<E> service) throws CommunicationException;
+  <E> Optional<E> rpcTo(AddressSource calleeAddress, Class<E> service) throws CommunicationException;
 
   Address getCaller();
 }

@@ -21,6 +21,7 @@ package algores.holonet.core.api.tier0.rpc;
 import algores.holonet.core.Network;
 import algores.holonet.core.Node;
 import algores.holonet.core.api.Address;
+import com.google.common.base.Optional;
 
 /**
  * Default implementation.
@@ -41,12 +42,16 @@ public class NetworkRpcBase implements NetworkRpc {
     return context.get();
   }
 
-  public <E> E getProxy(Node node, Address calleeAddress, Class<E> service) {
-    return getRpcContext().setupCall(node, calleeAddress, service);
+  public <E> Optional<E> getProxy(Node node, Address calleeAddress, Class<E> service) {
+    return getRpcContext().setupCall(
+        node,
+        calleeAddress,
+        service
+    );
   }
 
-  public Call getCall() {
-    return getRpcContext().getCall();
+  public Optional<Call> getActiveRequest() {
+    return getRpcContext().getActiveRequest();
   }
 
   public void dispose() {

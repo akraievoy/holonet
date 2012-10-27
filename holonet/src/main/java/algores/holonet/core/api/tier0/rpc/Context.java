@@ -22,13 +22,12 @@ import algores.holonet.core.CommunicationException;
 import algores.holonet.core.Network;
 import algores.holonet.core.Node;
 import algores.holonet.core.api.Address;
+import com.google.common.base.Optional;
 import org.akraievoy.base.Die;
 import org.akraievoy.base.introspect.Introspect;
 
 import java.lang.reflect.Proxy;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Stack;
+import java.util.*;
 
 public class Context {
   final Network parentNetwork;
@@ -36,8 +35,9 @@ public class Context {
   final RemotingHandler handler;
   final Map<Class, Object> serviceProxies = new HashMap<Class, Object>();
 
-  final Stack<Call> calls = new Stack<Call>();
-  int armedCalls = 0;
+  private final List<Call> activeRequests = new ArrayList<Call>();
+  private int servedRequests = 0;
+  private Node targetNode;
 
   public Context(Network parentNetwork) {
     this.parentNetwork = parentNetwork;
@@ -45,49 +45,88 @@ public class Context {
     handler = new RemotingHandler(this);
   }
 
-  @SuppressWarnings({"unchecked"})
-  public <E> E setupCall(final Node newRpcSource, final Address newRpcTarget, final Class<E> service) {
-    Die.ifFalse("someone created an rpc proxy and then left it with no call", armedCalls == calls.size());
-    calls.push(new Call(newRpcSource, newRpcTarget, service));
+  public <E> Optional<E> setupCall(final Node newRpcSource, final Address newRpcTarget, final Class<E> service) {
+    if (activeRequests.size() != servedRequests) {
+      //  someone created an rpc proxy and then left it with no call
+      throw new IllegalStateException(
+          String.format(
+              "activeRequests.size(%d) > servedRequests(%d)",
+              activeRequests.size(),
+              servedRequests
+          )
+      );
+    }
 
-    Object cachedProxy = serviceProxies.get(service);
+    final Call request = new Call(newRpcSource, newRpcTarget, service);
+
+    @SuppressWarnings("unchecked")
+    E cachedProxy = (E) serviceProxies.get(service);
     if (cachedProxy == null) {
-      cachedProxy = Proxy.newProxyInstance(getClass().getClassLoader(), Introspect.getDeepInterfaces(service), handler);
+      @SuppressWarnings({"unchecked", "UnnecessaryLocalVariable"})
+      final E newProxy =
+          (E) Proxy.newProxyInstance(
+              getClass().getClassLoader(),
+              Introspect.getDeepInterfaces(service),
+              handler
+          );
+      cachedProxy = newProxy;
       serviceProxies.put(service, cachedProxy);
     }
 
-    return (E) cachedProxy;
+    parentNetwork.registerRpcCall(request.getSource(), request.getTarget());
+    targetNode = parentNetwork.getEnv().getNode(request.getTarget());
+    parentNetwork.getInterceptor().registerRpcCallResult(targetNode != null);
+
+    if (targetNode != null) {
+      activeRequests.add(request);
+      return Optional.of(cachedProxy);
+    } else {
+      return Optional.absent();
+    }
   }
 
-  public Node lookupTarget() throws CommunicationException {
-    final Call call = getCall();
-    Die.ifNull("call", call);
-
-    Die.ifFalse("trying to use rpc proxy twice", armedCalls < calls.size());
-    armedCalls++;
-
-    parentNetwork.registerRpcCall(call.getSource(), call.getTarget());
-
-    final Node node = parentNetwork.getEnv().getNode(call.getTarget());
-
-    parentNetwork.getInterceptor().registerRpcCallResult(node != null);
-    if (node == null) {
-      call.getSource().getServices().getRouting().registerCommunicationFailure(call.getTarget());
-      throw new CommunicationException("Node for address " + call.getTarget() + " is not alive.");
+  public Node onCallStarted() throws CommunicationException {
+    if (activeRequests.isEmpty()) {
+      //  proxy not set up properly before call
+      throw new IllegalStateException(
+          "activeRequests.isEmpty"
+      );
     }
 
+    if (activeRequests.size() <= servedRequests) {
+      //  trying to use RPC proxy twice
+      throw new IllegalStateException(
+          String.format(
+              "activeRequests.size(%d) <= servedRequests(%d)",
+              activeRequests.size(),
+              servedRequests
+          )
+      );
+    }
+
+    if (targetNode == null) {
+      throw new IllegalStateException(
+          "targetNode == null"
+      );
+    }
+
+    servedRequests++;
+    final Call call = getActiveRequest().get();
     parentNetwork.registerRpcCall(call.getSource(), call.getTarget());
 
-    return node;
+    return targetNode;
   }
 
-  public Call getCall() {
-    return calls.peek();
+  public void onCallCompleted() {
+    parentNetwork.getInterceptor().registerRpcCallResult(true);
+    activeRequests.remove(activeRequests.size() - 1);
+    servedRequests--;
   }
 
-  //	LATER test on this
-  public void onCallCompletion() {
-    armedCalls--;
-    calls.pop();
+  public Optional<Call> getActiveRequest() {
+    if (activeRequests.isEmpty()) {
+      return Optional.absent();
+    }
+    return Optional.of(activeRequests.get(activeRequests.size() - 1));
   }
 }

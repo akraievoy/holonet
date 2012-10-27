@@ -21,7 +21,6 @@ package algores.holonet.core;
 import algores.holonet.core.api.API;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
-import org.akraievoy.cnet.gen.vo.EntropySource;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -31,13 +30,24 @@ import java.text.NumberFormat;
  */
 class PlanarAddress implements Address {
   public static final double SCALE = 1000.0;
-  public static final double EQUALITY_THRESH = 1.0e-12;
 
-  protected double coordX;
-  protected double coordY;
-  protected Key key;
+  protected final double coordX;
+  protected final double coordY;
+  protected final Key key;
+  protected final int hashCode;
 
-  PlanarAddress() {
+  PlanarAddress(double coordY, double coordX) {
+    this.coordY = coordY;
+    this.coordX = coordX;
+
+    this.key = API.createKey(this); //  TODO we have hash collisions now
+
+    int hashCode;
+    long temp = coordX != +0.0d ? Double.doubleToLongBits(coordX) : 0L;
+    hashCode = (int) (temp ^ (temp >>> 32));
+    temp = coordY != +0.0d ? Double.doubleToLongBits(coordY) : 0L;
+    hashCode = 31 * hashCode + (int) (temp ^ (temp >>> 32));
+    this.hashCode = hashCode;
   }
 
   public double getDistance(Address address) {
@@ -54,19 +64,11 @@ class PlanarAddress implements Address {
     return Math.sqrt(distSqr) * SCALE;
   }
 
-  public void init(EntropySource eSource) {
-    coordX = eSource.nextDouble();
-    coordY = eSource.nextDouble();
-  }
-
   /**
    * Please note that getKey() should return the same value for given instance of address,
    * as it is used in hashCode() and equals().
    */
   public Key getKey() {
-    if (key == null) {
-      key = API.createKey(this); //  TODO we have hash collisions now
-    }
     return key;
   }
 
@@ -85,18 +87,22 @@ class PlanarAddress implements Address {
     if (this == o) return true;
     if (!(o instanceof PlanarAddress)) return false;
 
-    final PlanarAddress planarAddress = (PlanarAddress) o;
+    final PlanarAddress that = (PlanarAddress) o;
 
-    return getKey().equals(planarAddress.getKey());
+    return
+        this.coordX == that.coordX &&
+        this.coordY == that.coordY;
   }
 
+  @Override
   public int hashCode() {
-    return getKey().hashCode();
+    return hashCode;
   }
 
-  public int compareTo(algores.holonet.capi.Address anObject) {
-    final PlanarAddress anotherAddress = (PlanarAddress) anObject;
-    return getKey().compareTo(anotherAddress.getKey());
+  public int compareTo(algores.holonet.capi.Address thatAddr) {
+    final PlanarAddress that = (PlanarAddress) thatAddr;
+    int xRes = Double.compare(this.coordX, that.coordX);
+    return xRes != 0 ? xRes : Double.compare(this.coordY, that.coordY);
   }
 
   public Address getAddress() {

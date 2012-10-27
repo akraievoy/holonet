@@ -18,17 +18,17 @@
 
 package algores.holonet.core.api.tier1.delivery;
 
+import algores.holonet.capi.Event;
 import algores.holonet.core.CommunicationException;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.LocalServiceBase;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.routing.RoutingService;
+import com.google.common.base.Optional;
 import org.akraievoy.base.Die;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 
 public class LookupServiceBase extends LocalServiceBase implements LookupService {
   public LookupServiceBase() {
@@ -71,13 +71,19 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     throw new CommunicationException("No route for '" + key + "', " + route.size() + " nodes traversed");
   }
 
-  public Address recursiveLookup(Key key, boolean mustExist, Stack<Address> traversed, List<RoutingEntry> callerPending) throws CommunicationException {
+  public Address recursiveLookup(
+      Key key,
+      boolean mustExist,
+      Stack<Address> traversed,
+      List<RoutingEntry> callerPending
+  ) throws CommunicationException {
     if (traversed.size() >= HOP_LIMIT) {
       throw new RoutingException("Hop limit exceeded");
     }
 
     final Address ownerAddress = getOwner().getAddress();
     traversed.push(ownerAddress);
+
     
     //  LATER expand this to chain of routing state snapshots at each hop
     //  also, P-Grid does not presume fixed mapping : address -> node rank-0 key
@@ -104,7 +110,7 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
 
     final List<RoutingEntry> pending = callerPending != null ? callerPending : new ArrayList<RoutingEntry>();
     int addedCount = addNewRoutes(pending, routes);
-    //  FIXME this breaks the distance injection in lots of ways
+
     if (callerPending != null && addedCount * 2 <= pending.size()) {
       //	this effectively returns extra local routes to the caller
       //	here aliasing allows to keep code cleaner (but not simpler of course)
@@ -113,23 +119,33 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
       return null;
     }
 
+    final RoutingService routing = getOwner().getServices().getRouting();
     //  memorize route count before iterative phase
-    final int pendingSize = pending.size();
+    int pendingSize = 0;
     CommunicationException nfe = null;
     while (!pending.isEmpty()) {
+      Collections.sort(pending, routing.getLivenessOrder());
+      Collections.sort(pending, routing.distanceOrder(key));
+      pendingSize = Math.max(pendingSize, pending.size());
       final RoutingEntry route = pending.remove(0);
       if (traversed.contains(route.getAddress())) {
         continue;
       }
 
       try {
-        final LookupService remoteLookup = getOwner().getServices().getRpc().rpcTo(route, LookupService.class);
-        final Address address = remoteLookup.recursiveLookup(
-            key, mustExist, traversed, pending
-        );
-
-        if (address != null) {
-          return address;
+        final Optional<LookupService> remoteLookupOpt =
+            getOwner().getServices().getRpc().rpcTo(route, LookupService.class);
+        if (remoteLookupOpt.isPresent()) {
+          final Address address = remoteLookupOpt.get().recursiveLookup(
+              key, mustExist, traversed, pending
+          );
+          routing.update(route, Event.HEART_BEAT);
+          if (address != null) {
+            return address;
+          }
+        } else {
+          routing.registerCommunicationFailure(route.getAddress());
+          traversed.add(route.getAddress());
         }
       } catch (CommunicationException myNfe) {
         nfe = myNfe;
@@ -159,6 +175,8 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     //    overlay data/structure tends to be more up-to-date
     globalQueue.removeAll(localRoutes);
 
+    //  FIXME NOW remove the traversed?
+
     //  we need to add fresh recommendations to the head of the pending list
     //    otherwise convergence of the search degrades to Ring instead of Chord
     //    as stale global routing choices obscure more efficient local ones
@@ -169,8 +187,9 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
 
   public List<RoutingEntry> lookupRoutes(Key key) throws CommunicationException {
     final List<RoutingEntry> replicas = getRouting().replicaSet(key, Byte.MAX_VALUE);
-    final List<RoutingEntry> nodeHandles = getRouting().localLookup(key, 5, true);
+    final List<RoutingEntry> nodeHandles = getRouting().localLookup(key, 0, true);
 
+    nodeHandles.removeAll(replicas);
     replicas.addAll(nodeHandles);
 
     return replicas;

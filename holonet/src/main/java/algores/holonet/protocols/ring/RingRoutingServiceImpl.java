@@ -88,7 +88,7 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
     return predecessor;
   }
 
-  public void setPredecessor(RoutingEntry predecessor) {
+  public RoutingEntry setPredecessor(RoutingEntry predecessor) {
     Die.ifNull("predecessor", predecessor);
     this.predecessor = predecessor;
 
@@ -96,17 +96,19 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
     ownRoute.updateRanges(newRange);
 
     update(predecessor, Event.DISCOVERED);
+
+    return ownRoute;
   }
 
-  protected String flavorize(RoutingEntry owner, RoutingEntry entry) {
+  protected FlavorTuple flavorize(RoutingEntry owner, RoutingEntry entry) {
     if (entry.equals(predecessor)) {
-      return FLAVOR_PREDECESSOR;
+      return new FlavorTuple(FLAVOR_PREDECESSOR, true);
     }
 
     if (entry.equals(successor)) {
-      return FLAVOR_SUCCESSOR;
+      return new FlavorTuple(FLAVOR_SUCCESSOR, true);
     }
 
-    return FLAVOR_EXTRA;
+    return new FlavorTuple(FLAVOR_EXTRA, false);
   }
 }

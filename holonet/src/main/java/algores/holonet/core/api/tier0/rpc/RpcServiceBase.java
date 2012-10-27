@@ -22,6 +22,7 @@ import algores.holonet.core.CommunicationException;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.AddressSource;
 import algores.holonet.core.api.LocalServiceBase;
+import com.google.common.base.Optional;
 import org.akraievoy.base.Die;
 
 /**
@@ -57,17 +58,28 @@ public class RpcServiceBase extends LocalServiceBase implements RpcService {
    * @throws algores.holonet.core.CommunicationException
    *          propagated
    */
-  public <E> E rpcTo(final AddressSource calleeAddress, final Class<E> service) throws CommunicationException {
+  public <E> Optional<E> rpcTo(final AddressSource calleeAddress, final Class<E> service) throws CommunicationException {
     Die.ifNull("calleeAddress", calleeAddress);
 
     if (owner.getAddress().equals(calleeAddress)) {
-      return owner.getServices().resolveService(service);
+      return Optional.of(owner.getServices().resolveService(service));
     }
 
-    return owner.getNetwork().getRpc().getProxy(owner, calleeAddress.getAddress(), service);
+    return owner.getNetwork().getRpc().getProxy(
+        owner,
+        calleeAddress.getAddress(),
+        service
+    );
   }
 
   public Address getCaller() {
-    return owner.getNetwork().getRpc().getCall().getSource().getAddress();
+    final Optional<Call> activeRequest =
+        owner.getNetwork().getRpc().getActiveRequest();
+
+    if (activeRequest.isPresent()) {
+      activeRequest.get().getSource().getAddress();
+    }
+
+    return owner.getAddress();
   }
 }

@@ -18,6 +18,8 @@
 
 package algores.holonet.protocols;
 
+import algores.holonet.core.Progress;
+import algores.holonet.core.ProgressMeta;
 import algores.holonet.protocols.chord.ChordRoutingServiceImpl;
 import algores.holonet.protocols.chord.ChordServiceBase;
 
@@ -46,20 +48,40 @@ public class ChordProtocolTestCase extends DhtProtocolTestCase {
   }
 
   public void testJoinLeave() throws Throwable {
+/*
+    if (true) {
+      final int width = 100000;
+      final Progress probing =
+          ProgressMeta.DEFAULT.progress("probing seeds", width).start();
+      for (int seedOffs = 0; seedOffs < width; seedOffs++) {
+        try {
+          testJoinLeave0(136279 + seedOffs, 5);
+          probing.iter(seedOffs);
+        } catch (Throwable t) {
+          System.err.println("seed = " + (seedOffs + 136279) + ": " + t.getMessage());
+          probing.iter(seedOffs, false);
+        }
+      }
+      probing.stop();
+    }
+*/
+
+    testJoinLeave0(145391, 5);
+    testJoinLeave0(137073, 5);
+    testJoinLeave0(138657, 5);
     testJoinLeave0(135930, 4);
     testJoinLeave0(388934, 4);
     testJoinLeave0(909845, 4);
-    //  FIXME new failing test case found
-//    testJoinLeave0(136279, 5);
+    testJoinLeave0(136279, 5);
     testJoinLeave0(135930, 16);
     testJoinLeave0(230474, 16);
     testJoinLeave0(847598, 16);
-//    testJoinLeave0(135930, 32);
+    testJoinLeave0(135930, 32);
     testJoinLeave0(874934, 32);
     testJoinLeave0(129874, 32);
-//    testJoinLeave0(830388, 64);
-//    testJoinLeave0(135930, 256);
-//    testJoinLeave0(238479, 256);
-//    testJoinLeave0(983430, 512);
+    testJoinLeave0(830388, 64);
+    testJoinLeave0(135930, 256);
+    testJoinLeave0(238479, 256);
+    testJoinLeave0(983430, 512);
   }
 }

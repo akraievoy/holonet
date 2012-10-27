@@ -19,10 +19,12 @@
 package algores.holonet.core;
 
 import algores.holonet.core.api.Address;
+import algores.holonet.core.api.Key;
 import algores.holonet.core.api.tier0.routing.RoutingDistance;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 import java.util.Collection;
+import java.util.SortedMap;
 
 /**
  * Network environment.
@@ -46,4 +48,6 @@ public interface Env extends RoutingDistance {
   EnvMappings getMappings();
 
   RequestPair generateRequestPair(EntropySource entropy);
+
+  SortedMap<Key, Node> keyToNode();
 }

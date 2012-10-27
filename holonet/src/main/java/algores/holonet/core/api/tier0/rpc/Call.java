@@ -43,4 +43,14 @@ public class Call {
   public Class getService() {
     return service;
   }
+
+  @Override
+  public String toString() {
+    return String.format(
+        "%s ==> %s.%s",
+        source,
+        target,
+        service.getSimpleName()
+    );
+  }
 }

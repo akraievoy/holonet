@@ -1,5 +1,5 @@
 /*
- Copyright 2011 Anton Kraievoy akraievoy@gmail.com
+ Copyright 2012 Anton Kraievoy akraievoy@gmail.com
  This file is part of Holonet.
 
  Holonet is free software: you can redistribute it and/or modify
@@ -16,16 +16,10 @@
  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package algores.holonet.core.api.tier0.rpc;
+package algores.holonet.core.api;
 
-import algores.holonet.core.Node;
-import algores.holonet.core.api.Address;
-import com.google.common.base.Optional;
+import org.akraievoy.cnet.gen.vo.EntropySource;
 
-public interface NetworkRpc {
-  <E> Optional<E> getProxy(Node node, Address calleeAddress, Class<E> service);
-
-  Optional<Call> getActiveRequest();
-
-  void dispose();
+public interface AddressMeta {
+  Address create(EntropySource entropy);
 }

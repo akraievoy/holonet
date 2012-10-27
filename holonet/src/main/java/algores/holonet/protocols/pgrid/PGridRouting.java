@@ -52,19 +52,19 @@ class PGridRouting extends RoutingServiceBase {
     setRedundancy(MAX_SAME_PATHS);
   }
 
-  protected String flavorize(RoutingEntry owner, RoutingEntry created) {
+  protected FlavorTuple flavorize(RoutingEntry owner, RoutingEntry created) {
     final Range ownerRange = owner.getRange();
     final Range otherRange = created.getRange();
 
     if (ownerRange.isPrefixFor(otherRange, true)) {
-      return "replica-specialized";
+      return new FlavorTuple("replica-specialized");
     }
     if (otherRange.isPrefixFor(ownerRange, false)) {
-      return "replica-generalized";
+      return new FlavorTuple("replica-generalized");
     }
 
     final int commonPrefixLen = ownerRange.getCommonPrefixLen(otherRange);
-    return "complement:" + commonPrefixLen;
+    return new FlavorTuple("complement:" + commonPrefixLen);
   }
 
   public RoutingDistance getRoutingDistance() {

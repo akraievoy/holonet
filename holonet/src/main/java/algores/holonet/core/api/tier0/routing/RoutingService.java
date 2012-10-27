@@ -26,6 +26,7 @@ import algores.holonet.core.api.Key;
 import algores.holonet.core.api.NodeHandle;
 import algores.holonet.core.api.Range;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -89,4 +90,8 @@ public interface RoutingService extends RoutingState<RoutingEntry, Key> {
   double getRedundancy();
 
   void setRedundancy(double redundancy);
+
+  Comparator<RoutingEntry> distanceOrder(Key key);
+
+  Comparator<RoutingEntry> getLivenessOrder();
 }
