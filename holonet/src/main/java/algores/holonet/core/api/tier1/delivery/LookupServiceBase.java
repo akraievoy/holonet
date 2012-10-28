@@ -57,24 +57,24 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     );
 
     try {
-      state = recursiveLookup(key, mustExist, state);
+      state = recursiveLookup(key, mustExist, mode, state);
 
       if (state.replicaOpt.isPresent()) {
         getOwner().getNetwork().registerLookupSuccess(
-            mode, lookupStartTime, state.replicaPath, true
+            mode, lookupStartTime, state.replicaPath, state.getStats(), true
         );
         return state.replicaOpt.get();
       }
 
     } catch (CommunicationException nfe) {
       getOwner().getNetwork().registerLookupSuccess(
-          mode, lookupStartTime, state.replicaPath, false
+          mode, lookupStartTime, state.replicaPath, state.getStats(), false
       );
       throw nfe;
     }
 
     getOwner().getNetwork().registerLookupSuccess(
-        mode, lookupStartTime, state.replicaPath, false
+        mode, lookupStartTime, state.replicaPath, state.getStats(), false
     );
     throw new CommunicationException(
         String.format(
@@ -88,6 +88,7 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
   public RecursiveLookupState recursiveLookup(
       Key key,
       boolean mustExist,
+      Mode mode,
       RecursiveLookupState state
   ) throws CommunicationException {
     if (state.hopCount >= HOP_LIMIT) {
@@ -101,13 +102,16 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
         services.getStorage().getKeys().contains(key) ||
         !mustExist && routing.getOwnRoute().isReplicaFor(key, (byte) 0)
     ) {
-      return updateRoutes(new RecursiveLookupState(
-          Optional.of(ownerAddress),
-          state.replicaPath,
-          state.traversals,
-          state.hopCount,
-          state.hopDistance
-      ));
+      return updateRoutes(
+          mode,
+          new RecursiveLookupState(
+              Optional.of(ownerAddress),
+              state.replicaPath,
+              state.traversals,
+              state.hopCount,
+              state.hopDistance
+          )
+      );
     }
 
     List<RoutingEntry> replicaPath = state.replicaPath;
@@ -117,9 +121,14 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
         new ArrayList<Traversal>(state.traversals);
     final List<RoutingEntry> localRoutes =
         routing.replicaSet(key, Byte.MAX_VALUE);
-    final List<RoutingEntry> fingers = routing.localLookup(key, 0, true);
+    final List<RoutingEntry> fingers = routing.localLookup(
+        key, (int) Math.ceil(routing.getRedundancy()), true
+    );
+    final List<RoutingEntry> neighbors = routing.neighborSet(0);
     fingers.removeAll(localRoutes);
     localRoutes.addAll(fingers);
+    neighbors.removeAll(localRoutes);
+    localRoutes.addAll(neighbors);
 
     for (Traversal t : localTraversals) {
       //  remove traversed previously
@@ -134,13 +143,18 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     for (RoutingEntry re : localRoutes) {
       localTraversals.add(new Traversal(re, state.hopCount, -1, Event.DISCOVERED));
     }
+    int liftCount = 0;
     for (Traversal t : localTraversals) {
       //  some of globally pending routes became closer?
       if (!t.called()) {
-        if (routing.routingDistance(t.re, key) < state.hopDistance) {
+        if (routing.routingDistance(t.re, key) * 2 < state.hopDistance) {
           final int localIndex = localRoutes.indexOf(t.re);
           if (localIndex <= 0) {
             localRoutes.add(t.re);
+            liftCount ++;
+            if (liftCount * 8 > localRoutes.size()) {
+              break;
+            }
           }
         }
       }
@@ -174,6 +188,7 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
           final RecursiveLookupState remoteState =
               remoteLookupOpt.get().recursiveLookup(
                   key, mustExist,
+                  mode,
                   new RecursiveLookupState(
                       replicaOpt,
                       remoteReplicaPath,
@@ -225,22 +240,33 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
       }
     }
 
-    return updateRoutes(new RecursiveLookupState(
-        replicaOpt,
-        replicaPath,
-        localTraversals,
-        state.hopCount,
-        state.hopDistance
-    ));
+    return updateRoutes(
+        mode,
+        new RecursiveLookupState(
+            replicaOpt,
+            replicaPath,
+            localTraversals,
+            state.hopCount,
+            state.hopDistance
+        )
+    );
   }
 
-  protected RecursiveLookupState updateRoutes(RecursiveLookupState state) {
+  protected RecursiveLookupState updateRoutes(Mode mode, RecursiveLookupState state) {
     final RoutingService routing = getOwner().getServices().getRouting();
+    final RoutingService.RoutingStatsTuple statsBefore =
+        routing.getStats();
 
     for (Traversal t : state.traversals) {
         routing.update(t.re, t.event);
     }
-
+    final RoutingService.RoutingStatsTuple statsAfter =
+        routing.getStats();
+    getOwner().getNetwork().getInterceptor().modeToLookups(mode).registerRoutingStats(
+        statsAfter.routeCount,
+        statsAfter.routeRedundancy,
+        statsAfter.routeRedundancy / statsBefore.routeRedundancy
+    );
     return state;
   }
 }

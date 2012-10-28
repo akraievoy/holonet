@@ -77,6 +77,7 @@ public class EnvSimple implements Env {
       Address localAddress, Key target,
       Address curAddress, Range curRange
   ) {
+//    return 1 + (localAddress.getKey().toLong() % 3 + curAddress.getKey().toLong() % 5 + 1) * 32;
     return 1;
   }
 

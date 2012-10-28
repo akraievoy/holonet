@@ -23,7 +23,6 @@ import algores.holonet.core.api.*;
 import org.akraievoy.base.Die;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -42,6 +41,9 @@ public class RoutingEntry extends NodeHandleBase {
       (float) Math.pow((1 + Math.sqrt(5)) / 2, -0.25);
   public static final float LIVENESS_COMM_SUCCESS_REWARD =
       (float) Math.pow(LIVENESS_COMM_FAIL_PENALTY, -0.25);
+  public static final float LIVENESS_MIN =
+      (float) (LIVENESS_DEFAULT * Math.pow(LIVENESS_COMM_FAIL_PENALTY, 3));
+
   static {
     if (LIVENESS_COMM_FAIL_PENALTY >= 1) {
       throw new IllegalStateException(
@@ -66,6 +68,7 @@ public class RoutingEntry extends NodeHandleBase {
   //	TODO later change this to model time
   protected static final AtomicLong vmStamp = new AtomicLong(1);
 
+  protected final RangeBase nodeIdRange;
   protected final List<Range> ranges = new ArrayList<Range>(RANGE_COUNT_DEFAULT);
   protected int entryCount;
   protected float liveness = LIVENESS_DEFAULT;
@@ -84,6 +87,7 @@ public class RoutingEntry extends NodeHandleBase {
 
   public RoutingEntry(Key nodeId, Address address) {
     super(nodeId, address);
+    nodeIdRange = new RangeBase(getNodeId(), getNodeId().next());
     updateStamp();
   }
 
@@ -105,6 +109,10 @@ public class RoutingEntry extends NodeHandleBase {
 
   public float getLiveness() {
     return liveness;
+  }
+
+  public void setLiveness(float liveness) {
+    this.liveness = liveness;
   }
 
   public int getEntryCount() {
@@ -157,24 +165,30 @@ public class RoutingEntry extends NodeHandleBase {
   }
 
   public void updateLiveness(Event event) {
+    liveness = computeNewLiveness(event);
+  }
+
+  public float computeNewLiveness(Event event) {
+    final float newLiveness;
     if (event == Event.DISCOVERED) {
       //	recover/improve linearly
-      liveness += 1;
+      newLiveness = liveness + 1;
     } else if (event == Event.CONNECTION_FAILED) {
       //	penalize exponentially
-      liveness *= LIVENESS_COMM_FAIL_PENALTY;
+      newLiveness = liveness * LIVENESS_COMM_FAIL_PENALTY;
     } else if (event == Event.JOINED) {
       //	reset
-      liveness = LIVENESS_DEFAULT;
+      newLiveness = LIVENESS_DEFAULT;
     } else if (event == Event.LEFT) {
       //	jolt to minimum
-      liveness = 1;
+      newLiveness = 1;
     } else if (event == Event.HEART_BEAT) {
       //	improve exponentially
-      liveness *= LIVENESS_COMM_SUCCESS_REWARD;
+      newLiveness = liveness * LIVENESS_COMM_SUCCESS_REWARD;
     } else {
       throw Die.unexpected("event", event);
     }
+    return newLiveness;
   }
 
   public boolean update(long newStamp, int newEntryCount, List<Range> newRanges) {
@@ -194,7 +208,7 @@ public class RoutingEntry extends NodeHandleBase {
   public Range selectRange(
       Address localAddress, Key target, final RoutingDistance routingDistance
   ) {
-    Range bestRange = getNodeIdRange();
+    Range bestRange = nodeIdRange;
     double bestDist =
         routingDistance.apply(localAddress, target, address, bestRange);
 
@@ -209,10 +223,6 @@ public class RoutingEntry extends NodeHandleBase {
     }
 
     return bestRange;
-  }
-
-  public RangeBase getNodeIdRange() {
-    return new RangeBase(getNodeId(), getNodeId().next());
   }
 
   public String toString() {
@@ -234,15 +244,7 @@ public class RoutingEntry extends NodeHandleBase {
       }
     }
 
-    return getNodeIdRange();
-  }
-
-  public RoutingEntry updateRanges(final Range[] ranges) {
-    this.ranges.clear();
-    this.ranges.addAll(Arrays.asList(ranges));
-    this.stamp = getNextStamp();
-
-    return this;
+    return nodeIdRange;
   }
 
   public RoutingEntry updateRanges(final Range singleRange) {

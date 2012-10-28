@@ -43,22 +43,11 @@ public class Metrics implements NetworkInterceptor {
     return periodName;
   }
 
-  public void registerLookup(
-      final LookupService.Mode mode,
-      final double latency,
-      final long hopCount,
-      final double directLatency,
-      boolean success
-  ) {
-    modeToLookups(mode).registerLookup(
-        latency, hopCount, directLatency, success
-    );
-  }
-
   @Override
   public LookupMetrics modeToLookups(LookupService.Mode mode) {
     return modeToLookups.get(mode);
   }
+
 
   public void reportInconsistentLookup(LookupService.Mode mode) {
     modeToLookups(mode).reportInconsistentLookup();
@@ -192,6 +181,34 @@ public class Metrics implements NetworkInterceptor {
       ctx.put(
           periodName + prefix + "_correctRatio",
           lookups.getLookupConsistency()
+      );
+      ctx.put(
+          periodName + prefix + "_routingServiceRouteCountAvg",
+          lookups.getRoutingServiceRouteCountAvg()
+      );
+      ctx.put(
+          periodName + prefix + "_routingServiceRedundancyAvg",
+          lookups.getRoutingServiceRedundancyAvg()
+      );
+      ctx.put(
+          periodName + prefix + "_routingServiceRedundancyChangeAvg",
+          lookups.getRoutingServiceRedundancyChangeAvg()
+      );
+      ctx.put(
+          periodName + prefix + "_routeRedundancyAvg",
+          lookups.getRouteRedundancyAvg()
+      );
+      ctx.put(
+          periodName + prefix + "_routeExhaustionAvg",
+          lookups.getRouteExhaustionAvg()
+      );
+      ctx.put(
+          periodName + prefix + "_routeRetractionAvg",
+          lookups.getRouteRetractionAvg()
+      );
+      ctx.put(
+          periodName + prefix + "_routeRpcFailRatioAvg",
+          lookups.getRouteRpcFailRatioAvg()
       );
     }
 

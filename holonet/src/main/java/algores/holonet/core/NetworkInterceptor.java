@@ -28,17 +28,6 @@ public interface NetworkInterceptor {
   //	hopcount/latency aggregates
   //	---------------------------
 
-  /**
-   * Registers a successful lookup
-   *
-   * @param mode          which operation current lookup supported
-   * @param latency       time elapsed on this lookup.
-   * @param hopCount      network nodes transferred before lookup completed.
-   * @param directLatency between source and nextHandler nodes.
-   * @param success       either true or false
-   */
-  void registerLookup(LookupService.Mode mode, double latency, long hopCount, double directLatency, boolean success);
-
   //	----------------------------
   //	lookup failure/success ratio
   //	----------------------------
@@ -61,33 +50,6 @@ public interface NetworkInterceptor {
 
   void registerNodeDepartures(final int nodeCount);
 
-  NetworkInterceptor NOOP = new NetworkInterceptor() {
-    private final LookupMetrics mockLookups = new LookupMetrics();
-
-    public void registerLookup(LookupService.Mode mode, double latency, long hopCount, double directLatency, boolean success) {
-    }
-
-    public void reportInconsistentLookup(LookupService.Mode get) {
-    }
-
-    public void registerNodeArrivals(int nodeCount, boolean successful) {
-    }
-
-    public void registerNodeFailures(int nodeCount) {
-    }
-
-    public void registerNodeDepartures(int nodeCount) {
-    }
-
-    public void registerRpcCallResult(boolean successful) {
-    }
-
-    @Override
-    public LookupMetrics modeToLookups(LookupService.Mode mode) {
-      return mockLookups;
-    }
-  };
-
   LookupMetrics modeToLookups(LookupService.Mode mode);
 
   //	----------------------------------------------------------
@@ -96,12 +58,20 @@ public interface NetworkInterceptor {
   public static class LookupMetrics {
     private long totalHopCount;
     private long lookupCount;
+    private double routeRedundancyTotal;
+    private double routeRetractionTotal;
+    private double routeExhaustionTotal;
+    private double routeRpcFailRatioTotal;
     private double totalLatency;
     private double lookupVsDirectTotal;
     private long lookupVsDirectCount;
     private long lookupSuccesses;
     private long lookupFailures;
     private long inconsistentLookups;
+    private double routingServiceRouteCountTotal;
+    private double routingServiceRedundancyTotal;
+    private double routingServiceRedundancyChangeTotal;
+    private long routingServiceSnapshotCount;
 
     public double getMeanLatency() {
       return totalLatency / lookupSuccesses;
@@ -126,8 +96,12 @@ public interface NetworkInterceptor {
     public void registerLookup(
         final double latency,
         final long hopCount,
+        final double routeRedundancy,
+        final double routeRetraction,
+        final double routeExhaustion,
+        final double routeRpcFailRatio,
         final double directLatency,
-        boolean success
+        final boolean success
     ) {
       if (success) {
         totalLatency += latency;
@@ -140,6 +114,10 @@ public interface NetworkInterceptor {
       } else {
         lookupFailures += 1.0;
       }
+      routeRedundancyTotal += routeRedundancy;
+      routeRetractionTotal += routeRetraction;
+      routeExhaustionTotal += routeExhaustion;
+      routeRpcFailRatioTotal += routeRpcFailRatio;
       lookupCount++;
     }
 
@@ -166,5 +144,73 @@ public interface NetworkInterceptor {
     public long getLookupFailures() {
       return lookupFailures;
     }
+
+    public void registerRoutingStats(
+        final int routeCount,
+        final float routeRedundancy,
+        final float redundancyChangeRate) {
+      routingServiceSnapshotCount += 1;
+      routingServiceRouteCountTotal += routeCount;
+      routingServiceRedundancyTotal += routeRedundancy;
+      routingServiceRedundancyChangeTotal += redundancyChangeRate;
+    }
+
+    public double getRoutingServiceRouteCountAvg() {
+      return routingServiceRouteCountTotal / routingServiceSnapshotCount;
+    }
+
+    public double getRoutingServiceRedundancyAvg() {
+      return routingServiceRedundancyTotal / routingServiceSnapshotCount;
+    }
+
+    public double getRoutingServiceRedundancyChangeAvg() {
+      return routingServiceRedundancyChangeTotal / routingServiceSnapshotCount;
+    }
+
+    public double getRouteExhaustionAvg() {
+      return routeExhaustionTotal / lookupCount;
+    }
+
+    public double getRouteRedundancyAvg() {
+      return routeRedundancyTotal / lookupCount;
+    }
+
+    public double getRouteRetractionAvg() {
+      return routeRetractionTotal / lookupCount;
+    }
+
+    public double getRouteRpcFailRatioAvg() {
+      return routeRpcFailRatioTotal / lookupCount;
+    }
   }
+
+  NetworkInterceptor NOOP = new NetworkInterceptor() {
+    private final LookupMetrics mockLookups = new LookupMetrics();
+
+    public void reportInconsistentLookup(LookupService.Mode get) {
+      //  nothing to do
+    }
+
+    public void registerNodeArrivals(int nodeCount, boolean successful) {
+      //  nothing to do
+    }
+
+    public void registerNodeFailures(int nodeCount) {
+      //  nothing to do
+    }
+
+    public void registerNodeDepartures(int nodeCount) {
+      //  nothing to do
+    }
+
+    public void registerRpcCallResult(boolean successful) {
+      //  nothing to do
+    }
+
+    @Override
+    public LookupMetrics modeToLookups(LookupService.Mode mode) {
+      return mockLookups;
+    }
+  };
+
 }

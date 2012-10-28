@@ -22,6 +22,7 @@ import algores.holonet.core.*;
 import algores.holonet.core.api.API;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
+import algores.holonet.core.api.tier0.routing.RoutingServiceBase;
 import algores.holonet.core.api.tier0.storage.StorageService;
 import algores.holonet.core.api.tier1.delivery.LookupService;
 import algores.holonet.testbench.Metrics;
@@ -81,8 +82,10 @@ public abstract class DhtProtocolTestCase extends TestCase {
     }
     lookupProgress.stop();
 
+    final NetworkInterceptor.LookupMetrics getMetrics =
+        testMetrics.modeToLookups(LookupService.Mode.GET);
     final double avgHopLimitActual =
-        testMetrics.modeToLookups(LookupService.Mode.GET).getMeanPathLength();
+        getMetrics.getMeanPathLength();
     assertTrue(
         String.format(
             "average hops for %d nodes should be less than %d, but is %g",
@@ -92,7 +95,24 @@ public abstract class DhtProtocolTestCase extends TestCase {
         ),
         avgHopLimitActual < avgHopLimit
     );
+    final double redundancyLimit =
+        RoutingServiceBase.MAINTENANCE_THRESHOLD * ctx.getNet().getFactory().createRouting().getRedundancy();
+    assertTrue(
+        String.format(
+            "route redundancy for %d nodes should be less than %g, but is %g",
+            nodes,
+            redundancyLimit,
+            getMetrics.getRoutingServiceRedundancyAvg()
+        ),
+        getMetrics.getRoutingServiceRedundancyAvg() < redundancyLimit
+    );
+/*
+    System.err.println(String.format("hop count (%d nodes) = %g", nodes, getMetrics.getMeanPathLength()));
+    System.err.println(String.format("route count (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRouteCountAvg()));
+    System.err.println(String.format("route redundancy (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRedundancyAvg()));
+    System.err.println(String.format("route redundancy change (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRedundancyChangeAvg()));
     assertEquals(0, ctx.getNetFailCount().get());
+*/
   }
 
   protected void testJoinLeave0(final long seed, final int nodes) {
@@ -158,6 +178,15 @@ public abstract class DhtProtocolTestCase extends TestCase {
       lookupProgress.iter(testIndex);
     }
     lookupProgress.stop();
+
+/*
+    final NetworkInterceptor.LookupMetrics getMetrics =
+        ctx.nameToMetrics().get(Context.METRICS).modeToLookups(LookupService.Mode.GET);
+    System.err.println(String.format("hop count (%d nodes) = %g", nodes, getMetrics.getMeanPathLength()));
+    System.err.println(String.format("route count (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRouteCountAvg()));
+    System.err.println(String.format("route redundancy (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRedundancyAvg()));
+    System.err.println(String.format("route redundancy change (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRedundancyChangeAvg()));
+*/
   }
 
 }

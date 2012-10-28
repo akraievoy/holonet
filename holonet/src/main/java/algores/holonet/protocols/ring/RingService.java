@@ -61,8 +61,9 @@ public class RingService extends OverlayServiceBase {
 
     rpcToStorage(successor).putAll(owner.getServices().getStorage().getDataEntries());
 
-    rpcToRouting(predecessor).setSuccessor(successor);
-    rpcToRouting(successor).setPredecessor(predecessor);
+    final RoutingEntry updatedSuccessor =
+        rpcToRouting(successor).setPredecessor(predecessor);
+    rpcToRouting(predecessor).setSuccessor(updatedSuccessor);
   }
 
   public void stabilize() throws CommunicationException {

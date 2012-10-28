@@ -191,6 +191,10 @@ public class Network {
     this.factory = factory;
   }
 
+  public ServiceFactorySpring getFactory() {
+    return factory;
+  }
+
   //	-----------------------
   //	aggregate manipulations
   //	-----------------------
@@ -256,6 +260,7 @@ public class Network {
       final LookupService.Mode mode,
       final double lookupStartTime,
       final List<RoutingEntry> route,
+      final LookupService.RecursiveLookupState.StatsTuple stats,
       final boolean success
   ) {
     final double latency = getElapsedTime() - lookupStartTime;
@@ -264,8 +269,23 @@ public class Network {
     final double directLatency = 2 * firstAddr.getDistance(lastAddr);
 
     final NetworkInterceptor interceptor = getInterceptor();
-    interceptor.registerLookup(
-        mode, latency, route.size() - 1, directLatency, success
+    final double routeRedundancy =
+        (double) stats.traversalSucceeded / route.size();
+    final double routeRetraction =
+        (double) stats.traversalFailed / route.size();
+    final double routeExhaustion =
+        (double) stats.traversalCalled / stats.traversalAdded;
+    final double routeRpcFailRatio =
+        (double) stats.traversalFailed / stats.traversalCalled;
+    interceptor.modeToLookups(mode).registerLookup(
+        latency,
+        route.size() - 1,
+        routeRedundancy,
+        routeRetraction,
+        routeExhaustion,
+        routeRpcFailRatio,
+        directLatency,
+        success
     );
   }
 }

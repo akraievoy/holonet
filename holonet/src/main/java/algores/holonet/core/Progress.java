@@ -37,8 +37,8 @@ public class Progress {
   private final long divider;
   private final boolean silent;
 
-  private long lastNanos = 0;
-  private boolean failsSinceLst = false;
+  private long lastElapsed = 0;
+  private boolean failsSinceLast = false;
   private boolean line = false;
 
   public Progress(String description, final long iterations) {
@@ -73,19 +73,20 @@ public class Progress {
     if (silent || iterations < MULTILINE_ITERATIONS) {
       return;
     }
-    failsSinceLst |= !success;
+    failsSinceLast |= !success;
     if (index % divider != 0) {
       return;
     }
-    final long nanos = stopwatch.elapsedTime(NANOSECONDS) - lastNanos;
-    if (!failsSinceLst) {
+    final long elapsed = stopwatch.elapsedTime(NANOSECONDS);
+    final long nanos = elapsed - lastElapsed;
+    if (!failsSinceLast) {
       System.out.print(".");
     } else {
       System.out.print("!");
     }
-    failsSinceLst = false;
-    if (index / divider % WIDTH == 31) {
-      lastNanos = nanos;
+    failsSinceLast = false;
+    if (index / divider % WIDTH == WIDTH - 1) {
+      lastElapsed = elapsed;
       line = false;
       System.out.println(
           String.format(
@@ -161,5 +162,14 @@ public class Progress {
       default:
         throw new AssertionError();
     }
+  }
+
+  public static void main(String[] args) throws InterruptedException {
+    final Progress sleep = new Progress("sleeping 100 ms", 300).start();
+    for (int i = 0; i < 300; i++) {
+      sleep.iter(i);
+      Thread.sleep(100);
+    }
+    sleep.stop();
   }
 }

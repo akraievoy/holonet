@@ -134,7 +134,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     for (RoutingEntry re : routes) {
       if (isNeighbor(ownRoute, re)) {
         result.add(re);
-        if (result.size() >= num) {
+        if (num > 0 && result.size() >= num) {
           break;
         }
       }
@@ -281,7 +281,13 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       return;
     }
 
-    for (RoutingEntry myRe : routes) {
+    final float newLiveness = upEntry.computeNewLiveness(event);
+
+    float minLiveness =
+        RoutingEntry.LIVENESS_MIN * RoutingEntry.LIVENESS_COMM_FAIL_PENALTY;
+    for (int i = 0, size = routes.size(); i < size; i++) {
+      RoutingEntry myRe = routes.get(i);
+      minLiveness = Math.min(minLiveness, myRe.getLiveness());
       if (!myRe.getAddress().equals(upEntry.getAddress())) {
         continue;
       }
@@ -289,20 +295,37 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       if (myRe.getStamp() < upEntry.getStamp()) {
         myRe.update(upEntry.getStamp(), upEntry.getEntryCount(), upEntry.getRanges());
       }
-      myRe.updateLiveness(event);
+      if (newLiveness >= RoutingEntry.LIVENESS_MIN) {
+        myRe.updateLiveness(event);
+      } else {
+        routes.remove(i);
+        final FlavorTuple fTuple = flavorize(getOwnRoute(), upEntry);
+        final Integer oldCount = flavorToCount.get(fTuple.flavor);
+        if (oldCount != null) {
+          if (oldCount > 1) {
+            flavorToCount.put(fTuple.flavor, oldCount - 1);
+          } else {
+            flavorToCount.remove(fTuple.flavor);
+          }
+        }
+      }
 
       return;
     }
 
+    final FlavorTuple fTuple = flavorize(getOwnRoute(), upEntry);
+    final Integer count = flavorToCount.get(fTuple.flavor);
+    if (newLiveness < minLiveness || count != null && count > Math.floor(redundancy)) {
+      return;
+    }
     final RoutingEntry newRe = upEntry.copy();
     newRe.updateLiveness(event);
     routes.add(newRe);
-    final FlavorTuple tuple = flavorize(getOwnRoute(), newRe);
-    if (tuple.requireFullReflavor) {
+    if (fTuple.requireFullReflavor) {
       fullReflavor();
     } else {
-      final Integer oldCount = flavorToCount.get(tuple.flavor);
-      flavorToCount.put(tuple.flavor, oldCount == null ? 1 : oldCount + 1);
+      final Integer oldCount = flavorToCount.get(fTuple.flavor);
+      flavorToCount.put(fTuple.flavor, oldCount == null ? 1 : oldCount + 1);
     }
   }
 
@@ -395,6 +418,15 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     return routesRes;
   }
 
+  @Override
+  public RoutingStatsTuple getStats() {
+    final int routeCount =
+        routes.size() + (routes.contains(getOwnRoute()) ? 0 : 1);
+    final float routeRedundancy =
+        (float) routes.size() / flavorToCount.size();
+    return new RoutingStatsTuple(routeCount, routeRedundancy);
+  }
+
   public void registerCommunicationFailure(Address calleeAddress) {
     //	TODO we don't really NEED to create an object just to do a query
     final NodeHandle dummyHandle = new NodeHandleBase(calleeAddress.getKey(), calleeAddress);
@@ -418,16 +450,16 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   @Override
-  public double routingDistance(RoutingEntry r1, Key key) {
+  public double routingDistance(RoutingEntry r, Key key) {
     final Address localAddress = owner.getAddress();
     final Env env = owner.getNetwork().getEnv();
     final RoutingDistance dist = getRoutingDistance();
     //  LATER why we select range by routing metric only?
-    final Range bestRange = r1.selectRange(localAddress, key, dist);
+    final Range bestRange = r.selectRange(localAddress, key, dist);
     final double routingDist =
-        dist.apply(localAddress, key, r1.getAddress(), bestRange);
+        dist.apply(localAddress, key, r.getAddress(), bestRange);
     final double envDist =
-        env.apply(localAddress, key, r1.getAddress(), bestRange);
+        env.apply(localAddress, key, r.getAddress(), bestRange);
     return Math.pow(routingDist,2) * Math.pow(envDist, 2);
   }
 

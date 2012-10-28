@@ -40,6 +40,7 @@ public interface LookupService {
   RecursiveLookupState recursiveLookup(
       Key key,
       boolean mustExist,
+      Mode mode,
       RecursiveLookupState state
   ) throws CommunicationException;
 
@@ -75,6 +76,38 @@ public interface LookupService {
           0,
           Double.MAX_VALUE
       );
+    }
+
+    public static class StatsTuple {
+      public final int traversalAdded;
+      public final int traversalCalled;
+      public final int traversalFailed;
+      public final int traversalSucceeded;
+
+      public StatsTuple(
+          int traversalAdded,
+          int traversalCalled,
+          int traversalFailed
+      ) {
+        this.traversalAdded = traversalAdded;
+        this.traversalCalled = traversalCalled;
+        this.traversalFailed = traversalFailed;
+        this.traversalSucceeded = this.traversalCalled - this.traversalFailed;
+      }
+    }
+
+    public StatsTuple getStats() {
+      int called = 0;
+      int failed = 0;
+      for (Traversal traversal : traversals) {
+        if (traversal.called()) {
+          called++;
+          if (traversal.event == Event.CONNECTION_FAILED) {
+            failed++;
+          }
+        }
+      }
+      return new StatsTuple(traversals.size(), called, failed);
     }
 
     //  LATER it's now possible to create nice dump method for debug purposes

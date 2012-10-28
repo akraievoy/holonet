@@ -96,4 +96,16 @@ public interface RoutingService extends RoutingState<RoutingEntry, Key> {
   Comparator<RoutingEntry> getLivenessOrder();
 
   double routingDistance(RoutingEntry r1, Key key);
+
+  RoutingStatsTuple getStats();
+
+  public static class RoutingStatsTuple {
+    public final int routeCount;
+    public final float routeRedundancy;
+
+    public RoutingStatsTuple(int routeCount, float routeRedundancy) {
+      this.routeCount = routeCount;
+      this.routeRedundancy = routeRedundancy;
+    }
+  }
 }
