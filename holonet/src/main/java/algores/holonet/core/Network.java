@@ -30,7 +30,6 @@ import org.akraievoy.cnet.gen.vo.EntropySource;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Network {
@@ -270,13 +269,13 @@ public class Network {
 
     final NetworkInterceptor interceptor = getInterceptor();
     final double routeRedundancy =
-        (double) stats.traversalSucceeded / route.size();
+        (double) stats.traversalsSucceeded / route.size();
     final double routeRetraction =
-        (double) stats.traversalFailed / route.size();
+        (double) stats.traversalsFailed / route.size();
     final double routeExhaustion =
-        (double) stats.traversalCalled / stats.traversalAdded;
+        (double) stats.traversalsCalled / stats.traversalsAdded;
     final double routeRpcFailRatio =
-        (double) stats.traversalFailed / stats.traversalCalled;
+        (double) stats.traversalsFailed / stats.traversalsCalled;
     interceptor.modeToLookups(mode).registerLookup(
         latency,
         route.size() - 1,

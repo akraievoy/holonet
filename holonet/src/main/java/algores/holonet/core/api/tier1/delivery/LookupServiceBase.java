@@ -102,23 +102,16 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
         services.getStorage().getKeys().contains(key) ||
         !mustExist && routing.getOwnRoute().isReplicaFor(key, (byte) 0)
     ) {
-      return updateRoutes(
-          mode,
-          new RecursiveLookupState(
-              Optional.of(ownerAddress),
-              state.replicaPath,
-              state.traversals,
-              state.hopCount,
-              state.hopDistance
-          )
-      );
+      return updateRoutes(mode, state.withReplica(ownerAddress));
     }
 
     List<RoutingEntry> replicaPath = state.replicaPath;
     Optional<Address> replicaOpt = Optional.absent();
 
-    final List<Traversal> localTraversals =
-        new ArrayList<Traversal>(state.traversals);
+    final SortedMap<Address, Traversal> localTraversed =
+        new TreeMap<Address, Traversal>(state.traversed);
+    final SortedMap<Address, Traversal> localPending =
+        new TreeMap<Address, Traversal>(state.pending);
     final List<RoutingEntry> localRoutes =
         routing.replicaSet(key, Byte.MAX_VALUE);
     final List<RoutingEntry> fingers = routing.localLookup(
@@ -130,21 +123,20 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     neighbors.removeAll(localRoutes);
     localRoutes.addAll(neighbors);
 
-    for (Traversal t : localTraversals) {
-      //  remove traversed previously
-      if (t.called()) {
-        final int localIndex = localRoutes.indexOf(t.re);
-        if (localIndex >= 0) {
-          localRoutes.remove(localIndex);
-        }
+    for (Iterator<RoutingEntry> rIt = localRoutes.iterator(); rIt.hasNext(); ) {
+      if (localTraversed.containsKey(rIt.next().getAddress())) {
+        rIt.remove();
       }
     }
     //  add new routes to traversal history
     for (RoutingEntry re : localRoutes) {
-      localTraversals.add(new Traversal(re, state.hopCount, -1, Event.DISCOVERED));
+      localPending.put(
+          re.getAddress(),
+          new Traversal(re, state.hopCount, -1, Event.DISCOVERED)
+      );
     }
     int liftCount = 0;
-    for (Traversal t : localTraversals) {
+    for (Traversal t : state.pending.values()) {
       //  some of globally pending routes became closer?
       if (!t.called()) {
         if (routing.routingDistance(t.re, key) * 2 < state.hopDistance) {
@@ -170,18 +162,10 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
             services.getRpc().rpcTo(route, LookupService.class);
         if (remoteLookupOpt.isPresent()) {
           //  mark called
-          for (int i = 0, size = localTraversals.size(); i < size; i++) {
-            Traversal t = localTraversals.get(i);
-            if (t.re.equals(route)) {
-              localTraversals.set(
-                  i,
-                  new Traversal(
-                      t.re, t.hopAdded, state.hopCount, Event.HEART_BEAT
-                  )
-              );
-              break;
-            }
-          }
+          localTraversed.put(
+              route.getAddress(),
+              localPending.remove(route.getAddress()).calledAtHop(state.hopCount)
+          );
           final ArrayList<RoutingEntry> remoteReplicaPath =
               new ArrayList<RoutingEntry>(state.replicaPath);
           remoteReplicaPath.add(route);
@@ -192,15 +176,17 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
                   new RecursiveLookupState(
                       replicaOpt,
                       remoteReplicaPath,
-                      localTraversals,
+                      localTraversed,
+                      localPending,
                       state.hopCount + 1,
                       routing.routingDistance(route, key)
                   )
               );
+          localTraversed.putAll(remoteState.traversed);
           //  remote may invoke some fraction of our local queue,
-          //    so we have to renew localTraversals completely
-          localTraversals.clear();
-          localTraversals.addAll(remoteState.traversals);
+          //    so we have to renew localPending completely
+          localPending.clear();
+          localPending.putAll(remoteState.pending);
           if (remoteState.replicaOpt.isPresent()) {
             replicaOpt = remoteState.replicaOpt;
             replicaPath = remoteState.replicaPath;
@@ -208,33 +194,19 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
           } else {
             //  remote may invoke some fraction of our local queue,
             //    so we also have to analyse the localRoutes
-            for (Traversal t : localTraversals) {
-              //  remove traversed previously
-              if (t.called()) {
-                final int localIndex = localRoutes.indexOf(t.re);
-                if (localIndex >= 0) {
-                  localRoutes.remove(localIndex);
-                }
+            for (Iterator<RoutingEntry> rIt = localRoutes.iterator(); rIt.hasNext(); ) {
+              if (localTraversed.containsKey(rIt.next().getAddress())) {
+                rIt.remove();
               }
             }
           }
         } else {
           //  mark failed
-          for (int i = 0, size = localTraversals.size(); i < size; i++) {
-            Traversal t = localTraversals.get(i);
-            if (t.re.equals(route)) {
-              localTraversals.set(
-                  i,
-                  new Traversal(
-                      t.re, t.hopAdded, state.hopCount, Event.CONNECTION_FAILED
-                  )
-              );
-              break;
-            }
-          }
+          localTraversed.put(
+              route.getAddress(),
+              localPending.remove(route.getAddress()).failedAtHop(state.hopCount)
+          );
         }
-      } catch (CommunicationException myNfe) {
-        throw myNfe;
       } catch (StackOverflowError soe) {
         throw new RuntimeException(soe);
       }
@@ -245,7 +217,8 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
         new RecursiveLookupState(
             replicaOpt,
             replicaPath,
-            localTraversals,
+            localTraversed,
+            localPending,
             state.hopCount,
             state.hopDistance
         )
@@ -257,7 +230,10 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     final RoutingService.RoutingStatsTuple statsBefore =
         routing.getStats();
 
-    for (Traversal t : state.traversals) {
+    for (Traversal t : state.traversed.values()) {
+        routing.update(t.re, t.event);
+    }
+    for (Traversal t : state.pending.values()) {
         routing.update(t.re, t.event);
     }
     final RoutingService.RoutingStatsTuple statsAfter =

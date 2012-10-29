@@ -45,23 +45,42 @@ public interface LookupService {
   ) throws CommunicationException;
 
   public static class RecursiveLookupState {
+    private static final SortedMap<Address,Traversal> EMPTY_MAP =
+        Collections.unmodifiableSortedMap(new TreeMap<Address, Traversal>());
+
     public final Optional<Address> replicaOpt;
     public final List<RoutingEntry> replicaPath;
-    public final List<Traversal> traversals;
+    public final SortedMap<Address, Traversal> traversed;
+    public final SortedMap<Address, Traversal> pending;
     public final int hopCount;
     public final double hopDistance;
 
     public RecursiveLookupState(
         final Optional<Address> replicaOpt,
         final List<RoutingEntry> replicaPath,
-        final List<Traversal> traversals,
+        final SortedMap<Address, Traversal> traversed,
+        final SortedMap<Address, Traversal> pending,
         final int hopCount,
         final double hopDistance
     ) {
+      if (traversed.isEmpty()) {
+        throw new IllegalStateException("traversals.isEmpty");
+      }
+
       this.replicaOpt = replicaOpt;
-      this.traversals = Collections.unmodifiableList(traversals);
+      this.replicaPath =
+          Collections.unmodifiableList(
+              new ArrayList<RoutingEntry>(replicaPath)
+          );
+      this.traversed =
+          Collections.unmodifiableSortedMap(
+              new TreeMap<Address, Traversal>(traversed)
+          );
+      this.pending =
+          Collections.unmodifiableSortedMap(
+              new TreeMap<Address, Traversal>(pending)
+          );
       this.hopCount = hopCount;
-      this.replicaPath = Collections.unmodifiableList(replicaPath);
       this.hopDistance = hopDistance;
     }
 
@@ -70,44 +89,76 @@ public interface LookupService {
     ) {
       this(
           Optional.<Address>absent(),
-          Arrays.asList(ownerEntry), Arrays.asList(
-              new Traversal(ownerEntry, 0, 0, Event.HEART_BEAT)
-          ),
+          Arrays.asList(ownerEntry),
+          singleton(ownerEntry),
+          EMPTY_MAP,
           0,
           Double.MAX_VALUE
       );
     }
 
+    private static SortedMap<Address, Traversal> singleton(
+        RoutingEntry ownerEntry
+    ) {
+      final TreeMap<Address, Traversal> singleton =
+          new TreeMap<Address, Traversal>();
+      singleton.put(
+          ownerEntry.getAddress(),
+          new Traversal(ownerEntry, 0, 0, Event.HEART_BEAT)
+      );
+      return singleton;
+    }
+
     public static class StatsTuple {
-      public final int traversalAdded;
-      public final int traversalCalled;
-      public final int traversalFailed;
-      public final int traversalSucceeded;
+      public final int traversalsAdded;
+      public final int traversalsCalled;
+      public final int traversalsFailed;
+      public final int traversalsSucceeded;
 
       public StatsTuple(
-          int traversalAdded,
-          int traversalCalled,
-          int traversalFailed
+          int traversalsAdded,
+          int traversalsCalled,
+          int traversalsFailed
       ) {
-        this.traversalAdded = traversalAdded;
-        this.traversalCalled = traversalCalled;
-        this.traversalFailed = traversalFailed;
-        this.traversalSucceeded = this.traversalCalled - this.traversalFailed;
+        this.traversalsAdded = traversalsAdded;
+        this.traversalsCalled = traversalsCalled;
+        this.traversalsFailed = traversalsFailed;
+        this.traversalsSucceeded = this.traversalsCalled - this.traversalsFailed;
       }
+    }
+
+    public RecursiveLookupState withReplica(Address replica) {
+      return new RecursiveLookupState(
+          Optional.of(replica),
+          replicaPath,
+          traversed,
+          pending,
+          hopCount,
+          hopDistance
+      );
     }
 
     public StatsTuple getStats() {
       int called = 0;
       int failed = 0;
-      for (Traversal traversal : traversals) {
-        if (traversal.called()) {
-          called++;
-          if (traversal.event == Event.CONNECTION_FAILED) {
-            failed++;
-          }
+      for (Traversal t : this.traversed.values()) {
+        if (!t.called()) {
+          throw new IllegalStateException("t.called == false");
+        }
+        called++;
+        if (t.event == Event.CONNECTION_FAILED) {
+          failed++;
         }
       }
-      return new StatsTuple(traversals.size(), called, failed);
+      for (Traversal t : pending.values()) {
+        if (t.called()) {
+          throw new IllegalStateException("t.called == true");
+        }
+      }
+      if (called == 0) {
+        throw new IllegalStateException("called == 0");
+      }
+      return new StatsTuple(traversed.size() + pending.size(), called, failed);
     }
 
     //  LATER it's now possible to create nice dump method for debug purposes
@@ -133,6 +184,14 @@ public interface LookupService {
 
     public boolean called() {
       return hopCalled >= 0;
+    }
+
+    public Traversal failedAtHop(final int hopCalled) {
+      return new Traversal(re, hopAdded, hopCalled, Event.CONNECTION_FAILED);
+    }
+
+    public Traversal calledAtHop(final int hopCalled) {
+      return new Traversal(re, hopAdded, hopCalled, Event.HEART_BEAT);
     }
   }
 }
