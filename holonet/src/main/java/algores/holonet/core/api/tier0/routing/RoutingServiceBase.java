@@ -48,9 +48,9 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   /**
    * should we store duplicates of enries of the same flavor, this value might be fractional, like 1.75
    */
-  protected double redundancy = 2.25;
+  protected double redundancy = 3.25;
   /**
-   * Comparator defining which redundant entries would be be dropped: less means drop, greater means keep.
+   * Comparator defining which redundant entries would be dropped: less means drop, greater means keep.
    * Default strategy is based on sole liveness value, which is itself adjusted by failures and usage frequency.
    */
   protected Comparator<RoutingEntry> livenessOrder = new LivenessComparator();
@@ -423,7 +423,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     final int routeCount =
         routes.size() + (routes.contains(getOwnRoute()) ? 0 : 1);
     final float routeRedundancy =
-        (float) routes.size() / flavorToCount.size();
+        (float) routeCount / flavorToCount.size();
     return new RoutingStatsTuple(routeCount, routeRedundancy);
   }
 
@@ -432,6 +432,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     final NodeHandle dummyHandle = new NodeHandleBase(calleeAddress.getKey(), calleeAddress);
     final RoutingEntry re = getEntry(dummyHandle);
 
+    //  this should also provoke eviction / reflavoring
     if (re != null) {
       re.updateLiveness(Event.CONNECTION_FAILED);
     } else {
@@ -460,7 +461,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
         dist.apply(localAddress, key, r.getAddress(), bestRange);
     final double envDist =
         env.apply(localAddress, key, r.getAddress(), bestRange);
-    return Math.pow(routingDist,2) * Math.pow(envDist, 2);
+    return routingDist * Math.pow(2, envDist);
   }
 
   protected static class LivenessComparator implements Comparator<RoutingEntry> {

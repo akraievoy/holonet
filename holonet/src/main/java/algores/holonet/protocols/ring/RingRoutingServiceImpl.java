@@ -61,8 +61,6 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
 
     successor = ownRoute;
     predecessor = ownRoute;
-
-    setRedundancy(3);
   }
 
   public RoutingDistance getRoutingDistance() {

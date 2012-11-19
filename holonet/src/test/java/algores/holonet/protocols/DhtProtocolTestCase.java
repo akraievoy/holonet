@@ -106,13 +106,13 @@ public abstract class DhtProtocolTestCase extends TestCase {
         ),
         getMetrics.getRoutingServiceRedundancyAvg() < redundancyLimit
     );
-/*
-    System.err.println(String.format("hop count (%d nodes) = %g", nodes, getMetrics.getMeanPathLength()));
-    System.err.println(String.format("route count (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRouteCountAvg()));
-    System.err.println(String.format("route redundancy (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRedundancyAvg()));
-    System.err.println(String.format("route redundancy change (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRedundancyChangeAvg()));
+    if (nodes >= 64) {
+      System.err.println(String.format("hop count (%d nodes) = %g", nodes, getMetrics.getMeanPathLength()));
+      System.err.println(String.format("route count (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRouteCountAvg()));
+      System.err.println(String.format("route redundancy (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRedundancyAvg()));
+      System.err.println(String.format("route redundancy change (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRedundancyChangeAvg()));
+    }
     assertEquals(0, ctx.getNetFailCount().get());
-*/
   }
 
   protected void testJoinLeave0(final long seed, final int nodes) {
@@ -179,14 +179,14 @@ public abstract class DhtProtocolTestCase extends TestCase {
     }
     lookupProgress.stop();
 
-/*
     final NetworkInterceptor.LookupMetrics getMetrics =
         ctx.nameToMetrics().get(Context.METRICS).modeToLookups(LookupService.Mode.GET);
-    System.err.println(String.format("hop count (%d nodes) = %g", nodes, getMetrics.getMeanPathLength()));
-    System.err.println(String.format("route count (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRouteCountAvg()));
-    System.err.println(String.format("route redundancy (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRedundancyAvg()));
-    System.err.println(String.format("route redundancy change (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRedundancyChangeAvg()));
-*/
+    if (nodes >= 64) {
+      System.err.println(String.format("hop count (%d nodes) = %g", nodes, getMetrics.getMeanPathLength()));
+      System.err.println(String.format("route count (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRouteCountAvg()));
+      System.err.println(String.format("route redundancy (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRedundancyAvg()));
+      System.err.println(String.format("route redundancy change (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRedundancyChangeAvg()));
+    }
+    assertEquals(0, ctx.getNetFailCount().get());
   }
-
 }

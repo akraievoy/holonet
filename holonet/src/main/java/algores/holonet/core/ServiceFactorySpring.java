@@ -38,7 +38,11 @@ public class ServiceFactorySpring implements ServiceFactory {
   protected RoutingService routing = new ChordRoutingServiceImpl();
 
   public ServiceFactorySpring() {
-    routing.setRedundancy(3);
+    //  nothing to do here
+  }
+
+  public ServiceFactorySpring(final int routingRedundancy) {
+    routing.setRedundancy(routingRedundancy);
   }
 
   public void setLookup(LookupService lookup) {
