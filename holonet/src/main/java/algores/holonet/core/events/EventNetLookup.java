@@ -22,10 +22,8 @@ import algores.holonet.core.CommunicationException;
 import algores.holonet.core.Network;
 import algores.holonet.core.Node;
 import algores.holonet.core.RequestPair;
-import algores.holonet.core.api.API;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
-import algores.holonet.core.api.tier0.storage.StorageService;
 import algores.holonet.core.api.tier1.delivery.LookupService;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
@@ -44,16 +42,12 @@ class EventNetLookup extends Event {
           network.generateRequestPair(eSource);
       Collection<Key> serverKeys =
           request.server.getServices().getStorage().getKeys();
-      int tryCount = 32;
-      while (tryCount-- >= 0 && serverKeys.isEmpty()) { //  server has no mappings
-        request =
-            network.generateRequestPair(eSource);
-        serverKeys =
-            request.server.getServices().getStorage().getKeys();
-      }
 
       final Key mapping =
-          eSource.randomElement(serverKeys);
+          serverKeys.isEmpty() ?
+              //  we may also pull other keys from the range, not only the greatest one
+              request.server.getServices().getRouting().getOwnRoute().getRange().getRKey().prev() :
+              eSource.randomElement(serverKeys);
       final LookupService lookupSvc =
           request.client.getServices().getLookup();
 
