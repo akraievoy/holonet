@@ -124,7 +124,8 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     localRoutes.addAll(neighbors);
 
     for (Iterator<RoutingEntry> rIt = localRoutes.iterator(); rIt.hasNext(); ) {
-      if (localTraversed.containsKey(rIt.next().getAddress())) {
+      final Address address = rIt.next().getAddress();
+      if (localTraversed.containsKey(address) || localPending.containsKey(address)) {
         rIt.remove();
       }
     }
@@ -138,15 +139,13 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     int liftCount = 0;
     for (Traversal t : state.pending.values()) {
       //  some of globally pending routes became closer?
-      if (!t.called()) {
         if (routing.routingDistance(t.re, key) * 2 < state.hopDistance) {
-          final int localIndex = localRoutes.indexOf(t.re);
-          if (localIndex <= 0) {
-            localRoutes.add(t.re);
-            liftCount ++;
-            if (liftCount * 8 > localRoutes.size()) {
-              break;
-            }
+        final int localIndex = localRoutes.indexOf(t.re);
+        if (localIndex <= 0) {
+          localRoutes.add(t.re);
+          liftCount ++;
+          if (liftCount * 8 > localRoutes.size()) {
+            break;
           }
         }
       }
@@ -195,7 +194,8 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
             //  remote may invoke some fraction of our local queue,
             //    so we also have to analyse the localRoutes
             for (Iterator<RoutingEntry> rIt = localRoutes.iterator(); rIt.hasNext(); ) {
-              if (localTraversed.containsKey(rIt.next().getAddress())) {
+              final Address address = rIt.next().getAddress();
+              if (localTraversed.containsKey(address)) {
                 rIt.remove();
               }
             }

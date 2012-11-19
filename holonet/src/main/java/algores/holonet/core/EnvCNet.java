@@ -303,5 +303,22 @@ public class EnvCNet implements Env {
     public int getNodeIdx() {
       return nodeIdx;
     }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      AddressCNet that = (AddressCNet) o;
+
+      if (nodeIdx != that.nodeIdx) return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return nodeIdx;
+    }
   }
 }
