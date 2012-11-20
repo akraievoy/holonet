@@ -28,14 +28,36 @@ import org.akraievoy.cnet.gen.vo.EntropySource;
  */
 class EventNetStabilize extends Event {
   public EventComposite.Result executeInternal(Network targetNetwork, final EntropySource eSource) {
-    try {
-      for (Node node : targetNetwork.getAllNodes()) {
+    Result result = Result.SUCCESS;
+
+    int stabilizeSucceeded = 0;
+    int stabilizeTotal = 0;
+    for (Node node : targetNetwork.getAllNodes()) {
+      try {
+        stabilizeTotal += 1;
         node.getServices().getOverlay().stabilize();
+        stabilizeSucceeded += 1;
+      } catch (CommunicationException e) {
+        result = handleEventFailure(e, null);
+        log.debug(
+            String.format(
+                "stabilize failed: %s",
+                e.getMessage()
+            ),
+            e
+        );
       }
-    } catch (CommunicationException e) {
-      return handleEventFailure(e, null);
     }
 
-    return EventComposite.Result.SUCCESS;
+    if (stabilizeSucceeded != stabilizeTotal) {
+      log.warn(
+          String.format(
+              "stabilize success ratio: %.6g",
+              (float) stabilizeSucceeded / stabilizeTotal
+          )
+      );
+    }
+
+    return result;
   }
 }

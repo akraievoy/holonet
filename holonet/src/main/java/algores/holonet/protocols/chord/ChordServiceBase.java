@@ -28,6 +28,7 @@ import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.rpc.RpcService;
 import algores.holonet.core.api.tier1.delivery.LookupService;
 import algores.holonet.protocols.ring.RingRoutingService;
+import algores.holonet.protocols.ring.RingRoutingServiceImpl;
 import algores.holonet.protocols.ring.RingService;
 import com.google.common.base.Optional;
 
@@ -71,24 +72,44 @@ public class ChordServiceBase extends RingService implements ChordService {
    * For maintaining finger table/link purpose
    */
   public void stabilize() throws CommunicationException {
+    final RingRoutingServiceImpl ownRouting =
+        (RingRoutingServiceImpl) getRouting();
     final RpcService rpc = owner.getServices().getRpc();
+
     final Address succAddr = getRouting().getSuccessor().getAddress();
-    final Optional<RingRoutingService> succRoutingOpt =
+    Optional<RingRoutingService> succRoutingOpt =
         rpc.rpcTo(succAddr, RingRoutingService.class);
     if (!succRoutingOpt.isPresent()) {
-      throw new CommunicationException("Successor is not alive, stabilize (possibly on join) failed.");
+      ownRouting.registerCommunicationFailure(succAddr);
+
+      final RingRoutingServiceImpl.RecoverRefTuple tuple =
+          ownRouting.recoverRef("successor", owner.getKey().next());
+
+      ownRouting.setSuccessor(tuple.recovered);
+      succRoutingOpt = tuple.remoteRoutingOpt;
     }
 
-    final RoutingEntry succPred = succRoutingOpt.get().getPredecessor();
-    if (KeySpace.isInOpenRange(succPred, getRouting().getSuccessor(), owner.getAddress())) {
-      getRouting().setPredecessor(succPred);
-      rpcToRouting(getRouting().getPredecessor()).setSuccessor(getRouting().getOwnRoute());
-    } else if (KeySpace.isInOpenLeftRange(owner, getRouting().getSuccessor(), succPred)) {
-      getRouting().setSuccessor(succPred);
+    final RoutingEntry succPred = succRoutingOpt.get().getPredecessorSafe();
+    if (KeySpace.isInOpenRange(succPred, ownRouting.getSuccessor(), owner.getAddress())) {
+      ownRouting.setPredecessor(succPred);
+      final Optional<RingRoutingService> rsOpt =
+          rpc.rpcTo(succPred.getAddress(), RingRoutingService.class);
+      if (rsOpt.isPresent()) {
+        rsOpt.get().setSuccessor(ownRouting.getOwnRoute());
+      } else {
+        ownRouting.registerCommunicationFailure(succPred.getAddress());
+        throw new CommunicationException("predecessor just was alive?");
+      }
+    } else if (KeySpace.isInOpenLeftRange(owner, ownRouting.getSuccessor(), succPred)) {
+      ownRouting.setSuccessor(succPred);
     }
-    rpcToRouting(getRouting().getSuccessor()).setPredecessor(getRouting().getOwnRoute());
+    rpcToRouting(ownRouting.getSuccessor()).setPredecessor(ownRouting.getOwnRoute());
 
-    owner.getServices().getStorage().putAll(rpcToStorage(getRouting().getSuccessor()).filter(getRouting().getPredecessor(), false, owner.getKey(), true));
+    owner.getServices().getStorage().putAll(
+        rpcToStorage(ownRouting.getSuccessor()).filter(
+            ownRouting.getPredecessor(), false, owner.getKey(), true
+        )
+    );
 
     fixFingers();
   }

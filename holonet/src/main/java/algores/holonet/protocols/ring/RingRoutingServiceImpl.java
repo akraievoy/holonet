@@ -19,13 +19,22 @@
 package algores.holonet.protocols.ring;
 
 import algores.holonet.capi.Event;
+import algores.holonet.core.CommunicationException;
 import algores.holonet.core.Node;
+import algores.holonet.core.api.Address;
+import algores.holonet.core.api.Key;
 import algores.holonet.core.api.Range;
 import algores.holonet.core.api.RangeBase;
 import algores.holonet.core.api.tier0.routing.RoutingDistance;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.routing.RoutingServiceBase;
+import algores.holonet.core.api.tier0.rpc.RpcService;
+import algores.holonet.core.api.tier0.storage.StorageService;
+import com.google.common.base.Optional;
 import org.akraievoy.base.Die;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Default implementation.
@@ -108,5 +117,73 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
     }
 
     return new FlavorTuple(FLAVOR_EXTRA, false);
+  }
+
+  @Override
+  public RoutingEntry getPredecessorSafe() throws CommunicationException {
+    final RpcService rpc = owner.getServices().getRpc();
+
+    final RoutingEntry predEntry = getPredecessor();
+    final Address predAddr = predEntry.getAddress();
+    final Optional<RingRoutingService> predRouting =
+        rpc.rpcTo(predAddr, RingRoutingService.class);
+    if (predRouting.isPresent()) {
+      return predRouting.get().getOwnRoute();
+    }
+
+    registerCommunicationFailure(predAddr);
+
+    final RecoverRefTuple tuple =
+        recoverRef("predecessor", predEntry.getKey());
+    final RoutingEntry newPredecessor =
+        tuple.remoteRoutingOpt.get().getOwnRoute();
+    setPredecessor(newPredecessor);
+
+    return newPredecessor;
+  }
+
+  public static class RecoverRefTuple {
+    public final RoutingEntry recovered;
+    public final Optional<RingRoutingService> remoteRoutingOpt;
+
+    public RecoverRefTuple(
+        final RoutingEntry recovered,
+        final Optional<RingRoutingService> remoteRoutingOpt
+    ) {
+      this.recovered = recovered;
+      this.remoteRoutingOpt = remoteRoutingOpt;
+    }
+  }
+
+  public RecoverRefTuple recoverRef(
+      final String refFlavor,
+      final Key targetKey
+  ) {
+    final RpcService rpc = owner.getServices().getRpc();
+
+    final List<RoutingEntry> routes = getRoutes();
+    Collections.sort(routes, distanceOrder(targetKey));
+    int triedRoutes = 0;
+    for (RoutingEntry route : routes) {
+      if (route.equals(getOwnRoute())) {
+        continue;
+      }
+
+      triedRoutes++;
+      final Optional<RingRoutingService> routingOpt =
+          rpc.rpcTo(route.getAddress(), RingRoutingService.class);
+
+      if (routingOpt.isPresent()) {
+        return new RecoverRefTuple(route, routingOpt);
+      }
+      registerCommunicationFailure(route.getAddress());
+    }
+
+    throw new CommunicationException(
+        String.format(
+            "unable to recover any " + refFlavor + " after peer failure, tried %d routes",
+            triedRoutes
+        )
+    );
   }
 }

@@ -33,35 +33,35 @@ import com.google.common.base.Optional;
  */
 public abstract class OverlayServiceBase extends LocalServiceBase implements OverlayService {
 
-  protected StorageService rpcToStorage(final AddressSource target) throws CommunicationException {
-    if (target.equals(owner.getAddress())) {
+  protected StorageService rpcToStorage(final AddressSource server) throws CommunicationException {
+    if (server.equals(owner.getAddress())) {
       return getStorage();
     }
 
-    final Optional<StorageService> storageOpt = getRpc().rpcTo(target.getAddress(), StorageService.class);
+    final Optional<StorageService> storageOpt = getRpc().rpcTo(server.getAddress(), StorageService.class);
     if (storageOpt.isPresent()) {
       return storageOpt.get();
     } else {
-      getRouting().registerCommunicationFailure(target.getAddress());
+      getRouting().registerCommunicationFailure(server.getAddress());
       throw new CommunicationException(
-          String.format("%s is offline", target)
+          String.format("%s is offline", server)
       );
     }
   }
 
-  protected LookupService rpcToDelivery(AddressSource address) throws CommunicationException {
-    if (address.equals(owner.getAddress())) {
+  protected LookupService rpcToDelivery(AddressSource server) throws CommunicationException {
+    if (server.equals(owner.getAddress())) {
       return getDelivery();
     }
 
     final Optional<LookupService> lsOpt =
-        getRpc().rpcTo(address.getAddress(), LookupService.class);
+        getRpc().rpcTo(server.getAddress(), LookupService.class);
     if (lsOpt.isPresent()) {
       return lsOpt.get();
     } else {
-      getRouting().registerCommunicationFailure(address.getAddress());
+      getRouting().registerCommunicationFailure(server.getAddress());
       throw new CommunicationException(
-          String.format("%s is offline", address)
+          String.format("%s is offline", server)
       );
     }
   }
