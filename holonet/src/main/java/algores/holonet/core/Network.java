@@ -276,6 +276,7 @@ public class Network {
         (double) stats.traversalsCalled / stats.traversalsAdded;
     final double routeRpcFailRatio =
         (double) stats.traversalsFailed / stats.traversalsCalled;
+
     interceptor.modeToLookups(mode).registerLookup(
         latency,
         route.size() - 1,

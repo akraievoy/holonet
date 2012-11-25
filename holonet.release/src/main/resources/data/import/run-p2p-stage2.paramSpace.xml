@@ -107,7 +107,7 @@
                 value="192"
                 strategy="spawn" chainedStrategy="spawn"/>
       <hn:Param name="tbFailProb.value"
-                value="0.48"
+                value="0.64"
                 strategy="spawn" chainedStrategy="spawn"/>
       <hn:Param name="tbElems.value"
                 value="64"
