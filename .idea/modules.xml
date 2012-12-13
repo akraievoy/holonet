@@ -2,14 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/base.db/base.db.iml" filepath="$PROJECT_DIR$/base.db/base.db.iml" />
-      <module fileurl="file://$PROJECT_DIR$/base.runner/base.runner.iml" filepath="$PROJECT_DIR$/base.runner/base.runner.iml" />
-      <module fileurl="file://$PROJECT_DIR$/build.versioning/build.versioning.iml" filepath="$PROJECT_DIR$/build.versioning/build.versioning.iml" />
-      <module fileurl="file://$PROJECT_DIR$/cnet/cnet.iml" filepath="$PROJECT_DIR$/cnet/cnet.iml" />
-      <module fileurl="file://$PROJECT_DIR$/holonet/holonet.iml" filepath="$PROJECT_DIR$/holonet/holonet.iml" />
       <module fileurl="file://$PROJECT_DIR$/holonet-root.iml" filepath="$PROJECT_DIR$/holonet-root.iml" />
-      <module fileurl="file://$PROJECT_DIR$/holonet.release/holonet.release.iml" filepath="$PROJECT_DIR$/holonet.release/holonet.release.iml" />
-      <module fileurl="file://$PROJECT_DIR$/holonet.runner/holonet.runner.iml" filepath="$PROJECT_DIR$/holonet.runner/holonet.runner.iml" />
     </modules>
   </component>
 </project>
