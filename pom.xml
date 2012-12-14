@@ -126,6 +126,9 @@
   <build>
     <resources>
       <resource>
+        <directory>${project.basedir}/src/main/resources</directory>
+      </resource>
+      <resource>
         <directory>${project.build.directory}/generated-resources</directory>
       </resource>
     </resources>
@@ -208,6 +211,32 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <mainClass>org.akraievoy.base.runner.Main</mainClass>
+          <arguments>
+            <!--<argument>wheee</argument>-->
+          </arguments>
+          <systemProperties>
+<!--
+            <systemProperty>
+              <key>myproperty</key>
+              <value>myvalue</value>
+            </systemProperty>
+-->
+          </systemProperties>
+        </configuration>
       </plugin>
     </plugins>
   </build>
