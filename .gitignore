@@ -4,3 +4,4 @@ target
 *.ipr
 *.iws
 atlassian-ide-plugin.xml
+data*.7z
