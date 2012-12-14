@@ -2,13 +2,7 @@
 <project version="4">
   <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false">
     <file url="file://$PROJECT_DIR$" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/base.db" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/base.runner" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/cnet" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/data" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/holonet" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/holonet.release" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/holonet.runner" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/logs" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java/algores" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java/org" charset="UTF-8" />
