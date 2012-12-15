@@ -19,6 +19,11 @@
         </option>
         <option name="RIGHT_MARGIN" value="80" />
         <option name="KEEP_SIMPLE_METHODS_IN_ONE_LINE" value="true" />
+        <ScalaCodeStyleSettings>
+          <option name="METHOD_BRACE_FORCE" value="1" />
+          <option name="NOT_CONTINUATION_INDENT_FOR_PARAMS" value="true" />
+          <option name="SPACE_BEFORE_BRACE_METHOD_CALL" value="false" />
+        </ScalaCodeStyleSettings>
         <XML>
           <option name="XML_LEGACY_SETTINGS_IMPORTED" value="true" />
         </XML>
@@ -83,7 +88,19 @@
           </indentOptions>
         </codeStyleSettings>
         <codeStyleSettings language="Scala">
+          <option name="ALIGN_MULTILINE_PARAMETERS" value="false" />
+          <option name="ALIGN_MULTILINE_EXTENDS_LIST" value="true" />
+          <option name="CALL_PARAMETERS_WRAP" value="5" />
+          <option name="CALL_PARAMETERS_LPAREN_ON_NEXT_LINE" value="true" />
+          <option name="CALL_PARAMETERS_RPAREN_ON_NEXT_LINE" value="true" />
+          <option name="METHOD_PARAMETERS_WRAP" value="5" />
+          <option name="METHOD_PARAMETERS_RPAREN_ON_NEXT_LINE" value="true" />
+          <option name="EXTENDS_LIST_WRAP" value="5" />
           <option name="KEEP_SIMPLE_METHODS_IN_ONE_LINE" value="true" />
+          <option name="IF_BRACE_FORCE" value="3" />
+          <option name="DOWHILE_BRACE_FORCE" value="3" />
+          <option name="WHILE_BRACE_FORCE" value="3" />
+          <option name="FOR_BRACE_FORCE" value="3" />
           <option name="PARENT_SETTINGS_INSTALLED" value="true" />
           <indentOptions>
             <option name="CONTINUATION_INDENT_SIZE" value="4" />
