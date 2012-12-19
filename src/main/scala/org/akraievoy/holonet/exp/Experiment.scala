@@ -23,7 +23,11 @@ case class Experiment(
   desc: String = "",
   depends: Seq[String] = Nil,
   configs: Map[String, Config]
-) extends Named
+) extends Named {
+  def execute(confName: String) = {
+    configs(confName).paramSpace()
+  }
+}
 
 object Experiment {
   def apply(

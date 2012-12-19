@@ -26,7 +26,45 @@ case class Param(
   strategy: Parameter.Strategy,
   chainStrategy: Parameter.Strategy,
   desc: String
-) extends Named
+) extends Named {
+  def toPosSeq(
+    chained: Boolean = false,
+    expIndex: Int = 0
+  ): Seq[ParamPos] = {
+    val fullSeq = valueSpec.zipWithIndex.map {
+      case (str, idx) =>
+        ParamPos(
+          str,
+          idx,
+          valueSpec.size,
+          isParallel(chained),
+          expIndex
+        )
+    }
+    actualStrategy(chained) match {
+      case Parameter.Strategy.USE_FIRST =>
+        Seq(fullSeq.head)
+      case Parameter.Strategy.USE_LAST =>
+        Seq(fullSeq.last)
+      case anyFull if Parameter.Strategy.full(anyFull) =>
+        fullSeq
+      case other =>
+        throw new IllegalArgumentException(
+          "unable to handle strategy %s".format(other)
+        )
+    }
+  }
+
+  def isParallel(chained: Boolean = false) =
+    actualStrategy(chained) != Parameter.Strategy.ITERATE
+
+  def actualStrategy(chained: Boolean = false): Parameter.Strategy =
+    if (chained) {
+      chainStrategy
+    } else {
+      strategy
+    }
+}
 
 object Param{
   def apply(
@@ -36,10 +74,22 @@ object Param{
     chainStrategy: Parameter.Strategy = Parameter.Strategy.SPAWN,
     desc: String = ""
   ) = {
-    if (singleValueSpec.contains(';')) {
-      new Param(name, singleValueSpec.split(";"), strategy, chainStrategy, desc)
-    } else {
-      new Param(name, Seq(singleValueSpec), strategy, chainStrategy, desc)
-    }
+    val valueSpec =
+      if (singleValueSpec.contains(';')) {
+        singleValueSpec.split(";").toSeq
+      } else if (singleValueSpec.contains("-")) {
+        val rangeStr = singleValueSpec.split("-")
+        if (rangeStr.length > 2) {
+          throw new IllegalArgumentException(
+            "param '%s' has more than 2 range limits".format(name)
+          )
+        }
+        val range = rangeStr.map(java.lang.Long.parseLong)
+        (range(0) to range(1)).map(String.valueOf)
+      } else {
+        Seq(singleValueSpec)
+      }
+
+    new Param(name, valueSpec, strategy, chainStrategy, desc)
   }
 }

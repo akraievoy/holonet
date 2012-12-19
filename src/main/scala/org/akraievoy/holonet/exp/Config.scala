@@ -23,6 +23,31 @@ case class Config(
   desc: String = "",
   params: Map[String, Param]
 ) extends Named {
+
+  def paramSpace(
+    chained: Boolean = false,
+    expIndex: Int = 0
+  ): Map[Boolean, Stream[Seq[ParamPos]]] = {
+    val posSeqMap = params.values.groupBy{
+      param => param isParallel chained
+    }.mapValues{
+      paramSeq => paramSeq.map(_.toPosSeq(chained))
+    }
+
+    posSeqMap.mapValues{
+      posSeq => posSeq.foldLeft(Config.EMPTY_SPACE) {
+      (seqSeq, seq) =>
+        for (
+          posSeq <- seqSeq.toStream;
+          pos <- seq
+        ) yield {
+          posSeq :+ pos
+        }
+      }
+    }.withDefaultValue(Config.EMPTY_SPACE)
+
+  }
+
   def withDefault(dflt: Config) = {
     copy(params = params.withDefault(dflt.params))
   }
@@ -75,4 +100,6 @@ object Config {
       )
     )
   }
+
+  val EMPTY_SPACE = Seq(Seq.empty[ParamPos]).toStream
 }

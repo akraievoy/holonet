@@ -32,6 +32,8 @@ libraryDependencies += "org.netlib" % "netlib-java" % "0.9.1"
 
 libraryDependencies += "org.netlib" % "arpack-combo" % "0.1"
 
+libraryDependencies += "org.scalaz" % "scalaz-core_2.9.1" % "6.0.4"
+
 resolvers += "github-akraievoy-mvn_repo" at "https://raw.github.com/akraievoy/mvn_repo/master/releases/"
 
 libraryDependencies += "junit" % "junit" % "4.10" % "test"
