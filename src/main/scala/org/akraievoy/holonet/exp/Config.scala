@@ -62,7 +62,9 @@ object Config {
     new Config(
       name,
       desc,
-      params.groupBy {
+      params.zipWithIndex.map{
+        case (p,idx) => p.copy(index = idx)
+      }.groupBy{
         p => p.name
       }.mapValues(
         pSeq =>
@@ -83,7 +85,9 @@ object Config {
     new Config(
       "default",
       "Default",
-      params.groupBy {
+      params.zipWithIndex.map{
+        case (p, idx) => p.copy(index = idx)
+      }.groupBy{
         p => p.name
       }.mapValues(
         pSeq =>

@@ -18,14 +18,16 @@
 
 package org.akraievoy.holonet.exp
 
+import store.DataStore
+
 case class Experiment(
   name: String,
   desc: String = "",
   depends: Seq[String] = Nil,
   configs: Map[String, Config]
 ) extends Named {
-  def execute(confName: String) = {
-    configs(confName).paramSpace()
+  def execute(store: DataStore, spacePos: Seq[ParamPos]) = {
+
   }
 }
 

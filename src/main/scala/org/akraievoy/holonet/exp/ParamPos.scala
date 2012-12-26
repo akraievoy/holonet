@@ -18,10 +18,54 @@
 
 package org.akraievoy.holonet.exp
 
+/**
+ * Parameter position within an experiment space.
+ *
+ * @param value effective value for given position
+ * @param pos position index from 0 to total-1
+ * @param total total number of positions for given parameter
+ * @param parallel are we okay run experiments in parallel for this param?
+ * @param index within original experiment definition
+ * @param expIndex of experiment within experiment chain
+ */
 case class ParamPos(
+  name: String,
   value: String,
-  index: Int,
-  count: Int,
+  pos: Int,
+  total: Int,
   parallel: Boolean,
+  index: Int,
   expIndex: Int = 0
-)
+) extends Ordered[ParamPos] {
+
+  def compare(that: ParamPos) = {
+    val expCompare = expIndex compare that.expIndex
+    if (expCompare != 0) {
+      expCompare
+    } else {
+      index compare that.index
+    }
+  }
+
+}
+
+object ParamPos {
+  def pos(spacePos: Seq[ParamPos]): Int = {
+    spacePos.sorted.reverse.foldLeft((0, 1)){
+      case ((expPrevPos, expPrevTotal), paramPos) =>
+        combine(expPrevPos, expPrevTotal, paramPos.pos, paramPos.total)
+    }._1
+  }
+
+  private def combine(
+    prevPos: Int,
+    prevTotal: Int,
+    curPos: Int,
+    curTotal: Int
+  ): (Int, Int) = {
+    (
+        prevPos + curPos * prevTotal,
+        curTotal * prevTotal
+    )
+  }
+}

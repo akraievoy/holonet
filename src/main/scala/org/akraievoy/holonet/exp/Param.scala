@@ -25,7 +25,8 @@ case class Param(
   valueSpec: Seq[String],
   strategy: Parameter.Strategy,
   chainStrategy: Parameter.Strategy,
-  desc: String
+  desc: String,
+  index: Int
 ) extends Named {
   def toPosSeq(
     chained: Boolean = false,
@@ -34,10 +35,12 @@ case class Param(
     val fullSeq = valueSpec.zipWithIndex.map {
       case (str, idx) =>
         ParamPos(
+          name,
           str,
           idx,
           valueSpec.size,
           isParallel(chained),
+          index,
           expIndex
         )
     }
@@ -90,6 +93,6 @@ object Param{
         Seq(singleValueSpec)
       }
 
-    new Param(name, valueSpec, strategy, chainStrategy, desc)
+    new Param(name, valueSpec, strategy, chainStrategy, desc, -1)
   }
 }

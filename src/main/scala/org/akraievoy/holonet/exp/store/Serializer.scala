@@ -16,8 +16,9 @@
  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.akraievoy.holonet.exp
+package org.akraievoy.holonet.exp.store
 
-trait Schema {
-
+trait Serializer[T] {
+  def alias: String
+  def mt: Manifest[T]
 }
