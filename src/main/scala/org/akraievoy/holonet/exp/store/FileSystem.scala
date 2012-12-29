@@ -58,15 +58,22 @@ class FileSystem(
   def readCSV(
     runUID: RunUID,
     fName: String
-  ): Seq[Seq[String]] = {
+  ): Option[Seq[Seq[String]]] = {
     val destFile = new File(expDir(runUID), fName)
-    val in = new FileInputStream(destFile)
-    try {
-      io.Source.fromInputStream(in, "UTF-8").getLines().map{
-        str => str.split(";").map{cell => cell.trim}.toSeq
-      }.toSeq
-    } finally {
-      in.close()
+    if (destFile.isFile) {
+      val in = new FileInputStream(destFile)
+      try {
+        val lineSeq = io.Source.fromInputStream(in, "UTF-8").getLines().map {
+          str => str.split(";").map {
+            cell => cell.trim
+          }.toSeq
+        }.toSeq
+        Some(lineSeq)
+      } finally {
+        in.close()
+      }
+    } else {
+      None
     }
   }
 
@@ -94,12 +101,15 @@ class FileSystem(
     val srcFile = new File(expDir(runUID), fName)
 
     noReadsAndDumpsOverAppends(openStreams, srcFile)
-
-    val in = new BufferedInputStream(new FileInputStream(srcFile))
-    try {
-      readOp(in).headOption
-    } finally {
-      in.close()
+    if (srcFile.isFile) {
+      val in = new BufferedInputStream(new FileInputStream(srcFile))
+      try {
+        readOp(in).headOption
+      } finally {
+        in.close()
+      }
+    } else {
+      None
     }
   }
 

@@ -19,7 +19,7 @@
 package org.akraievoy.holonet.exp.store
 
 case class StoreLens[T](
-  getFun: () => T,
+  getFun: () => Option[T],
   setFun: (T) => Unit
 ) {
 

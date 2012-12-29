@@ -18,6 +18,7 @@
 
 package org.akraievoy.holonet.exp.store
 
+//  TODO add covariance
 trait Serializer[T] {
   def alias: String
   def mt: Manifest[T]

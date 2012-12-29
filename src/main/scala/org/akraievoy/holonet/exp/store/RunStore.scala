@@ -56,8 +56,4 @@ class RunStore(
       dateFormat.format(new Date(generateStamp))
     )
   }
-
-  def listParams(runUID: RunUID): Map[String, Class[_]] = {
-    Map.empty[String, Class[_]] //  FIXME proceed
-  }
 }

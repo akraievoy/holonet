@@ -19,7 +19,7 @@
 package org.akraievoy.holonet.exp
 
 import annotation.tailrec
-import store.{DataStore, RunUID, RunStore, FileSystem}
+import store.{DataStore, RunStore, FileSystem}
 import java.io.File
 
 object Registry {
@@ -123,8 +123,8 @@ object Registry {
     val fs = new FileSystem(new File("data"))
     val runStore = new RunStore(fs)
 
-    //  FIXME validate we have no param name collisions
-    (1 to expsWithConf.length).toSeq.foldLeft(Seq.empty[RunUID]){
+    //  FIXME validate we have no param name/type collisions
+    (1 to expsWithConf.length).toSeq.foldLeft(Seq.empty[DataStore]){
       (runChain, length) =>
         val subchain = expsWithConf.take(length)
         val currentExpWithConf = expsWithConf(length - 1)
@@ -176,8 +176,10 @@ object Registry {
 
         ds.writeShutdown()
 
-        runChain :+ currentUID
+        runChain :+ ds
     }
+
+    //  FIXME PROCEED on-completion triggers
   }
 
   def execute(targetExpName: String, configFun: Experiment => Config) {

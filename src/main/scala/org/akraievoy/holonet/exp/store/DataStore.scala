@@ -28,12 +28,22 @@ import org.akraievoy.holonet.exp.ParamPos
 class DataStore(
   val fs: FileSystem,
   val uid: RunUID,
-  val chain: Seq[RunUID]
-  //  FIXME we should recover live DataStores for chained experiments
+  val chain: Seq[DataStore]
 ) {
-  private var scheme: Map[String, String] = Map.empty
+  private var schema: Map[String, String] = Map.empty
   private var openStreams: Map[File, Closeable] = Map.empty
   private var cachedCSV: Map[String, Map[String, Seq[Seq[String]]]] = Map.empty
+
+  fs.readCSV(uid, "schema.csv").map{
+    lineSeq =>
+      lineSeq.foreach{
+        line =>
+          schema = schema.updated(line(0), line(1))
+      }
+  }
+
+  //  FIXME type the parameters
+  //  FIXME add primitive lenses for parameters (keeping schema)
 
   def set[T](
     paramName: String,
@@ -44,8 +54,8 @@ class DataStore(
   ) {
     val pos = ParamPos.pos(spacePos)
     val posStr = java.lang.Long.toString(pos, 16)
-    val paramFName = paramKey(paramName, mt)
-    if (DataStore.primitives.contains(mt)) {
+    val paramFName = paramKey(paramName, mt, true).get
+    if (DataStore.primitiveSerializers.contains(mt)) {
       synchronized{
         fs.appendCSV(
           uid,
@@ -55,7 +65,7 @@ class DataStore(
           Seq(
             Seq(
               posStr,
-              DataStore.primitives(mt).lens.asInstanceOf[Lens[String, T]].set("", value)
+              DataStore.primitiveSerializers(mt).lens.asInstanceOf[Lens[String, T]].set("", value)
             )
           ).toStream
         ).map {
@@ -63,7 +73,7 @@ class DataStore(
             openStreams = openStreams.updated(file, closeable)
         }
       }
-    } else if (DataStore.streamables.contains(mt.asInstanceOf[Manifest[_ <: Streamable]])) {
+    } else if (DataStore.streamableSerializers.contains(mt.asInstanceOf[Manifest[_ <: Streamable]])) {
       val binaryParamFName = "%s\\/%s".format(paramFName, posStr)
         fs.appendBinary(
           uid,
@@ -84,34 +94,70 @@ class DataStore(
   )(
     implicit mt: Manifest[T]
   ): Option[T] = {
+    chain.find{
+      prevExp =>
+        prevExp.schema.contains(paramName)
+    }.getOrElse{
+      this
+    }.get[T](paramName, spacePos)
+  }
+
+  def getDirect[T](
+    paramName: String,
+    spacePos: Seq[ParamPos]
+  )(
+    implicit mt: Manifest[T]
+  ): Option[T] = {
+
     val pos = ParamPos.pos(spacePos)
     val posStr = java.lang.Long.toString(pos, 16)
-    val paramFName = paramKey(paramName, mt)
-
-    if (DataStore.primitives.contains(mt)) {
-      synchronized {
-        cachedCSV.get(paramFName).getOrElse{
-          val readCSV = fs.readCSV(uid, paramFName).groupBy{ _.head }
-          cachedCSV = cachedCSV.updated(paramFName, readCSV)
-          readCSV
-        }.getOrElse(posStr, Nil).lastOption.map{
-          entry => DataStore.primitives(mt).lens.get(entry.last).asInstanceOf[T]
+    paramKey(paramName, mt, false).flatMap {
+      paramFName =>
+        if (DataStore.primitiveSerializers.contains(mt)) {
+          synchronized {
+            cachedCSV.get(paramFName).orElse {
+              fs.readCSV(uid, paramFName).map {
+                lineSeq =>
+                  val groupedLines = lineSeq groupBy {
+                    _.head
+                  }
+                  cachedCSV = cachedCSV.updated(paramFName, groupedLines)
+                  groupedLines
+              }
+            }.flatMap {
+              groupedLines =>
+                groupedLines.getOrElse(posStr, Nil).lastOption
+            }.map {
+              entry =>
+                val lens = DataStore.primitiveSerializers(mt).lens
+                lens.get(entry.last).asInstanceOf[T]
+            }
+          }
+        } else if (mt <:< manifest[Streamable]) {
+          val serializer =
+            DataStore.streamableSerializers(
+              mt.asInstanceOf[Manifest[T with Streamable]]
+            )
+          fs.readBinary(
+            uid,
+            "%s\\/%s".format(paramFName, posStr),
+            serializer.readOp
+          ).asInstanceOf[Option[T]]
+        } else {
+          typeNotSupported(mt)
         }
-      }
-    } else if (mt <:< manifest[Streamable]) {
-      fs.readBinary(
-        uid,
-        "%s\\/%s".format(paramFName, posStr),
-        DataStore.streamables(mt.asInstanceOf[Manifest[T with Streamable]]).readOp
-      ).asInstanceOf[Option[T]]
-    } else {
-      typeNotSupported(mt)
     }
   }
 
-  //  FIXME PROCEED on-completion triggers
-  //  FIXME PROCEED listing the parameters per experiment
-  //  FIXME PROCEED lookup the parameter in chain
+  def listParams: Map[String, Class[_]] = {
+    schema.mapValues {
+      typeAlias =>
+        DataStore.allSerializers.find {
+          case (tManifest, serializer) =>
+            serializer.alias == typeAlias
+        }.get._2.mt.erasure
+    }
+  }
 
   private def typeNotSupported[T](mt: Manifest[T]): Nothing = {
     throw new IllegalStateException(
@@ -121,18 +167,19 @@ class DataStore(
 
   private def paramKey(
     paramName: String,
-    mt: Manifest[_ <: Any]
-  ) = {
+    mt: Manifest[_ <: Any],
+    extendSchema: Boolean
+  ): Option[String] = {
     val serializer =
-      DataStore.primitives.get(mt).map(_.asInstanceOf[Serializer[_ <: Any]]).orElse(
-        DataStore.streamables.get(mt.asInstanceOf[Manifest[_ <: Streamable]])
+      DataStore.primitiveSerializers.get(mt).map(_.asInstanceOf[Serializer[_ <: Any]]).orElse(
+        DataStore.streamableSerializers.get(mt.asInstanceOf[Manifest[_ <: Streamable]])
       ).getOrElse {
         typeNotSupported(mt)
       }
     val alias = serializer.alias
 
     this.synchronized{
-      val aliasStored = scheme.get(paramName).map {
+      val aliasStored = schema.get(paramName).map {
         aliasPrev =>
           if (aliasPrev != alias) {
             throw new IllegalStateException(
@@ -144,11 +191,16 @@ class DataStore(
             )
           }
       }.isDefined
-      if (!aliasStored) {
-        scheme = scheme.updated(paramName, alias)
+
+      if (!aliasStored && !extendSchema) {
+        None
+      } else {
+        if (!aliasStored && extendSchema) {
+          schema = schema.updated(paramName, alias)
+        }
+        Some("raw/%s--%s".format(paramName, alias))
       }
     }
-    "raw/%s--%s".format(paramName, mt.erasure.getSimpleName)
   }
 
   private def applyOffset[T](
@@ -180,7 +232,7 @@ class DataStore(
     StoreLens[T](
       {
         () =>
-          get[T](paramName, spacePosOffs).get
+          get[T](paramName, spacePosOffs)
       }, {
         (t) =>
           set[T](paramName, t, spacePosOffs)
@@ -195,12 +247,12 @@ class DataStore(
   def writeShutdown() {
     fs.dumpCSV(uid, "chain.csv", Map.empty)(
       chain.toStream.map(
-        uid => Seq(uid.expName, uid.confName, uid.stamp)
+        store => Seq(store.uid.expName, store.uid.confName, store.uid.stamp)
       )
     )
 
     fs.dumpCSV(uid, "schema.csv", Map.empty)(
-      scheme.map {
+      schema.map {
         case (pName, pAlias) =>
           Seq(pName, pAlias)
       }.toStream
@@ -232,7 +284,7 @@ object DataStore {
     Float => JFloat, Double => JDouble
   }
 
-  private lazy val primitives =
+  protected lazy val primitiveSerializers =
     Seq[ValueSerializer[String, _ <: Any]](
       ValueSerializer(
         "String",
@@ -320,7 +372,7 @@ object DataStore {
       serSeq.head
     }
 
-  private lazy val streamables =
+  protected lazy val streamableSerializers =
     Seq[StreamSerializer[_ <: Streamable]](
       StreamSerializer[VertexData](
         "VertexData",
@@ -380,4 +432,22 @@ object DataStore {
       }
       serSeq.head
     }
+
+  protected lazy val allSerializers: Map[Manifest[_], Serializer[Any]] = {
+    val streamables1: Map[Manifest[_], Serializer[Any]] =
+      streamableSerializers.map {
+        case (m, s) =>
+          (
+            m.asInstanceOf[Manifest[_]],
+            s.asInstanceOf[Serializer[Any]]
+          )
+      }.toMap
+
+    val primitives1: Map[Manifest[_], Serializer[Any]] =
+      primitiveSerializers.mapValues {
+        value => value.asInstanceOf[Serializer[Any]]
+      }.toMap
+
+    primitives1.withDefault(streamables1)
+  }
 }
