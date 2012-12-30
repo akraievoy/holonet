@@ -19,38 +19,12 @@
 package org.akraievoy.holonet.exp
 
 import annotation.tailrec
-import store.{DataStore, RunStore, FileSystem}
+import store.{RunStore, ExperimentStore, RegistryStore, FileSystem}
 import java.io.File
+import org.slf4j.LoggerFactory
 
-object Registry {
-  lazy val experiments: Seq[Experiment] = Seq(
-    Experiment(
-      "dlaGen-1-images",
-      "DLA density distribution [stage1] Images",
-      Nil,
-      Config(
-        Param("entropySource.seed", "13311331"),
-        Param("locationGenerator.gridSize", "1024"),
-        Param("locationGenerator.dimensionRatio", "1.5")
-      ),
-      Config(
-        "dimensions",
-        "Multiple dimensions",
-        Param(
-          "locationGenerator.dimensionRatio",
-          "1;1.25;1.5;1.75;2"
-        )
-      ),
-      Config(
-        "seeds",
-        "Multiple seeds",
-        Param(
-          "entropySource.seed",
-          "13311331;31133113;53355335;35533553;51155115"
-        )
-      )
-    )
-  )
+object Registry extends RegistryData {
+  val log = LoggerFactory.getLogger(classOf[RegistryData])
 
   lazy val expByName = experiments.groupBy(_.name).mapValues {
     expSeq =>
@@ -64,14 +38,14 @@ object Registry {
       expSeq.head
   }
 
-  type ExpWithConf = (Experiment, Config)
+  type ExpConfPair = (Experiment, Config)
 
   @tailrec
   private def addDependencies(
     pendingNames: Seq[String],
-    resultChain: Seq[ExpWithConf],
+    resultChain: Seq[ExpConfPair],
     configFun: Experiment => Config
-  ): Seq[ExpWithConf] = {
+  ): Seq[ExpConfPair] = {
     if (resultChain.size + pendingNames.size > 128) {
       throw new IllegalStateException(
         "cyclic dependency of experiments"
@@ -119,15 +93,15 @@ object Registry {
     )
   }
 
-  private def execute(expsWithConf: Seq[ExpWithConf]) = {
+  private def execute(expPairSeq: Seq[ExpConfPair]) = {
     val fs = new FileSystem(new File("data"))
-    val runStore = new RunStore(fs)
+    val registryStore = new RegistryStore(fs)
 
-    //  FIXME validate we have no param name/type collisions
-    (1 to expsWithConf.length).toSeq.foldLeft(Seq.empty[DataStore]){
+    //  TODO validate we have no param name/type collisions
+    (1 to expPairSeq.length).toSeq.foldLeft(Seq.empty[ExperimentStore]){
       (runChain, length) =>
-        val subchain = expsWithConf.take(length)
-        val currentExpWithConf = expsWithConf(length - 1)
+        val subchain = expPairSeq.take(length)
+        val currentExpPair = expPairSeq(length - 1)
         val emptyParamSpace = Map(
           true -> Config.EMPTY_SPACE,
           false -> Config.EMPTY_SPACE
@@ -140,27 +114,39 @@ object Registry {
             mapChained.map{
               case (parallelFlag, paramPosSeq) =>
                 (
-                    parallelFlag,
-                    for (
-                      chainedPoses <- paramPosSeq;
-                      currentPoses <- mapCurrent.getOrElse(
-                        parallelFlag,
-                        Config.EMPTY_SPACE
-                      )
-                    ) yield {
-                      val posSeq = chainedPoses ++ currentPoses
-                      posSeq
-                    }
+                  parallelFlag,
+                  for (
+                    chainedPoses <- paramPosSeq;
+                    currentPoses <- mapCurrent.getOrElse(
+                      parallelFlag,
+                      Config.EMPTY_SPACE
+                    )
+                  ) yield {
+                    val posSeq = chainedPoses ++ currentPoses
+                    posSeq
+                  }
                 )
             }
         }
 
-        val currentUID = runStore.registerRun(
-          currentExpWithConf._1.name,
-          currentExpWithConf._2.name
+        log.info(
+          "starting {} with conf {}",
+          currentExpPair._1.name,
+          currentExpPair._2.name
         )
 
-        val ds = new DataStore(fs, currentUID, runChain)
+        val currentUID = registryStore.registerRun(
+          currentExpPair._1.name,
+          currentExpPair._2.name
+        )
+
+        val expStore = new ExperimentStore(
+          fs,
+          currentUID,
+          currentExpPair._1,
+          currentExpPair._2,
+          runChain
+        )
 
         val posStream = for (
           sequentialPos <- paramSpace.getOrElse(false, Config.EMPTY_SPACE);
@@ -171,19 +157,34 @@ object Registry {
 
         posStream.foreach{
           spacePos =>
-            //  FIXME run the experiment at last, yeah
+            log.debug("spacePos = " + spacePos)
+            currentExpPair._1.executeFun(RunStore(expStore, spacePos))
         }
 
-        ds.writeShutdown()
+        expStore.writeShutdown()
 
-        runChain :+ ds
+        runChain :+ expStore
     }
 
     //  FIXME PROCEED on-completion triggers
+    log.info("chain complete")
+
   }
 
-  def execute(targetExpName: String, configFun: Experiment => Config) {
+  private def execute(targetExpName: String, configFun: Experiment => Config) {
     val chain = dependencyChain(targetExpName, configFun)
     execute(chain)
+  }
+
+  def execute(targetExpName: String, configMap: Map[String, String]) {
+    execute(
+      targetExpName,
+      {
+        exp =>
+          exp.configs(
+            configMap.getOrElse(exp.name, "default")
+          )
+      }
+    )
   }
 }

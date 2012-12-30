@@ -30,6 +30,7 @@ package org.akraievoy.holonet.exp
  */
 case class ParamPos(
   name: String,
+  mt: Manifest[_ <: Any],
   value: String,
   pos: Int,
   total: Int,

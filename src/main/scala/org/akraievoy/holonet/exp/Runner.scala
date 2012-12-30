@@ -18,6 +18,10 @@
 
 package org.akraievoy.holonet.exp
 
+import org.apache.log4j.BasicConfigurator
+
 object Runner extends App {
-  Registry.execute("dlaGen-1-images", (_.configs("default")))
+  BasicConfigurator.configure()
+
+  Registry.execute("dlaGen-1-images", Map("dlaGen-1-images" -> "dimensions"))
 }

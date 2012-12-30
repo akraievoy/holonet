@@ -23,12 +23,14 @@ import java.io._
 import scalaz.Lens
 import org.akraievoy.cnet.net.vo._
 import org.akraievoy.cnet.net.vo.EdgeDataFactory.EdgeDataConstant
-import org.akraievoy.holonet.exp.ParamPos
+import org.akraievoy.holonet.exp.{Experiment, Config, ParamPos}
 
-class DataStore(
+class ExperimentStore(
   val fs: FileSystem,
   val uid: RunUID,
-  val chain: Seq[DataStore]
+  val experiment: Experiment,
+  val config: Config,
+  val chain: Seq[ExperimentStore]
 ) {
   private var schema: Map[String, String] = Map.empty
   private var openStreams: Map[File, Closeable] = Map.empty
@@ -42,9 +44,6 @@ class DataStore(
       }
   }
 
-  //  FIXME type the parameters
-  //  FIXME add primitive lenses for parameters (keeping schema)
-
   def set[T](
     paramName: String,
     value: T,
@@ -52,10 +51,21 @@ class DataStore(
   )(
     implicit mt: Manifest[T]
   ) {
+    spacePos.find {
+      paramPos => paramPos.name == paramName
+    }.map {
+      paramPos =>
+        throw new IllegalArgumentException(
+          "experiment parameter '%s' value is read-only".format(
+            paramName
+          )
+        )
+    }
+
     val pos = ParamPos.pos(spacePos)
     val posStr = java.lang.Long.toString(pos, 16)
     val paramFName = paramKey(paramName, mt, true).get
-    if (DataStore.primitiveSerializers.contains(mt)) {
+    if (ExperimentStore.primitiveSerializers.contains(mt)) {
       synchronized{
         fs.appendCSV(
           uid,
@@ -65,7 +75,7 @@ class DataStore(
           Seq(
             Seq(
               posStr,
-              DataStore.primitiveSerializers(mt).lens.asInstanceOf[Lens[String, T]].set("", value)
+              ExperimentStore.primitiveSerializers(mt).lens.asInstanceOf[Lens[String, T]].set("", value)
             )
           ).toStream
         ).map {
@@ -73,7 +83,7 @@ class DataStore(
             openStreams = openStreams.updated(file, closeable)
         }
       }
-    } else if (DataStore.streamableSerializers.contains(mt.asInstanceOf[Manifest[_ <: Streamable]])) {
+    } else if (ExperimentStore.streamableSerializers.contains(mt.asInstanceOf[Manifest[_ <: Streamable]])) {
       val binaryParamFName = "%s\\/%s".format(paramFName, posStr)
         fs.appendBinary(
           uid,
@@ -94,12 +104,20 @@ class DataStore(
   )(
     implicit mt: Manifest[T]
   ): Option[T] = {
-    chain.find{
-      prevExp =>
-        prevExp.schema.contains(paramName)
-    }.getOrElse{
-      this
-    }.get[T](paramName, spacePos)
+    spacePos.find {
+      paramPos => paramPos.name == paramName
+    }.map {
+      paramPos =>
+        val lens = ExperimentStore.paramSerializers(paramPos.mt).lens
+        lens.get(paramPos.value).asInstanceOf[T]
+    }.orElse {
+      chain.find {
+        prevExp =>
+          prevExp.schema.contains(paramName)
+      }.getOrElse {
+        this
+      }.getDirect[T](paramName, spacePos)
+    }
   }
 
   def getDirect[T](
@@ -113,7 +131,7 @@ class DataStore(
     val posStr = java.lang.Long.toString(pos, 16)
     paramKey(paramName, mt, false).flatMap {
       paramFName =>
-        if (DataStore.primitiveSerializers.contains(mt)) {
+        if (ExperimentStore.primitiveSerializers.contains(mt)) {
           synchronized {
             cachedCSV.get(paramFName).orElse {
               fs.readCSV(uid, paramFName).map {
@@ -129,13 +147,13 @@ class DataStore(
                 groupedLines.getOrElse(posStr, Nil).lastOption
             }.map {
               entry =>
-                val lens = DataStore.primitiveSerializers(mt).lens
+                val lens = ExperimentStore.primitiveSerializers(mt).lens
                 lens.get(entry.last).asInstanceOf[T]
             }
           }
         } else if (mt <:< manifest[Streamable]) {
           val serializer =
-            DataStore.streamableSerializers(
+            ExperimentStore.streamableSerializers(
               mt.asInstanceOf[Manifest[T with Streamable]]
             )
           fs.readBinary(
@@ -152,7 +170,7 @@ class DataStore(
   def listParams: Map[String, Class[_]] = {
     schema.mapValues {
       typeAlias =>
-        DataStore.allSerializers.find {
+        ExperimentStore.allSerializers.find {
           case (tManifest, serializer) =>
             serializer.alias == typeAlias
         }.get._2.mt.erasure
@@ -171,8 +189,8 @@ class DataStore(
     extendSchema: Boolean
   ): Option[String] = {
     val serializer =
-      DataStore.primitiveSerializers.get(mt).map(_.asInstanceOf[Serializer[_ <: Any]]).orElse(
-        DataStore.streamableSerializers.get(mt.asInstanceOf[Manifest[_ <: Streamable]])
+      ExperimentStore.primitiveSerializers.get(mt).map(_.asInstanceOf[Serializer[_ <: Any]]).orElse(
+        ExperimentStore.streamableSerializers.get(mt.asInstanceOf[Manifest[_ <: Streamable]])
       ).getOrElse {
         typeNotSupported(mt)
       }
@@ -214,7 +232,20 @@ class DataStore(
         paramPos =>
           offsets.get(paramPos.name).map {
             offset =>
-              paramPos.copy(pos = paramPos.pos + offset)
+              val param = (this +: chain).find{
+                dataStore => dataStore.config.params.contains(paramPos.name)
+              }.getOrElse {
+                throw new IllegalStateException(
+                  "no config has parameter %s".format(
+                    paramPos.name
+                  )
+                )
+              }.config.params(paramPos.name)
+
+              paramPos.copy(
+                value = param.valueSpec(paramPos.pos + offset),
+                pos = paramPos.pos + offset
+              )
           }.getOrElse(paramPos)
       }
     }
@@ -223,20 +254,22 @@ class DataStore(
   def lens[T](
     paramName: String,
     spacePos: Seq[ParamPos],
-    offsets: Map[String, Int] = Map.empty
+    lensOffsets: Map[String, Int] = Map.empty
   )(
     implicit mt: Manifest[T]
   ) = {
-    val spacePosOffs = applyOffset(spacePos, offsets)
-
     StoreLens[T](
       {
-        () =>
+        (offsets) =>
+          val spacePosOffs = applyOffset(spacePos, offsets)
           get[T](paramName, spacePosOffs)
       }, {
-        (t) =>
+        (offsets, t) =>
+          val spacePosOffs = applyOffset(spacePos, offsets)
           set[T](paramName, t, spacePosOffs)
-      }
+      },
+      lensOffsets,
+      mt
     )
   }
 
@@ -278,14 +311,14 @@ class DataStore(
   }
 }
 
-object DataStore {
+object ExperimentStore {
   import java.lang.{
     Byte => JByte, Integer => JInt, Long => JLong,
     Float => JFloat, Double => JDouble
   }
 
-  protected lazy val primitiveSerializers =
-    Seq[ValueSerializer[String, _ <: Any]](
+  protected lazy val primitiveSerializers: Map[Manifest[_], ValueSerializer[String, _]] =
+    Seq[ValueSerializer[String, _]](
       ValueSerializer(
         "String",
         Lens[String, String](
@@ -363,7 +396,94 @@ object DataStore {
           (s, d) => JLong.toString(JDouble.doubleToRawLongBits(d), 16)
         )
       )
-    ).groupBy(_.mt).mapValues {
+    ).groupBy(_.mt.asInstanceOf[Manifest[_]]).mapValues {
+      serSeq => if (serSeq.size > 1) {
+        throw new IllegalArgumentException(
+          "multiple serializers for %s".format(serSeq.head.mt.erasure.getName)
+        )
+      }
+      serSeq.head
+    }
+  protected lazy val paramSerializers: Map[Manifest[_], ValueSerializer[String, _]] =
+    Seq[ValueSerializer[String, _]](
+      ValueSerializer(
+        "String",
+        Lens[String, String](
+          s => s,
+          (s, s1) => s1
+        )
+      ),
+      ValueSerializer(
+        "Byte",
+        Lens[String, Byte](
+          s => JByte.parseByte(s),
+          (s, b) => JLong.toString(b)
+        )
+      ),
+      ValueSerializer(
+        "Byte",
+        Lens[String, JByte](
+          s => JByte.parseByte(s),
+          (s, b) => JLong.toString(0L + b)
+        )
+      ),
+      ValueSerializer(
+        "Int",
+        Lens[String, Int](
+          s => JInt.parseInt(s),
+          (s, i) => JLong.toString(i)
+        )
+      ),
+      ValueSerializer(
+        "Int",
+        Lens[String, JInt](
+          s => JInt.parseInt(s),
+          (s, i) => JLong.toString(0L + i)
+        )
+      ),
+      ValueSerializer(
+        "Long",
+        Lens[String, Long](
+          s => JLong.parseLong(s),
+          (s, l) => JLong.toString(l)
+        )
+      ),
+      ValueSerializer(
+        "Long",
+        Lens[String, JLong](
+          s => JLong.parseLong(s),
+          (s, l) => JLong.toString(l)
+        )
+      ),
+      ValueSerializer(
+        "Float",
+        Lens[String, Float](
+          s => JFloat.parseFloat(s),
+          (s, f) => JFloat.toString(f)
+        )
+      ),
+      ValueSerializer(
+        "Float",
+        Lens[String, JFloat](
+          s => JFloat.parseFloat(s),
+          (s, f) => JFloat.toString(f)
+        )
+      ),
+      ValueSerializer(
+        "Double",
+        Lens[String, Double](
+          s => JDouble.parseDouble(s),
+          (s, d) => JDouble.toString(d)
+        )
+      ),
+      ValueSerializer(
+        "Double",
+        Lens[String, JDouble](
+          s => JDouble.parseDouble(s),
+          (s, d) => JDouble.toHexString(d)
+        )
+      )
+    ).groupBy(_.mt.asInstanceOf[Manifest[_]]).mapValues {
       serSeq => if (serSeq.size > 1) {
         throw new IllegalArgumentException(
           "multiple serializers for %s".format(serSeq.head.mt.erasure.getName)
@@ -372,7 +492,7 @@ object DataStore {
       serSeq.head
     }
 
-  protected lazy val streamableSerializers =
+  protected lazy val streamableSerializers: Map[Manifest[_ <: Streamable], StreamSerializer[_ <: Streamable]] =
     Seq[StreamSerializer[_ <: Streamable]](
       StreamSerializer[VertexData](
         "VertexData",
@@ -424,7 +544,7 @@ object DataStore {
         input => new StoreDouble().fromStream(input),
         (store: StoreDouble) => store.createStream()
       )
-    ).groupBy(_.mt).mapValues {
+    ).groupBy(_.mt.asInstanceOf[Manifest[_ <: Streamable]]).mapValues {
       serSeq => if (serSeq.size > 1) {
         throw new IllegalArgumentException(
           "multiple serializers for %s".format(serSeq.head.mt.erasure.getName)
@@ -433,21 +553,13 @@ object DataStore {
       serSeq.head
     }
 
-  protected lazy val allSerializers: Map[Manifest[_], Serializer[Any]] = {
-    val streamables1: Map[Manifest[_], Serializer[Any]] =
-      streamableSerializers.map {
-        case (m, s) =>
-          (
-            m.asInstanceOf[Manifest[_]],
-            s.asInstanceOf[Serializer[Any]]
-          )
-      }.toMap
-
-    val primitives1: Map[Manifest[_], Serializer[Any]] =
-      primitiveSerializers.mapValues {
-        value => value.asInstanceOf[Serializer[Any]]
-      }.toMap
-
-    primitives1.withDefault(streamables1)
+  protected lazy val allSerializers: Map[Manifest[_ <: Any], Serializer[Any]] = {
+    primitiveSerializers.withDefault(streamableSerializers.map{
+      case (m, s) =>
+        (
+          m.asInstanceOf[Manifest[_]],
+          s
+        )
+    }.toMap)
   }
 }

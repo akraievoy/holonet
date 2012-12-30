@@ -18,14 +18,32 @@
 
 package org.akraievoy.holonet.exp.store
 
-case class StoreLens[T](
-  getFun: () => Option[T],
-  setFun: (T) => Unit
-) {
+import org.akraievoy.base.ref.Ref
 
-  def get = getFun()
+case class StoreLens[T](
+  getFun: (Map[String, Int]) => Option[T],
+  setFun: (Map[String, Int], T) => Unit,
+  offsets: Map[String, Int] = Map.empty,
+  mt: Manifest[T]
+) extends Ref[T] {
+
+  def get = getFun(offsets)
 
   def set(t: T) {
-    setFun(t)
+    setFun(offsets, t)
   }
+
+  def getValue = get.get  //  LATER pull the parameter name into the failure vortex
+
+  def setValue(value: T) {
+    set(value)
+  }
+
+  def offset(paramName: String, posDelta: Int) =
+    copy(
+      offsets = offsets.updated(
+        paramName,
+        offsets.getOrElse(paramName,0) + posDelta
+      )
+    )
 }

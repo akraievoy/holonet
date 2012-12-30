@@ -20,6 +20,7 @@ package org.akraievoy.base.runner.api;
 
 import com.google.common.base.Throwables;
 import org.akraievoy.base.Format;
+import org.akraievoy.base.ref.Ref;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,18 +36,18 @@ public class ExperimentTiming implements Runnable, ContextInjectable {
 
   protected Context ctx;
   protected Runnable wrapped;
-  protected RefLong durationRef = new RefLong();
-  protected RefString durationTextRef = new RefString();
+  protected Ref<Long> durationRef = new RefLong();
+  protected Ref<String> durationTextRef = new RefString();
 
   public ExperimentTiming(Runnable wrapped) {
     this.wrapped = wrapped;
   }
 
-  public void setDurationRef(RefLong durationRef) {
+  public void setDurationRef(Ref<Long> durationRef) {
     this.durationRef = durationRef;
   }
 
-  public void setDurationTextRef(RefString durationTextRef) {
+  public void setDurationTextRef(Ref<String> durationTextRef) {
     this.durationTextRef = durationTextRef;
   }
 

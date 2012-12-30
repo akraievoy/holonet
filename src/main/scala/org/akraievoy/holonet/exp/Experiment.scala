@@ -18,24 +18,22 @@
 
 package org.akraievoy.holonet.exp
 
-import store.DataStore
+import store.RunStore
 
 case class Experiment(
   name: String,
   desc: String = "",
   depends: Seq[String] = Nil,
-  configs: Map[String, Config]
-) extends Named {
-  def execute(store: DataStore, spacePos: Seq[ParamPos]) = {
-
-  }
-}
+  configs: Map[String, Config],
+  executeFun: RunStore => Unit
+) extends Named
 
 object Experiment {
   def apply(
     name: String,
     desc: String,
     depends: Seq[String],
+    executeFun: RunStore => Unit,
     configs: Config*
   ) = {
 
@@ -69,6 +67,6 @@ object Experiment {
       configMap
     }
 
-    new Experiment(name, desc, depends, dfltConfMap)
+    new Experiment(name, desc, depends, dfltConfMap, executeFun)
   }
 }

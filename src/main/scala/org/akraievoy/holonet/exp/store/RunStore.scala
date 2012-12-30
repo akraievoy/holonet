@@ -18,42 +18,16 @@
 
 package org.akraievoy.holonet.exp.store
 
-import java.util.concurrent.atomic.AtomicLong
-import annotation.tailrec
-import java.text.SimpleDateFormat
-import java.util.Date
+import org.akraievoy.holonet.exp.ParamPos
 
-class RunStore(
-  val fs: FileSystem
+case class RunStore(
+  es: ExperimentStore,
+  spacePos: Seq[ParamPos]
 ) {
-  private val stampGenerator =
-    new AtomicLong(System.currentTimeMillis())
-
-  private val dateFormat =
-    new SimpleDateFormat("yyMMdd-HHmmSS")
-
-  @tailrec
-  private def generateStamp: Long = {
-    val prevValue = stampGenerator.get()
-    val newValue = System.currentTimeMillis()
-    if (newValue - prevValue < 1000) {
-      Thread.sleep(1000)
-      generateStamp
-    } else if (stampGenerator.compareAndSet(prevValue, newValue)) {
-      newValue
-    } else {
-      generateStamp
-    }
-  }
-
-  def registerRun(
-    expName: String,
-    confName: String
-  ): RunUID = {
-    RunUID(
-      expName,
-      confName,
-      dateFormat.format(new Date(generateStamp))
-    )
-  }
+  def lens[T](
+    paramName: String,
+    lensOffsets: Map[String, Int] = Map.empty
+  )(
+    implicit mt: Manifest[T]
+  ) = es.lens[T](paramName, spacePos, lensOffsets)
 }

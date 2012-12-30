@@ -21,7 +21,7 @@ package org.akraievoy.holonet.exp.store
 import scalaz.Lens
 
 case class ValueSerializer[P, T](
-  mt: Manifest[T],
+  mt: Manifest[_ <: T],
   alias: String,
   lens: Lens[P, T]
 ) extends Serializer[T]

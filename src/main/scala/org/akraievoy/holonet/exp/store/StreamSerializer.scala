@@ -21,7 +21,7 @@ package org.akraievoy.holonet.exp.store
 import java.io.{InputStream, BufferedInputStream}
 
 case class StreamSerializer[T](
-  mt: Manifest[T],
+  mt: Manifest[_ <: T],
   alias: String,
   readOp: BufferedInputStream => Stream[T],
   writeOp: T => InputStream

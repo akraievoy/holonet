@@ -42,6 +42,7 @@ class FileSystem(
     val (w, opened) = openStreams.get(destFile).map{
       closeable => (closeable.asInstanceOf[PrintWriter], false)
     }.getOrElse{
+      destFile.getParentFile.mkdirs()
       (new PrintWriter(new FileWriter(destFile, true)), true)
     }
 
@@ -85,6 +86,8 @@ class FileSystem(
     val destFile = new File(expDir(runUID), fName)
 
     noReadsAndDumpsOverAppends(openStreams, destFile)
+
+    destFile.getParentFile.mkdirs()
 
     val w = new PrintWriter(new FileWriter(destFile, false))
     data.foreach(rowSeq => w.println(rowSeq.mkString(";")))

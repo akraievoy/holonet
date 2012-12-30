@@ -18,8 +18,8 @@
 
 package org.akraievoy.holonet.exp.store
 
-//  TODO add covariance
-trait Serializer[T] {
+//  LATER T is covariant here and invariant in subclasses, is this legal/sensible?
+trait Serializer[+T] {
   def alias: String
-  def mt: Manifest[T]
+  def mt: Manifest[_ <: T]
 }

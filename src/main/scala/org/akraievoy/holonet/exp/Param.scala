@@ -22,28 +22,23 @@ import org.akraievoy.base.runner.vo.Parameter
 
 case class Param(
   name: String,
+  mt: Manifest[_ <: Any],
   valueSpec: Seq[String],
   strategy: Parameter.Strategy,
   chainStrategy: Parameter.Strategy,
   desc: String,
   index: Int
 ) extends Named {
+
+  def pos(pos: Int, chained: Boolean = false, expIndex: Int = 0): ParamPos = {
+    fullPosSeq(chained, expIndex)(pos)
+  }
+
   def toPosSeq(
     chained: Boolean = false,
     expIndex: Int = 0
   ): Seq[ParamPos] = {
-    val fullSeq = valueSpec.zipWithIndex.map {
-      case (str, idx) =>
-        ParamPos(
-          name,
-          str,
-          idx,
-          valueSpec.size,
-          isParallel(chained),
-          index,
-          expIndex
-        )
-    }
+    val fullSeq = fullPosSeq(chained, expIndex)
     actualStrategy(chained) match {
       case Parameter.Strategy.USE_FIRST =>
         Seq(fullSeq.head)
@@ -54,6 +49,22 @@ case class Param(
       case other =>
         throw new IllegalArgumentException(
           "unable to handle strategy %s".format(other)
+        )
+    }
+  }
+
+  protected def fullPosSeq(chained: Boolean, expIndex: Int): Seq[ParamPos] = {
+    valueSpec.zipWithIndex.map {
+      case (str, idx) =>
+        ParamPos(
+          name,
+          mt,
+          str,
+          idx,
+          valueSpec.size,
+          isParallel(chained),
+          index,
+          expIndex
         )
     }
   }
@@ -70,12 +81,14 @@ case class Param(
 }
 
 object Param{
-  def apply(
+  def apply[T](
     name: String,
     singleValueSpec: String,
     strategy: Parameter.Strategy = Parameter.Strategy.SPAWN,
     chainStrategy: Parameter.Strategy = Parameter.Strategy.SPAWN,
     desc: String = ""
+  )(
+    implicit mt: Manifest[T]
   ) = {
     val valueSpec =
       if (singleValueSpec.contains(';')) {
@@ -93,6 +106,6 @@ object Param{
         Seq(singleValueSpec)
       }
 
-    new Param(name, valueSpec, strategy, chainStrategy, desc, -1)
+    new Param(name, mt, valueSpec, strategy, chainStrategy, desc, -1)
   }
 }
