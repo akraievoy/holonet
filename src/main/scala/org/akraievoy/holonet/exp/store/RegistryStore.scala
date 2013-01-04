@@ -30,7 +30,7 @@ class RegistryStore(
     new AtomicLong(System.currentTimeMillis())
 
   private val dateFormat =
-    new SimpleDateFormat("yyMMdd-HHmmSS")
+    new SimpleDateFormat("yyMMdd-HHmmss")
 
   @tailrec
   private def generateStamp: Long = {

@@ -148,18 +148,23 @@ object Registry extends RegistryData {
           runChain
         )
 
-        val posStream = for (
-          sequentialPos <- paramSpace.getOrElse(false, Config.EMPTY_SPACE);
-          parallelPos <- paramSpace.getOrElse(true, Config.EMPTY_SPACE).par
-        ) yield {
-          parallelPos ++ sequentialPos
+        paramSpace.getOrElse(
+          false,
+          Config.EMPTY_SPACE
+        ).foreach {
+          sequentialPos =>
+            paramSpace.getOrElse(
+              true,
+              Config.EMPTY_SPACE
+            ).par.foreach {
+              parallelPos =>
+                val spacePos = sequentialPos ++ parallelPos
+                log.debug("spacePos = " + spacePos)
+                currentExpPair._1.executeFun(RunStore(expStore, spacePos))
+            }
         }
 
-        posStream.foreach{
-          spacePos =>
-            log.debug("spacePos = " + spacePos)
-            currentExpPair._1.executeFun(RunStore(expStore, spacePos))
-        }
+        println("write shutdown for " + currentExpPair._1.name)
 
         expStore.writeShutdown()
 

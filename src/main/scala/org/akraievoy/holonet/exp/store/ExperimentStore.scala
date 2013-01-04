@@ -34,6 +34,7 @@ class ExperimentStore(
 ) {
   private var schema: Map[String, String] = Map.empty
   private var openStreams: Map[File, Closeable] = Map.empty
+  //  TODO in-memory format should be simplified
   private var cachedCSV: Map[String, Map[String, Seq[Seq[String]]]] = Map.empty
 
   fs.readCSV(uid, "schema.csv").map{
@@ -67,20 +68,27 @@ class ExperimentStore(
     val paramFName = paramKey(paramName, mt, true).get
     if (ExperimentStore.primitiveSerializers.contains(mt)) {
       synchronized{
+        val lens = ExperimentStore.primitiveSerializers(mt).lens
+        val serialized = lens.asInstanceOf[Lens[String, T]].set("", value)
         fs.appendCSV(
           uid,
           paramFName,
           openStreams
         )(
-          Seq(
-            Seq(
-              posStr,
-              ExperimentStore.primitiveSerializers(mt).lens.asInstanceOf[Lens[String, T]].set("", value)
-            )
-          ).toStream
+          Seq(Seq(posStr, serialized)).toStream
         ).map {
           case (file, closeable) =>
             openStreams = openStreams.updated(file, closeable)
+        }
+        if (cachedCSV.contains(paramFName)) {
+          val cachedParamData = cachedCSV(paramFName)
+          cachedCSV = cachedCSV.updated(
+            paramFName,
+            cachedParamData.updated(
+              posStr,
+              cachedParamData.getOrElse(posStr, Seq.empty) :+ Seq(posStr, serialized)
+            )
+          )
         }
       }
     } else if (ExperimentStore.streamableSerializers.contains(mt.asInstanceOf[Manifest[_ <: Streamable]])) {
