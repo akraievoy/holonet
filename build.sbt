@@ -40,7 +40,7 @@ libraryDependencies += "junit" % "junit" % "4.10" % "test"
 
 libraryDependencies += "com.novocode" % "junit-interface" % "0.8" % "test->default"
 
-parallelExecution in Test := false
+// parallelExecution in Test := false
 
 
 

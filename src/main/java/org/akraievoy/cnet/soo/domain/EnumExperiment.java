@@ -20,17 +20,15 @@ package org.akraievoy.cnet.soo.domain;
 
 import org.akraievoy.base.Format;
 import org.akraievoy.base.ObjArrays;
-import org.akraievoy.base.Parse;
+import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.runner.api.*;
-import org.akraievoy.base.runner.domain.ParamSetEnumerator;
-import org.akraievoy.base.runner.vo.Parameter;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.EntropySourceRandom;
 import org.akraievoy.cnet.metrics.domain.MetricScalarEigenGap;
 import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataFactory;
-import org.apache.log4j.BasicConfigurator;
+import org.akraievoy.holonet.exp.store.StoreLens;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,54 +37,40 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Map;
 
-public class EnumExperiment implements Runnable, ContextInjectable {
+public class EnumExperiment implements Runnable {
   private static final Logger log = LoggerFactory.getLogger(EnumExperiment.class);
 
   protected static final double MAX_EVALS = 1e6;
-  protected Context ctx;
 
-  protected RefLong sizeRef = new RefLong(8);
-  protected RefDouble thetaRef = new RefDouble(1.5);
-  protected RefDouble thetaTildeRef = new RefDouble(1);
-  protected RefDouble lambdaRef = new RefDouble(0.2);
-  protected String lambdaParamName;
+  protected Ref<Long> sizeRef = new RefLong(8);
+  protected Ref<Double> thetaRef = new RefDouble(1.5);
+  protected Ref<Double> thetaTildeRef = new RefDouble(1);
+  protected Ref<Double> lambdaRef = new RefDouble(0.2);
   protected EntropySource evalSource = new EntropySourceRandom();
   protected static final int TIME_THROTTLE_RANGE = -8192;
-
-  public void setCtx(Context ctx) {
-    this.ctx = ctx;
-  }
 
   public void setEvalSource(EntropySource evalSource) {
     this.evalSource = evalSource;
   }
 
-  public void setLambdaRef(RefDouble lambdaRef) {
+  public void setLambdaRef(Ref<Double> lambdaRef) {
     this.lambdaRef = lambdaRef;
   }
 
-  public void setSizeRef(RefLong sizeRef) {
+  public void setSizeRef(Ref<Long> sizeRef) {
     this.sizeRef = sizeRef;
   }
 
-  public void setThetaRef(RefDouble thetaRef) {
+  public void setThetaRef(Ref<Double> thetaRef) {
     this.thetaRef = thetaRef;
   }
 
-  public void setThetaTildeRef(RefDouble thetaTildeRef) {
+  public void setThetaTildeRef(Ref<Double> thetaTildeRef) {
     this.thetaTildeRef = thetaTildeRef;
-  }
-
-  public void setLambdaParamName(String lambdaParamName) {
-    this.lambdaParamName = lambdaParamName;
   }
 
   //  LATER simplify this method, as soon as the code upsets you enough
   public void run() {
-    if (ctx == null) {
-      BasicConfigurator.configure();
-    }
-
     final int size = sizeRef.getValue().intValue();
     final int len = size * (size - 1) / 2;
 
@@ -98,18 +82,12 @@ public class EnumExperiment implements Runnable, ContextInjectable {
 
     final double[] lambdas;
 
-    if (ctx != null) {
-      final Parameter lambdaParam;
-      if (lambdaParamName != null) {
-        final ParamSetEnumerator pse = ctx.getEnumerator();
-        lambdaParam = pse.getParameter(pse.getParameterIndex(lambdaParamName));
-
-        lambdas = ObjArrays.unbox(ObjArrays.remove(Parse.doubles(lambdaParam.getValues(), null), null));
-      } else {
-        lambdas = new double[]{lambdaRef.getValue()};
-      }
+    if (lambdaRef instanceof StoreLens) {
+      final StoreLens<Double> lambdaLens = (StoreLens<Double>) lambdaRef;
+      final Double[] doubleValues = (Double[]) lambdaLens.axisGetValueArr();
+      lambdas = ObjArrays.unbox(doubleValues);
     } else {
-      lambdas = new double[]{0.25, 0.5, 0.75, 0.875, 0.9325, 0.96875};
+      lambdas = new double[]{lambdaRef.getValue()};
     }
 
     final BigInteger totalSets = BigInteger.valueOf(2).pow(len);
@@ -229,8 +207,14 @@ public class EnumExperiment implements Runnable, ContextInjectable {
         }
       }
 
-      mseg.run();
-      final double eg = mseg.getTarget().getValue();
+      double eg;
+      try {
+        mseg.run();
+        eg = mseg.getTarget().getValue();
+      } catch (Throwable throwable) {
+        throwable.printStackTrace();
+        eg = 0;
+      }
       for (int ei = 0; ei < lambdas.length; ei++) {
         if (eg < lambdas[ei]) {
           break;
@@ -250,19 +234,22 @@ public class EnumExperiment implements Runnable, ContextInjectable {
       eigenSets[ei] = extrapolate(eigenSets[ei], evals, exactSparseSetsExpected);
     }
 
-    if (ctx != null) {
+    if (lambdaRef instanceof StoreLens) {
+      final StoreLens<Double> lambdaLens = (StoreLens<Double>) lambdaRef;
+      final StoreLens<Double>[] lambdaAxis = lambdaLens.axisArr();
+
       for (int ei = 0; ei < lambdas.length; ei++) {
-        final Map<String, Integer> offset = Context.offset(lambdaParamName, ei);
+        final StoreLens<Double> lambdaLensOffs = lambdaAxis[ei];
 
-        ctx.put("len", len, offset);
-        ctx.put("totalLinks", totalLinks, offset);
-        ctx.put("nodeLinks", nodeLinks, offset);
+        lambdaLensOffs.forTypeName(Integer.class, "len").set(len);
+        lambdaLensOffs.forTypeName(Integer.class, "totalLinks").set(totalLinks);
+        lambdaLensOffs.forTypeName(Integer.class, "nodeLinks").set(nodeLinks);
 
-        putWithLog("totalSets", offset, totalSets);
-        putWithLog("sparseSets", offset, sparseSets);
-        putWithLog("exactSparseSets", offset, exactSparseSetsExpected);
-        putWithLog("regularSets", offset, regularSets);
-        putWithLog("eigenSets", offset, eigenSets[ei]);
+        putWithLog("totalSets", lambdaLensOffs, totalSets);
+        putWithLog("sparseSets", lambdaLensOffs, sparseSets);
+        putWithLog("exactSparseSets", lambdaLensOffs, exactSparseSetsExpected);
+        putWithLog("regularSets", lambdaLensOffs, regularSets);
+        putWithLog("eigenSets", lambdaLensOffs, eigenSets[ei]);
       }
     }
 
@@ -280,9 +267,13 @@ public class EnumExperiment implements Runnable, ContextInjectable {
     return regularSets.multiply(exactSparseSetsExpected).divide(evals);
   }
 
-  public void putWithLog(final String path, Map<String, Integer> offset, BigInteger number) {
-    ctx.put(path, number, offset);
-    ctx.put(path+"_log", Math.log10(number.doubleValue()), offset);
+  public void putWithLog(
+      final String path,
+      StoreLens<Double> lambdaLensOffs,
+      BigInteger number
+  ) {
+    lambdaLensOffs.forTypeName(String.class, path).set(number.toString());
+    lambdaLensOffs.forName(path+"_log10").set(Math.log10(number.doubleValue()));
   }
 
   protected static final BigInteger BIG_INT_10K = BigInteger.valueOf(10000);

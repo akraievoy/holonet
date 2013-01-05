@@ -24,16 +24,28 @@ import org.netlib.lapack.LAPACK;
 import org.netlib.util.intW;
 
 public class LapackTest extends TestCase {
+
+  private LAPACK lapackInstance;
+
+  public void setUp() throws Exception {
+    super.setUp();
+    lapackInstance = LAPACK.getInstance();
+  }
+
   public double[] getSpectre(int N, final double[] matrix) {
     Die.ifFalse("matrix.length >= N*N", matrix.length >= N * N);
 
     final double[] result = new double[N];
     final double[] work = new double[3 * N];
     intW status = new intW(0);
-    LAPACK.getInstance().dsyev(
-        "N", "U", N, matrix, N,
-        result, work, 3 * N, status
-    );
+
+    synchronized (EigenMetric.class) {
+      lapackInstance.dsyev(
+          "N", "U", N, matrix, N,
+          result, work, 3 * N, status
+      );
+    }
+
     return result;
   }
 

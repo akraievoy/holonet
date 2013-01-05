@@ -23,5 +23,13 @@ import org.apache.log4j.BasicConfigurator
 object Runner extends App {
   BasicConfigurator.configure()
 
-  Registry.execute("dlaGen-1-images", Map("dlaGen-1-images" -> "dimensions"))
+  Registry.execute(
+    "dlaGen-1-images",
+    Map("dlaGen-1-images" -> "dimensions")
+  )
+
+  Registry.execute(
+    "overlayGO-1-enum",
+    Map("overlayGO-1-enum" -> "default")
+  )
 }

@@ -108,7 +108,7 @@ object Registry extends RegistryData {
         )
         val paramSpace = subchain.zipWithIndex.map{
           case ((exp, conf), index) =>
-            conf.paramSpace(index == length - 1, index)
+            conf.paramSpace(index < length - 1, index)
         }.foldLeft(emptyParamSpace) {
           case (mapChained, mapCurrent) =>
             mapChained.map{

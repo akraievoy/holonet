@@ -229,36 +229,6 @@ class ExperimentStore(
     }
   }
 
-  private def applyOffset[T](
-    spacePos: Seq[ParamPos],
-    offsets: Map[String, Int]
-  ): Seq[ParamPos] = {
-    if (offsets.size == 0) {
-      spacePos
-    } else {
-      spacePos.map {
-        paramPos =>
-          offsets.get(paramPos.name).map {
-            offset =>
-              val param = (this +: chain).find{
-                dataStore => dataStore.config.params.contains(paramPos.name)
-              }.getOrElse {
-                throw new IllegalStateException(
-                  "no config has parameter %s".format(
-                    paramPos.name
-                  )
-                )
-              }.config.params(paramPos.name)
-
-              paramPos.copy(
-                value = param.valueSpec(paramPos.pos + offset),
-                pos = paramPos.pos + offset
-              )
-          }.getOrElse(paramPos)
-      }
-    }
-  }
-
   def lens[T](
     paramName: String,
     spacePos: Seq[ParamPos],
@@ -267,15 +237,9 @@ class ExperimentStore(
     implicit mt: Manifest[T]
   ) = {
     StoreLens[T](
-      {
-        (offsets) =>
-          val spacePosOffs = applyOffset(spacePos, offsets)
-          get[T](paramName, spacePosOffs)
-      }, {
-        (offsets, t) =>
-          val spacePosOffs = applyOffset(spacePos, offsets)
-          set[T](paramName, t, spacePosOffs)
-      },
+      this,
+      paramName,
+      spacePos,
       lensOffsets,
       mt
     )
