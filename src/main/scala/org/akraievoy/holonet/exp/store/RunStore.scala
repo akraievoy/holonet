@@ -18,16 +18,24 @@
 
 package org.akraievoy.holonet.exp.store
 
-import org.akraievoy.holonet.exp.ParamPos
+import org.akraievoy.holonet.exp.{ParamName, ParamPos}
 
 case class RunStore(
   es: ExperimentStore,
   spacePos: Seq[ParamPos]
 ) {
   def lens[T](
-    paramName: String,
-    lensOffsets: Map[String, Int] = Map.empty
+    paramName: String
   )(
     implicit mt: Manifest[T]
-  ) = es.lens[T](paramName, spacePos, lensOffsets)
+  ): StoreLens[T] = {
+    es.lens[T](paramName, spacePos, Map.empty)
+  }
+
+  def lens[T](
+    paramName: ParamName[T]
+  ): StoreLens[T] = {
+    lens(paramName.name)(paramName.mt)
+  }
+
 }

@@ -92,7 +92,7 @@ class ExperimentStore(
         }
       }
     } else if (ExperimentStore.streamableSerializers.contains(mt.asInstanceOf[Manifest[_ <: Streamable]])) {
-      val binaryParamFName = "%s\\/%s".format(paramFName, posStr)
+      val binaryParamFName = "%s/%s".format(paramFName, posStr)
         fs.appendBinary(
           uid,
           binaryParamFName,
@@ -166,7 +166,7 @@ class ExperimentStore(
             )
           fs.readBinary(
             uid,
-            "%s\\/%s".format(paramFName, posStr),
+            "%s/%s".format(paramFName, posStr),
             serializer.readOp
           ).asInstanceOf[Option[T]]
         } else {

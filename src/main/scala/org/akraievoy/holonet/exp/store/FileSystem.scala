@@ -82,7 +82,9 @@ class FileSystem(
     runUID: RunUID,
     fName: String,
     openStreams: Map[File, Closeable]
-  )(data: Stream[Seq[String]]) {
+  )(
+    data: Stream[Seq[String]]
+  ) {
     val destFile = new File(expDir(runUID), fName)
 
     noReadsAndDumpsOverAppends(openStreams, destFile)
@@ -107,7 +109,7 @@ class FileSystem(
     if (srcFile.isFile) {
       val in = new BufferedInputStream(new FileInputStream(srcFile))
       try {
-        readOp(in).headOption
+        readOp(in).lastOption
       } finally {
         in.close()
       }
@@ -126,6 +128,7 @@ class FileSystem(
     val (out, opened) = openStreams.get(destFile).map {
       closeable => (closeable.asInstanceOf[FileOutputStream], false)
     }.getOrElse {
+      destFile.getParentFile.mkdirs()
       (new FileOutputStream(destFile, true), true)
     }
 

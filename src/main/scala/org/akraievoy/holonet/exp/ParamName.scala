@@ -1,5 +1,5 @@
 /*
- Copyright 2012 Anton Kraievoy akraievoy@gmail.com
+ Copyright 2013 Anton Kraievoy akraievoy@gmail.com
  This file is part of Holonet.
 
  Holonet is free software: you can redistribute it and/or modify
@@ -18,25 +18,18 @@
 
 package org.akraievoy.holonet.exp
 
-import org.apache.log4j.BasicConfigurator
+case class ParamName[T](
+  mt: Manifest[T],
+  name: String
+)
 
-object Runner extends App {
-  BasicConfigurator.configure()
-
-  if (false) {
-    Registry.execute(
-      "dlaGenImages",
-      Map("dlaGenImages" -> "dimensions")
-    )
-
-    Registry.execute(
-      "overlayEnum",
-      Map("overlayEnum" -> "default")
-    )
-  } else {
-    Registry.execute(
-      "overlayGO-1-physDataset",
-      Map("overlayGO-1-physDataset" -> "big")
-    )
+object ParamName{
+  def apply[T](
+    name: String
+  )(
+    implicit mt: Manifest[T]
+  ): ParamName[T] = {
+    ParamName(mt, name)
   }
 }
+

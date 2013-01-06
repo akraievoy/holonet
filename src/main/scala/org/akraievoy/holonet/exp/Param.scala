@@ -82,13 +82,11 @@ case class Param(
 
 object Param{
   def apply[T](
-    name: String,
+    paramName: ParamName[T],
     singleValueSpec: String,
     strategy: Parameter.Strategy = Parameter.Strategy.SPAWN,
     chainStrategy: Parameter.Strategy = Parameter.Strategy.SPAWN,
     desc: String = ""
-  )(
-    implicit mt: Manifest[T]
   ) = {
     val valueSpec =
       if (singleValueSpec.contains(';')) {
@@ -97,7 +95,7 @@ object Param{
         val rangeStr = singleValueSpec.split("-")
         if (rangeStr.length > 2) {
           throw new IllegalArgumentException(
-            "param '%s' has more than 2 range limits".format(name)
+            "param '%s' has more than 2 range limits".format(paramName.name)
           )
         }
         val range = rangeStr.map(java.lang.Long.parseLong)
@@ -106,6 +104,12 @@ object Param{
         Seq(singleValueSpec)
       }
 
-    new Param(name, mt, valueSpec, strategy, chainStrategy, desc, -1)
+    new Param(
+      paramName.name, paramName.mt,
+      valueSpec,
+      strategy, chainStrategy,
+      desc,
+      -1
+    )
   }
 }
