@@ -91,8 +91,8 @@ object Param{
     val valueSpec =
       if (singleValueSpec.contains(';')) {
         singleValueSpec.split(";").toSeq
-      } else if (singleValueSpec.contains("-")) {
-        val rangeStr = singleValueSpec.split("-")
+      } else if (singleValueSpec.contains("--")) {
+        val rangeStr = singleValueSpec.split("--")
         if (rangeStr.length > 2) {
           throw new IllegalArgumentException(
             "param '%s' has more than 2 range limits".format(paramName.name)

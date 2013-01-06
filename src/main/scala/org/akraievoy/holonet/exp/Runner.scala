@@ -35,8 +35,11 @@ object Runner extends App {
     )
   } else {
     Registry.execute(
-      "overlayGO-1-physDataset",
-      Map("overlayGO-1-physDataset" -> "big")
+      "overlayGO-2-ovlDataset",
+      Map(
+        "overlayGO-1-physDataset" -> "big",
+        "overlayGO-2-ovlDataset" -> "nu50"
+      )
     )
   }
 }

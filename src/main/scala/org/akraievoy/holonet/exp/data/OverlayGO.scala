@@ -20,12 +20,13 @@ package org.akraievoy.holonet.exp.data
 
 import org.akraievoy.holonet.exp._
 import org.akraievoy.cnet.gen.vo.{ConnPreferenceYookJeongBarabasi, MetricEuclidean, EntropySourceRandom}
-import org.akraievoy.cnet.gen.domain.{MetricEDataGenStructural, LocationGeneratorRecursive}
+import org.akraievoy.cnet.gen.domain.{OverlayNetFactory, MetricEDataGenStructural, LocationGeneratorRecursive}
 import org.akraievoy.cnet.net.vo.{EdgeDataDense, EdgeDataSparse, VertexData, EdgeData}
 import org.akraievoy.cnet.metrics.domain._
 import org.akraievoy.base.runner.domain.RunnableComposite
 import scala.collection.JavaConversions._
-import org.akraievoy.base.ref.Ref
+import org.akraievoy.base.ref.{RefRO, Ref}
+import store.StoreLens
 
 object OverlayGO {
   import java.lang.{
@@ -51,6 +52,23 @@ object OverlayGO {
     val physLocationY = ParamName[VertexData]("default.location.y")
     val physDensity = ParamName[VertexData]("default.density")
     val physEigenGap = ParamName[JDouble]("eigengap.physical")
+    //  stage 2 inputs
+    val entropySourceOvlSeed = ParamName[JLong]("esOvl.seed")
+    val entropySourceReqSeed = ParamName[JLong]("esReq.seed")
+    val ovlNetFactoryOmega = ParamName[JDouble]("onf.omega")
+    val ovlNetFactoryNu = ParamName[JDouble]("onf.nu")
+    val ovlReqFactoryPhi = ParamName[JDouble]("ovlReq.phi")
+    val ovlReqFactoryPsi = ParamName[JDouble]("ovlReq.psi")
+    val ovlReqFactorySigma = ParamName[JDouble]("ovlReq.sigma")
+    val ovlReqFactoryThreshMinAbsValue = ParamName[JDouble]("ovlReqThresh.minAbsValue")
+    val ovlReqFactoryThreshMinToMaxRatio = ParamName[JDouble]("ovlReqThresh.minToMaxRatio")
+    //  stage 2 outputs
+    val overlayIndex = ParamName[VertexData]("overlay.index")
+    val overlayDistance = ParamName[EdgeDataDense]("overlay.distance")
+    val overlayRequest = ParamName[EdgeDataSparse]("overlay.request")
+    val overlayLocationX = ParamName[VertexData]("overlay.locationX")
+    val overlayLocationY = ParamName[VertexData]("overlay.locationY")
+    val overlayDensity = ParamName[VertexData]("overlay.density")
 
   }
 
@@ -206,6 +224,89 @@ object OverlayGO {
       "big-4k",
       "Big (4k nodes, 1 seed)",
       Param(locationMetricNodes, "4096")
+    )
+  )
+
+  val experiment2overlayDataset = Experiment(
+    "overlayGO-2-ovlDataset",
+    "Overlay GO [stage2] Overlay Dataset",
+    Seq("overlayGO-1-physDataset"),
+    {
+      rs =>
+        val ovlESource = new EntropySourceRandom()
+        ovlESource.setSeed(
+          rs.lens(entropySourceOvlSeed).get.get
+        )
+
+        val reqESource = new EntropySourceRandom()
+        reqESource.setSeed(
+          rs.lens(entropySourceReqSeed).get.get
+        )
+
+        val ovlNetFactory = new OverlayNetFactory(ovlESource)
+        ovlNetFactory.setOmega(
+          rs.lens(ovlNetFactoryOmega).get.get
+        )
+        ovlNetFactory.setNu(
+          rs.lens(ovlNetFactoryNu).get.get
+        )
+        ovlNetFactory.setSource(
+          rs.lens(physStructure).asInstanceOf[StoreLens[EdgeData]]
+        )
+        ovlNetFactory.setTarget(rs.lens(overlayIndex))
+        ovlNetFactory.setEdgeDataMap(
+          Map(
+            rs.lens(physRouteLen).asInstanceOf[RefRO[EdgeData]] ->
+              rs.lens(overlayDistance).asInstanceOf[Ref[EdgeData]]
+          )
+        )
+        ovlNetFactory.setVertexDataMap(
+          Map[RefRO[VertexData], Ref[VertexData]](
+            rs.lens(physLocationX) -> rs.lens(overlayLocationX),
+            rs.lens(physLocationY) -> rs.lens(overlayLocationY),
+            rs.lens(physDensity) -> rs.lens(overlayDensity)
+          )
+        )
+
+        val ovlRequests = new MetricEDataOverlayRequest(reqESource)
+        ovlRequests.setSource(rs.lens(overlayDensity))
+        ovlRequests.setPhi(rs.lens(ovlReqFactoryPhi).get.get)
+        ovlRequests.setPsi(rs.lens(ovlReqFactoryPsi).get.get)
+        ovlRequests.setSigma(rs.lens(ovlReqFactorySigma).get.get)
+
+        val reqThreshold = new MetricEDataThreshold(ovlRequests)
+        reqThreshold.setTarget(rs.lens(overlayRequest).asInstanceOf[StoreLens[EdgeData]])
+        reqThreshold.setMinAbsValue(rs.lens(ovlReqFactoryThreshMinAbsValue).get.get)
+        reqThreshold.setMinToMaxRatio(rs.lens(ovlReqFactoryThreshMinToMaxRatio).get.get)
+
+        ovlNetFactory.run()
+        reqThreshold.run()
+    },
+    Config(
+      Param(entropySourceOvlSeed, "31013"),
+      Param(entropySourceReqSeed, "11311"),
+      Param(ovlNetFactoryOmega, "-1"),
+      Param(ovlNetFactoryNu, "0.25"),
+      Param(ovlReqFactoryPhi, "0.25"),
+      Param(ovlReqFactoryPsi, "0.75"),
+      Param(ovlReqFactorySigma, "0.03"),
+      Param(ovlReqFactoryThreshMinAbsValue, "0.003"),
+      Param(ovlReqFactoryThreshMinToMaxRatio, "0.001")
+    ),
+    Config(
+      "nu50",
+      "Default (select 50% of nodes)",
+      Param(ovlNetFactoryNu, "0.5")
+    ),
+    Config(
+      "nu20_omegaProf",
+      "Visual (select 20% of nodes), profile by Omega",
+      Param(ovlNetFactoryNu, "0.2"),
+      Param(ovlNetFactoryOmega, "-4;2;4"),
+      Param(ovlReqFactoryPhi, "1"),
+      Param(ovlReqFactoryPsi, "1"),
+      Param(ovlReqFactoryThreshMinAbsValue, "0.05"),
+      Param(ovlReqFactoryThreshMinToMaxRatio, "0.05")
     )
   )
 }

@@ -24,7 +24,8 @@ trait RegistryData {
   lazy val experiments: Seq[Experiment] = Seq(
     DlaGenImages.experiment,
     OverlayEnum.experiment,
-    OverlayGO.experiment1physDataset
+    OverlayGO.experiment1physDataset,
+    OverlayGO.experiment2overlayDataset
   )
 
 }
