@@ -36,6 +36,8 @@ class ExperimentStore(
   private var openStreams: Map[File, Closeable] = Map.empty
   //  TODO in-memory format should be simplified
   private var cachedCSV: Map[String, Map[String, Seq[Seq[String]]]] = Map.empty
+  private var cachedBinaries: Map[String, Streamable] = Map.empty
+  private var writeLocked = false
 
   fs.readCSV(uid, "schema.csv").map{
     lineSeq =>
@@ -61,6 +63,29 @@ class ExperimentStore(
             paramName
           )
         )
+    }
+    chain.find(_.schema.contains(paramName)).map{
+      expStore =>
+        throw new IllegalStateException(
+          "%s is located in chained experiment %s".format(
+            paramName,
+            expStore.experiment.name
+          )
+        )
+    }
+
+    val writeLockedLocal =
+      synchronized {
+        writeLocked
+      }
+
+    if (writeLockedLocal) {
+      throw new IllegalStateException(
+        "%s is located in read-only/completed experiment %s".format(
+          paramName,
+          experiment.name
+        )
+      )
     }
 
     val pos = ParamPos.pos(spacePos, chain.length)
@@ -163,11 +188,39 @@ class ExperimentStore(
             ExperimentStore.streamableSerializers(
               mt.asInstanceOf[Manifest[T with Streamable]]
             )
-          fs.readBinary(
-            uid,
-            "%s/%s".format(paramFName, posStr),
-            serializer.readOp
-          ).asInstanceOf[Option[T]]
+          val writeLockedLocal =
+            synchronized {
+              writeLocked
+            }
+
+          val binaryFName = "%s/%s".format(paramFName, posStr)
+          val fetchOp: (String) => Option[T] = {
+            binaryFName1 =>
+              fs.readBinary(
+                uid,
+                binaryFName1,
+                serializer.readOp
+              ).asInstanceOf[Option[T]]
+          }
+
+          if (writeLockedLocal) {
+            synchronized{
+              cachedBinaries.get(binaryFName).map {
+                _.asInstanceOf[T]
+              }.orElse {
+                fetchOp(binaryFName).map {
+                  readRes =>
+                    cachedBinaries = cachedBinaries.updated(
+                      binaryFName,
+                      readRes.asInstanceOf[Streamable]
+                    )
+                    readRes
+                }
+              }
+            }
+          } else {
+            fetchOp(binaryFName)
+          }
         } else {
           typeNotSupported(mt)
         }
@@ -249,36 +302,41 @@ class ExperimentStore(
   }
 
   def writeShutdown() {
-    fs.dumpCSV(uid, "chain.csv", Map.empty)(
-      chain.toStream.map(
-        store => Seq(store.uid.expName, store.uid.confName, store.uid.stamp)
+    synchronized{
+      fs.dumpCSV(uid, "chain.csv", Map.empty)(
+        chain.toStream.map(
+          store => Seq(store.uid.expName, store.uid.confName, store.uid.stamp)
+        )
       )
-    )
 
-    fs.dumpCSV(uid, "schema.csv", Map.empty)(
-      schema.map {
-        case (pName, pAlias) =>
-          Seq(pName, pAlias)
-      }.toStream
-    )
+      fs.dumpCSV(uid, "schema.csv", Map.empty)(
+        schema.map {
+          case (pName, pAlias) =>
+            Seq(pName, pAlias)
+        }.toStream
+      )
 
-    openStreams.values.foreach {
-      closeable =>
-        try {
-          closeable match {
-            case w: Writer =>
-              w.flush()
-            case o: OutputStream =>
-              o.flush()
-            case other =>
-            //  do nothing
+      openStreams.values.foreach {
+        closeable =>
+          try {
+            closeable match {
+              case w: Writer =>
+                w.flush()
+              case o: OutputStream =>
+                o.flush()
+              case other =>
+              //  do nothing
+            }
+          } finally {
+            closeable.close()
           }
-        } finally {
-          closeable.close()
-        }
+      }
+
+      openStreams = Map.empty
+
+      writeLocked = true
     }
 
-    openStreams = Map.empty
   }
 }
 
