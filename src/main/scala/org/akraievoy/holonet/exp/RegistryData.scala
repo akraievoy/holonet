@@ -18,7 +18,7 @@
 
 package org.akraievoy.holonet.exp
 
-import data.{OverlayGO, OverlayEnum, DlaGenImages}
+import data.{DhtSim, OverlayGO, OverlayEnum, DlaGenImages}
 
 trait RegistryData {
   lazy val experiments: Seq[Experiment] = Seq(
@@ -26,7 +26,17 @@ trait RegistryData {
     OverlayEnum.experiment,
     OverlayGO.experiment1physDataset,
     OverlayGO.experiment2overlayDataset,
-    OverlayGO.experiment3genetics
+    OverlayGO.experiment3genetics,
+    DhtSim.experiment1seeds,
+    DhtSim.experiment2paramSpace,
+    DhtSim.experiment3attack,
+    DhtSim.experiment3attackChained,
+    DhtSim.experiment3attackDestab,
+    DhtSim.experiment3attackDestabChained,
+    DhtSim.experiment3destab,
+    DhtSim.experiment3destabChained,
+    DhtSim.experiment3static,
+    DhtSim.experiment3staticChained
   )
 
 }

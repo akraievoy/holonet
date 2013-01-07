@@ -21,6 +21,7 @@ package algores.holonet.testbench;
 import algores.holonet.core.Network;
 import algores.holonet.core.Node;
 import org.akraievoy.base.runner.api.Context;
+import org.akraievoy.holonet.exp.store.StoreLens;
 
 /**
  * Metrics that make sense in static context.
@@ -80,10 +81,10 @@ public class Snapshot {
     return totalMappings;
   }
 
-  public void store(Context ctx) {
-    ctx.put(name + "_nodeCount", getNodeCount());
-    ctx.put(name + "_elemCount", getTotalMappings());
-    ctx.put(name + "_elemPerNodeAvg", getMappingsAverage());
-    ctx.put(name + "_elemPerNodeDev", deviation);
+  public void store(StoreLens<Double> reportLens) {
+    reportLens.forTypeName(Integer.class, name + "_nodeCount").set(getNodeCount());
+    reportLens.forTypeName(Integer.class, name + "_elemCount").set(getTotalMappings());
+    reportLens.forName(name + "_elemPerNodeAvg").set(getMappingsAverage());
+    reportLens.forName(name + "_elemPerNodeDev").set(deviation);
   }
 }

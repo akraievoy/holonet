@@ -33,14 +33,25 @@ object Runner extends App {
       "overlayEnum",
       Map("overlayEnum" -> "default")
     )
-  } else {
     Registry.execute(
       "overlayGO-3-genetics",
       Map(
         "overlayGO-1-physDataset" -> "big-1k",
         "overlayGO-2-ovlDataset" -> "nu20",
-//        "overlayGO-2-ovlDataset" -> "minEff13x4x64"
+        //  "overlayGO-2-ovlDataset" -> "minEff13x4x64"
         "overlayGO-3-genetics" -> "minEff17-smoke"
+      )
+    )
+  } else {
+    Registry.execute(
+      "p2p-stage3-attack-chained",
+      Map(
+        "overlayGO-1-physDataset" -> "big-1k",
+        "overlayGO-2-ovlDataset" -> "nu20",
+        "overlayGO-3-genetics" -> "minEff17-smoke",
+        "p2p-stage1-seed" -> "3x2",
+        "p2p-stage2-paramSpace" -> "failProf-large-192",
+        "p2p-stage3-attack-chained" -> "default"
       )
     )
   }

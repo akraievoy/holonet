@@ -18,29 +18,35 @@
 
 package algores.holonet.core.events;
 
+import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.runner.api.RefLong;
 
 /**
  * Composite event consisting of repetitions of nested event.
  */
-class EventCompositeLoop extends EventComposite {
+public class EventCompositeLoop extends EventComposite<EventCompositeLoop> {
   private final Event nestedEvent;
   int currentLoop;
-  RefLong count = new RefLong(1);
+  Ref<Long> count = new RefLong(1);
 
-  EventCompositeLoop(final Event newNestedEvent) {
+  public EventCompositeLoop(final Event<?> newNestedEvent) {
     nestedEvent = newNestedEvent;
   }
 
-  public void setCountRef(final RefLong loopCount) {
-    this.count = loopCount;
+  public void setCountRef(final Ref<Long> loopCountRef) {
+    this.count = loopCountRef;
+  }
+
+  public EventCompositeLoop withCountRef(Ref<Long> loopCountRef) {
+    setCountRef(loopCountRef);
+    return this;
   }
 
   public void setCount(final int loopCount) {
     this.count.setValue((long) loopCount);
   }
 
-  public Event generateNextEvent() {
+  public Event<?> generateNextEvent() {
     if (currentLoop < count.getValue()) {
       currentLoop++;
       return nestedEvent;

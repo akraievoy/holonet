@@ -20,18 +20,35 @@ package algores.holonet.core.events;
 
 import algores.holonet.core.CommunicationException;
 import algores.holonet.core.Network;
+import org.akraievoy.base.ref.Ref;
+import org.akraievoy.base.runner.api.RefLong;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 /**
  * Node leave event.
  */
-class EventNodeLeave extends EventNodeJoin {
-  public EventComposite.Result executeInternal(final Network targetNetwork, final EntropySource eSource) {
+public class EventNodeLeave extends Event<EventNodeLeave> {
+  protected Ref<Long> count = new RefLong(1);
+
+  public void setCountRef(Ref<Long> nodeCount) {
+    this.count = nodeCount;
+  }
+
+  public EventNodeLeave withCountRef(Ref<Long> nodeCountRef) {
+    setCountRef(nodeCountRef);
+    return this;
+  }
+
+  public void setCount(int nodeCount) {
+    this.count.setValue((long) nodeCount);
+  }
+
+  public Result executeInternal(final Network targetNetwork, final EntropySource eSource) {
     final int countInt = (int) count.getValue().intValue();
     if (targetNetwork.getAllNodes().size() > countInt) {
       try {
         targetNetwork.removeNodes(countInt, false, eSource);
-        return EventComposite.Result.SUCCESS;
+        return Result.SUCCESS;
       } catch (CommunicationException e) {
         return handleEventFailure(e, null);
       }

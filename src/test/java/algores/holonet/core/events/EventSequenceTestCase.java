@@ -31,7 +31,14 @@ public class EventSequenceTestCase extends TestCase {
     final Event leave = new EventNodeLeave();
     final Event stabilize = new EventNodeStabilize();
 
-    final EventCompositeSequence sequence = new EventCompositeSequence(Arrays.asList(new Event[]{join, stabilize, leave}));
+    final EventCompositeSequence sequence =
+        new EventCompositeSequence(
+            Arrays.asList(
+                new Event<?>[]{
+                    join, stabilize, leave
+                }
+            )
+        );
 
     validateSequence(sequence, join, stabilize, leave);
   }
@@ -41,7 +48,13 @@ public class EventSequenceTestCase extends TestCase {
     final Event leave = new EventNodeLeave();
     final Event stabilize = new EventNodeStabilize();
 
-    final EventCompositeSequence sequence = new EventCompositeSequence(Arrays.asList(new Event[]{join, stabilize, leave}));
+    final EventCompositeSequence sequence = new EventCompositeSequence(
+        Arrays.asList(
+            new Event<?>[]{
+                join, stabilize, leave
+            }
+        )
+    );
 
     sequence.generateNextEvent();
     sequence.generateNextEvent();

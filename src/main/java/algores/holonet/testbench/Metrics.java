@@ -21,6 +21,7 @@ package algores.holonet.testbench;
 import algores.holonet.core.NetworkInterceptor;
 import algores.holonet.core.api.tier1.delivery.LookupService;
 import org.akraievoy.base.runner.api.Context;
+import org.akraievoy.holonet.exp.store.StoreLens;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -132,87 +133,36 @@ public class Metrics implements NetworkInterceptor {
     return new Metrics(newPeriodName);
   }
 
-  public void store(Context ctx) {
-    ctx.put(periodName + "_joinSuccessCount", getNodeArrivalSuccesses());
-    ctx.put(periodName + "_joinFailCount", getNodeArrivalFailures());
-    ctx.put(periodName + "_joinSuccessRatio", getArrivalSuccessRatio());
-    ctx.put(periodName + "_leaveCount", getNodeDepartures());
-    ctx.put(periodName + "_failCount", getNodeFailures());
+  public void store(StoreLens<Double> reportLens ) {
+    reportLens.forTypeName(Integer.class, periodName + "_joinSuccessCount").set(getNodeArrivalSuccesses());
+    reportLens.forTypeName(Integer.class, periodName + "_joinFailCount").set(getNodeArrivalFailures());
+    reportLens.forName(periodName + "_joinSuccessRatio").set(getArrivalSuccessRatio());
+    reportLens.forTypeName(Integer.class, periodName + "_leaveCount").set(getNodeDepartures());
+    reportLens.forTypeName(Integer.class, periodName + "_failCount").set(getNodeFailures());
 
     for (LookupService.Mode mode : LookupService.Mode.values()) {
       final LookupMetrics lookups = modeToLookups(mode);
       final String prefix = "_lookup_" + mode.toString().toLowerCase();
-      ctx.put(
-          periodName + prefix + "_count",
-          lookups.getLookupCount()
-      );
-      ctx.put(
-          periodName + prefix + "_hopAvg",
-          lookups.getMeanPathLength()
-      );
-      ctx.put(
-          periodName + prefix + "_delayAvg",
-          lookups.getMeanLatency()
-      );
-      ctx.put(
-          periodName + prefix + "_vsDirectRatioAvg",
-          lookups.getLookupVsDirectRatioAvg()
-      );
-      ctx.put(
-          periodName + prefix + "_vsDirectCount",
-          lookups.getLookupVsDirectCount()
-      );
-      ctx.put(
-          periodName + prefix + "_successes",
-          lookups.getLookupSuccesses()
-      );
-      ctx.put(
-          periodName + prefix + "_failures",
-          lookups.getLookupFailures()
-      );
-      ctx.put(
-          periodName + prefix + "_successRatio",
-          lookups.getLookupSuccessRatio()
-      );
-      ctx.put(
-          periodName + prefix + "_successRatioTimesHopsAvg",
-          lookups.getLookupSuccessRatio() * lookups.getMeanPathLength()
-      );
-      ctx.put(
-          periodName + prefix + "_correctRatio",
-          lookups.getLookupConsistency()
-      );
-      ctx.put(
-          periodName + prefix + "_routingServiceRouteCountAvg",
-          lookups.getRoutingServiceRouteCountAvg()
-      );
-      ctx.put(
-          periodName + prefix + "_routingServiceRedundancyAvg",
-          lookups.getRoutingServiceRedundancyAvg()
-      );
-      ctx.put(
-          periodName + prefix + "_routingServiceRedundancyChangeAvg",
-          lookups.getRoutingServiceRedundancyChangeAvg()
-      );
-      ctx.put(
-          periodName + prefix + "_routeRedundancyAvg",
-          lookups.getRouteRedundancyAvg()
-      );
-      ctx.put(
-          periodName + prefix + "_routeExhaustionAvg",
-          lookups.getRouteExhaustionAvg()
-      );
-      ctx.put(
-          periodName + prefix + "_routeRetractionAvg",
-          lookups.getRouteRetractionAvg()
-      );
-      ctx.put(
-          periodName + prefix + "_routeRpcFailRatioAvg",
-          lookups.getRouteRpcFailRatioAvg()
-      );
+      reportLens.forTypeName(Long.class, periodName + prefix + "_count").set(lookups.getLookupCount());
+      reportLens.forName(periodName + prefix + "_hopAvg").set(lookups.getMeanPathLength());
+      reportLens.forName(periodName + prefix + "_delayAvg").set(lookups.getMeanLatency());
+      reportLens.forName(periodName + prefix + "_vsDirectRatioAvg").set(lookups.getLookupVsDirectRatioAvg());
+      reportLens.forTypeName(Long.class, periodName + prefix + "_vsDirectCount").set(lookups.getLookupVsDirectCount());
+      reportLens.forTypeName(Long.class, periodName + prefix + "_successes").set(lookups.getLookupSuccesses());
+      reportLens.forTypeName(Long.class, periodName + prefix + "_failures").set(lookups.getLookupFailures());
+      reportLens.forName(periodName + prefix + "_successRatio").set(lookups.getLookupSuccessRatio());
+      reportLens.forName(periodName + prefix + "_successRatioTimesHopsAvg").set(lookups.getLookupSuccessRatio() * lookups.getMeanPathLength());
+      reportLens.forName(periodName + prefix + "_correctRatio").set(lookups.getLookupConsistency());
+      reportLens.forName(periodName + prefix + "_routingServiceRouteCountAvg").set(lookups.getRoutingServiceRouteCountAvg());
+      reportLens.forName(periodName + prefix + "_routingServiceRedundancyAvg").set(lookups.getRoutingServiceRedundancyAvg());
+      reportLens.forName(periodName + prefix + "_routingServiceRedundancyChangeAvg").set(lookups.getRoutingServiceRedundancyChangeAvg());
+      reportLens.forName(periodName + prefix + "_routeRedundancyAvg").set(lookups.getRouteRedundancyAvg());
+      reportLens.forName(periodName + prefix + "_routeExhaustionAvg").set(lookups.getRouteExhaustionAvg());
+      reportLens.forName(periodName + prefix + "_routeRetractionAvg").set(lookups.getRouteRetractionAvg());
+      reportLens.forName(periodName + prefix + "_routeRpcFailRatioAvg").set(lookups.getRouteRpcFailRatioAvg());
     }
 
-    ctx.put(periodName + "_rpcCount", getRpcCallsTotal());
-    ctx.put(periodName + "_rpcSuccessRatio", getRpcSuccessRatio());
+    reportLens.forTypeName(Integer.class, periodName + "_rpcCount").set(getRpcCallsTotal());
+    reportLens.forName(periodName + "_rpcSuccessRatio").set(getRpcSuccessRatio());
   }
 }

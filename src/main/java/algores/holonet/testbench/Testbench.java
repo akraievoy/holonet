@@ -20,10 +20,12 @@ package algores.holonet.testbench;
 
 import algores.holonet.core.Network;
 import algores.holonet.core.events.Event;
+import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.base.runner.api.ContextInjectable;
 import org.akraievoy.base.runner.api.RefLong;
 import org.akraievoy.cnet.gen.vo.EntropySourceRandom;
+import org.akraievoy.holonet.exp.store.StoreLens;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +34,7 @@ import java.util.List;
  * Runs collection of <code>Events</code> on a given <code>Network</code>,
  * providing data for gathering different metrics data.
  */
-public class Testbench implements Runnable, ContextInjectable {
+public class Testbench implements Runnable {
   private Network network = new Network();
 
   private Event initialEvent;
@@ -43,9 +45,9 @@ public class Testbench implements Runnable, ContextInjectable {
   private List<Metrics> periodStats = new ArrayList<Metrics>();
   private List<Snapshot> snapshots = new ArrayList<Snapshot>();
 
-  private Context ctx;
-  private RefLong initSeedRef = new RefLong(123456);
-  private RefLong runSeedRef = new RefLong(654321);
+  private StoreLens<Double> reportLens;
+  private Ref<Long> initSeedRef = new RefLong(123456);
+  private Ref<Long> runSeedRef = new RefLong(654321);
 
   private EntropySourceRandom initEntropySource = new EntropySourceRandom();
   private EntropySourceRandom runEntropySource = new EntropySourceRandom();
@@ -53,19 +55,19 @@ public class Testbench implements Runnable, ContextInjectable {
   public Testbench() {
   }
 
-  public void setInitialEvent(Event initialEvent) {
+  public void setInitialEvent(Event<?> initialEvent) {
     this.initialEvent = initialEvent;
   }
 
-  public void setRuntimeEvent(Event runtimeEvent) {
+  public void setRuntimeEvent(Event<?> runtimeEvent) {
     this.runtimeEvent = runtimeEvent;
   }
 
-  public void setInitSeedRef(RefLong initSeedRef) {
+  public void setInitSeedRef(Ref<Long> initSeedRef) {
     this.initSeedRef = initSeedRef;
   }
 
-  public void setRunSeedRef(RefLong runSeedRef) {
+  public void setRunSeedRef(Ref<Long> runSeedRef) {
     this.runSeedRef = runSeedRef;
   }
 
@@ -112,18 +114,18 @@ public class Testbench implements Runnable, ContextInjectable {
       storeSnapshot("postRun");
 
       for (Snapshot snap : snapshots) {
-        snap.store(ctx);
+        snap.store(reportLens);
       }
       for (Metrics mtx : periodStats) {
-        mtx.store(ctx);
+        mtx.store(reportLens);
       }
     } finally {
       network.dispose();
     }
   }
 
-  public void setCtx(Context ctx) {
-    this.ctx = ctx;
+  public void setReportLens(StoreLens<Double> reportLens) {
+    this.reportLens = reportLens;
   }
 }
 

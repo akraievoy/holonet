@@ -20,27 +20,33 @@ package algores.holonet.core.events;
 
 import algores.holonet.core.Network;
 import algores.holonet.core.SimulatorException;
+import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.runner.api.RefLong;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 /**
  * Node join event.
  */
-class EventNodeJoin extends Event {
-  protected RefLong count = new RefLong(1);
+public class EventNodeJoin extends Event<EventNodeJoin> {
+  protected Ref<Long> count = new RefLong(1);
 
-  public void setCountRef(RefLong nodeCount) {
+  public void setCountRef(Ref<Long> nodeCount) {
     this.count = nodeCount;
+  }
+
+  public EventNodeJoin withCountRef(Ref<Long> nodeCountRef) {
+    setCountRef(nodeCountRef);
+    return this;
   }
 
   public void setCount(int nodeCount) {
     this.count.setValue((long) nodeCount);
   }
 
-  public EventComposite.Result executeInternal(Network network, final EntropySource eSource) {
+  public Result executeInternal(Network network, final EntropySource eSource) {
     try {
       network.insertNodes(count.getValue().intValue(), null, eSource);
-      return EventComposite.Result.SUCCESS;
+      return Result.SUCCESS;
     } catch (SimulatorException e) {
       return handleEventFailure(e, null);
     }

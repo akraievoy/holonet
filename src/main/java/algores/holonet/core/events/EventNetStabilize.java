@@ -26,8 +26,8 @@ import org.akraievoy.cnet.gen.vo.EntropySource;
 /**
  * Stabilizes all nodes in the network event.
  */
-class EventNetStabilize extends Event {
-  public EventComposite.Result executeInternal(Network targetNetwork, final EntropySource eSource) {
+public class EventNetStabilize extends Event<EventNetStabilize> {
+  public Result executeInternal(Network targetNetwork, final EntropySource eSource) {
     Result result = Result.SUCCESS;
 
     int stabilizeSucceeded = 0;

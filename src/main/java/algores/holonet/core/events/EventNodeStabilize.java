@@ -20,16 +20,17 @@ package algores.holonet.core.events;
 
 import algores.holonet.core.CommunicationException;
 import algores.holonet.core.Network;
+import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.runner.api.RefLong;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 /**
  * Node stabilize event.
  */
-class EventNodeStabilize extends Event {
-  protected RefLong count = new RefLong(1);
+public class EventNodeStabilize extends Event<EventNodeStabilize> {
+  protected Ref<Long> count = new RefLong(1);
 
-  public void setCountRef(RefLong nodeCount) {
+  public void setCountRef(Ref<Long> nodeCount) {
     this.count = nodeCount;
   }
 
@@ -37,7 +38,12 @@ class EventNodeStabilize extends Event {
     this.count.setValue((long) nodeCount);
   }
 
-  public EventComposite.Result executeInternal(Network targetNetwork, final EntropySource eSource) {
+  public EventNodeStabilize withCounthRef(Ref<Long> nodeCountRef) {
+    setCountRef(nodeCountRef);
+    return this;
+  }
+
+  public Result executeInternal(Network targetNetwork, final EntropySource eSource) {
     final long count = this.count.getValue().intValue();
     for (int callCount = 0; callCount < count; callCount++) {
       try {
@@ -47,6 +53,6 @@ class EventNodeStabilize extends Event {
       }
     }
 
-    return EventComposite.Result.SUCCESS;
+    return Result.SUCCESS;
   }
 }

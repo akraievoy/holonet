@@ -27,7 +27,7 @@ import org.akraievoy.cnet.gen.vo.EntropySource;
  * If a nested event once fails, no further attempts will be performed,
  * so composite event sequence will be truncated on upon first failure.
  */
-public abstract class EventComposite extends Event {
+public abstract class EventComposite<SelfType extends Event<?>> extends Event<SelfType> {
   private boolean stopOnFailure = false;
 
   /**
@@ -35,10 +35,16 @@ public abstract class EventComposite extends Event {
    *
    * @return <code>null</code> if and only if {@link EventComposite#isExhausted()} returns true.
    */
-  public abstract Event generateNextEvent();
+  public abstract Event<?> generateNextEvent();
 
   public void setStopOnFailure(boolean stopOnFailure) {
     this.stopOnFailure = stopOnFailure;
+  }
+
+  @SuppressWarnings("unchecked")
+  public SelfType withStopOnFailure(boolean stopOnFailure) {
+    setStopOnFailure(stopOnFailure);
+    return (SelfType) this;
   }
 
   /**
@@ -58,25 +64,25 @@ public abstract class EventComposite extends Event {
    * @param targetNetwork to be affected by this event sequence.
    * @return true if the sequence succeeded as a whole
    */
-  public EventComposite.Result executeInternal(final Network targetNetwork, final EntropySource eSource) {
+  public Result executeInternal(final Network targetNetwork, final EntropySource eSource) {
     reset();
-    EventComposite.Result aggregateResult = EventComposite.Result.PASSIVE;
+    Result aggregateResult = Result.PASSIVE;
 
     while (!isExhausted()) {
       final Event event = generateNextEvent();
 
-      final EventComposite.Result result = event.execute(targetNetwork, eSource);
+      final Result result = event.execute(targetNetwork, eSource);
 
-      if (EventComposite.Result.FAILURE.equals(result)) {
+      if (Result.FAILURE.equals(result)) {
         //  FIXME redundamcy, remove Composite in favor of Iterable and couple of iteration strategies?
-        aggregateResult = EventComposite.Result.FAILURE;
+        aggregateResult = Result.FAILURE;
         if (stopOnFailure) {
           return handleEventFailure(null, "Failure on nested level");
         }
       }
 
-      if (EventComposite.Result.SUCCESS.equals(result)) {
-        aggregateResult = EventComposite.Result.SUCCESS;
+      if (Result.SUCCESS.equals(result)) {
+        aggregateResult = Result.SUCCESS;
       }
     }
 

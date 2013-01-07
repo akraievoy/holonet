@@ -95,6 +95,7 @@ object OverlayGO {
     val gaStrategyFitnessCap = ParamName[JDouble]("geneticStrategy.fitnessCap")
     //  stage 3 outputs
     val gaGenome = ParamName[JDouble]("ovlGenOpt.genome")
+    val gaGenomeBest = ParamName[EdgeDataSparse]("ovlGenOpt.genome.best.0")
     val gaDurationText = ParamName[String]("ovlGenOpt.duration.text")
     val gaDurationMillis = ParamName[JLong]("ovlGenOpt.duration.millis")
   }

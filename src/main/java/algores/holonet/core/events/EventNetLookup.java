@@ -32,11 +32,11 @@ import java.util.Collection;
 /**
  * Lookup entry event.
  */
-class EventNetLookup extends Event {
+public class EventNetLookup extends Event<EventNetLookup> {
   protected int retries = 1;
 
-  public EventComposite.Result executeInternal(final Network network, final EntropySource eSource) {
-    EventComposite.Result aggregateResult = EventComposite.Result.PASSIVE;
+  public Result executeInternal(final Network network, final EntropySource eSource) {
+    Result aggregateResult = Result.PASSIVE;
     for (int sequentialIndex = 0; sequentialIndex < retries; sequentialIndex++) {
       RequestPair request =
           network.generateRequestPair(eSource);
@@ -57,7 +57,7 @@ class EventNetLookup extends Event {
             mapping.getKey(), true, LookupService.Mode.GET
         );
       } catch (CommunicationException e) {
-        if (!aggregateResult.equals(EventComposite.Result.FAILURE)) {
+        if (!aggregateResult.equals(Result.FAILURE)) {
           aggregateResult = handleEventFailure(e, null);
         }
         continue;
@@ -70,7 +70,7 @@ class EventNetLookup extends Event {
         network.getInterceptor().reportInconsistentLookup(LookupService.Mode.GET);
       }
 
-      aggregateResult = EventComposite.Result.SUCCESS;
+      aggregateResult = Result.SUCCESS;
     }
 
     return aggregateResult;
@@ -78,5 +78,10 @@ class EventNetLookup extends Event {
 
   public void setRetries(int retryCount) {
     this.retries = retryCount;
+  }
+
+  public EventNetLookup withRetries(int retryCount) {
+    setRetries(retryCount);
+    return this;
   }
 }

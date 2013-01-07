@@ -23,7 +23,8 @@ import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.Range;
 import com.google.common.base.Optional;
-import org.akraievoy.base.runner.api.RefCtx;
+import org.akraievoy.base.ref.Ref;
+import org.akraievoy.base.ref.RefRO;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.WeightedEventModel;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelBase;
@@ -31,7 +32,6 @@ import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.metrics.domain.MetricEDataRouteLen;
 import org.akraievoy.cnet.metrics.domain.MetricRoutesFloydWarshall;
 import org.akraievoy.cnet.net.ref.RefEdgeData;
-import org.akraievoy.cnet.net.ref.RefVertexData;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.IndexCodec;
 import org.akraievoy.cnet.net.vo.VertexData;
@@ -45,14 +45,14 @@ import java.util.*;
 public class EnvCNet implements Env {
   private static final Logger log = LoggerFactory.getLogger(EnvCNet.class);
 
-  protected RefVertexData locX;
-  protected RefVertexData locY;
-  protected RefVertexData density;
+  protected Ref<VertexData> locX;
+  protected Ref<VertexData> locY;
+  protected Ref<VertexData> density;
 
-  protected RefEdgeData dist;
-  protected RefEdgeData req;
-  protected RefEdgeData overlay;
-  protected RefEdgeData overlayDist = new RefEdgeData();
+  protected Ref<? extends EdgeData> dist;
+  protected Ref<? extends EdgeData> req;
+  protected Ref<? extends EdgeData> overlay;
+  protected Ref<EdgeData> overlayDist = new RefEdgeData();
   protected double overlayDistDiameter;
 
   protected WeightedEventModel nodeModel = new WeightedEventModelBase(Optional.of("nodes"));
@@ -64,32 +64,32 @@ public class EnvCNet implements Env {
 
   protected EnvSimple fallback = null;
 
-  public void setDensity(RefVertexData density) {
+  public void setDensity(Ref<VertexData> density) {
     this.density = density;
   }
 
-  public void setDist(RefEdgeData dist) {
+  public void setDist(Ref<? extends EdgeData> dist) {
     this.dist = dist;
   }
 
-  public void setLocX(RefVertexData locX) {
+  public void setLocX(Ref<VertexData> locX) {
     this.locX = locX;
   }
 
-  public void setLocY(RefVertexData locY) {
+  public void setLocY(Ref<VertexData> locY) {
     this.locY = locY;
   }
 
-  public void setReq(RefEdgeData req) {
+  public void setReq(Ref<? extends EdgeData> req) {
     this.req = req;
   }
 
-  public void setOverlay(RefEdgeData overlay) {
+  public void setOverlay(Ref<? extends EdgeData> overlay) {
     this.overlay = overlay;
   }
 
-  protected boolean refSet(final RefCtx[] refs) {
-    for (RefCtx ref : refs) {
+  protected boolean refSet(final Ref<?>[] refs) {
+    for (Ref<?> ref : refs) {
       if (ref == null || ref.getValue() == null) {
         return false;
       }
@@ -98,7 +98,7 @@ public class EnvCNet implements Env {
   }
 
   public void init() {
-    if (!refSet(new RefCtx[]{locX, locY, density, dist, req, overlay})) {
+    if (!refSet(new Ref<?>[]{locX, locY, density, dist, req, overlay})) {
       log.warn("activating fallback to EnvSimple: not all refs set");
       fallback = new EnvSimple();
       return;
@@ -106,8 +106,8 @@ public class EnvCNet implements Env {
 
     final MetricEDataRouteLen metricEDataRouteLen =
         new MetricEDataRouteLen(new MetricRoutesFloydWarshall());
-    metricEDataRouteLen.getRoutes().setDistSource(dist);
-    metricEDataRouteLen.getRoutes().setSource(overlay);
+    metricEDataRouteLen.getRoutes().setDistSource((RefRO<EdgeData>) dist);
+    metricEDataRouteLen.getRoutes().setSource((RefRO<EdgeData>) overlay);
 
     overlayDist.setValue(
         (EdgeData) MetricResultFetcher.fetch(metricEDataRouteLen)

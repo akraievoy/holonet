@@ -25,15 +25,15 @@ import java.util.Iterator;
 /**
  * Represents sequence of events.
  */
-class EventCompositeSequence extends EventComposite {
-  protected final Collection<Event> events = new ArrayList<Event>();
+public class EventCompositeSequence extends EventComposite<EventCompositeSequence> {
+  protected final Collection<Event<?>> events = new ArrayList<Event<?>>();
   protected Iterator eventIterator;
 
-  EventCompositeSequence(final Collection<Event> newEvents) {
+  public EventCompositeSequence(final Collection<Event<?>> newEvents) {
     events.addAll(newEvents);
   }
 
-  public Event generateNextEvent() {
+  public Event<?> generateNextEvent() {
     return (Event) getEventIterator().next();
   }
 

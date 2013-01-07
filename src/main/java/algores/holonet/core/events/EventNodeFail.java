@@ -20,13 +20,30 @@ package algores.holonet.core.events;
 
 import algores.holonet.core.CommunicationException;
 import algores.holonet.core.Network;
+import org.akraievoy.base.ref.Ref;
+import org.akraievoy.base.runner.api.RefLong;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 /**
  * Node failure event.
  */
-class EventNodeFail extends EventNodeJoin {
-  public EventComposite.Result executeInternal(final Network targetNetwork, final EntropySource eSource) {
+public class EventNodeFail extends Event<EventNodeFail> {
+  protected Ref<Long> count = new RefLong(1);
+
+  public void setCountRef(Ref<Long> nodeCount) {
+    this.count = nodeCount;
+  }
+
+  public EventNodeFail withCountRef(Ref<Long> nodeCountRef) {
+    setCountRef(nodeCountRef);
+    return this;
+  }
+
+  public void setCount(int nodeCount) {
+    this.count.setValue((long) nodeCount);
+  }
+
+  public Result executeInternal(final Network targetNetwork, final EntropySource eSource) {
     final int countInt = count.getValue().intValue();
 
     if (targetNetwork.getAllNodes().size() > countInt) {
@@ -35,7 +52,7 @@ class EventNodeFail extends EventNodeJoin {
       } catch (CommunicationException e) {
         return handleEventFailure(e, null);
       }
-      return EventComposite.Result.SUCCESS;
+      return Result.SUCCESS;
     }
 
     return handleEventFailure(null, "Unsufficient number of nodes");

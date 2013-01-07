@@ -20,27 +20,33 @@ package algores.holonet.core.events;
 
 import algores.holonet.core.Network;
 import algores.holonet.core.SimulatorException;
+import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.runner.api.RefLong;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 /**
  * Adding a data entry to a node.
  */
-class EventNetPutEntry extends Event {
-  protected RefLong count = new RefLong(1);
+public class EventNetPutEntry extends Event<EventNetPutEntry> {
+  protected Ref<Long> count = new RefLong(1);
 
-  public void setCountRef(final RefLong count) {
-    this.count = count;
+  public void setCountRef(final Ref<Long> countRef) {
+    this.count = countRef;
+  }
+
+  public EventNetPutEntry withCountRef(Ref<Long> nodeCountRef) {
+    setCountRef(nodeCountRef);
+    return this;
   }
 
   public void setCount(final long count) {
     this.count.setValue(count);
   }
 
-  public EventComposite.Result executeInternal(Network network, final EntropySource eSource) {
+  public Result executeInternal(Network network, final EntropySource eSource) {
     try {
       network.putDataEntries(count.getValue().intValue(), eSource);
-      return EventComposite.Result.SUCCESS;
+      return Result.SUCCESS;
     } catch (SimulatorException e) {
       return handleEventFailure(e, null);
     }

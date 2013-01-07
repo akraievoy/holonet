@@ -20,6 +20,7 @@ package algores.holonet.core.events;
 
 import algores.holonet.core.Network;
 import algores.holonet.core.SimulatorException;
+import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.runner.api.RefDouble;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.slf4j.Logger;
@@ -28,30 +29,29 @@ import org.slf4j.LoggerFactory;
 /**
  * An abstract implementor.
  */
-public abstract class Event {
+public abstract class Event<SelfType extends Event<?>> {
   protected static final Logger log = LoggerFactory.getLogger(Event.class);
-
-  /**
-   * Various event execution results.
-   */
-  public static enum Result {
-    SUCCESS, FAILURE, PASSIVE
-  }
 
   private static boolean reporting = false;
 
   protected boolean failOnError;
-  protected RefDouble probability = new RefDouble(1.0);
+  protected Ref<Double> probability = new RefDouble(1.0);
 
   public void setFailOnError(boolean failOnError) {
     this.failOnError = failOnError;
   }
 
-  public final EventComposite.Result execute(Network targetNetwork, EntropySource eSource) {
+  @SuppressWarnings("unchecked")
+  public SelfType withFailOnError(boolean failOnError) {
+    setFailOnError(failOnError);
+    return (SelfType) this;
+  }
+
+  public final Result execute(Network targetNetwork, EntropySource eSource) {
     if (shouldIDoThis(eSource)) {
       return executeInternal(targetNetwork, eSource);
     } else {
-      return EventComposite.Result.PASSIVE;
+      return Result.PASSIVE;
     }
   }
 
@@ -60,17 +60,22 @@ public abstract class Event {
     return prob == 1.0 || eSource.nextDouble() < prob;
   }
 
-  protected abstract EventComposite.Result executeInternal(Network targetNetwork, final EntropySource eSource);
+  protected abstract Result executeInternal(Network targetNetwork, final EntropySource eSource);
 
   public void setProbability(final double newProbability) {
     probability.setValue(newProbability);
   }
 
-  public void setProbabilityRef(final RefDouble newProbability) {
+  public void setProbabilityRef(final Ref<Double> newProbability) {
     probability = newProbability;
   }
 
-  public EventComposite.Result handleEventFailure(final SimulatorException anException, final String aMessage) {
+  public SelfType withProbabilityRef(final Ref<Double> probabilityRef) {
+    setProbabilityRef(probabilityRef);
+    return (SelfType) this;
+  }
+
+  public Result handleEventFailure(final SimulatorException anException, final String aMessage) {
     final Result result = failOnError ? Result.FAILURE : Result.PASSIVE;
 
     if (reporting) {

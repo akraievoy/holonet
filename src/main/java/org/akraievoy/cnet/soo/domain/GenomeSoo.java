@@ -77,7 +77,7 @@ public class GenomeSoo extends Genome {
     this.fitness = fitness;
 
     final StoreLens<EdgeDataSparse> solutionLens =
-        baseLens.forTypeName(EdgeDataSparse.class, nameBase + ".genome.0");
+        baseLens.forTypeName(EdgeDataSparse.class, nameBase + ".0");
 
     final EdgeDataSparse solution = solutionLens.getValue();
     this.setGenomeData(new Object[] {solution});
@@ -90,7 +90,7 @@ public class GenomeSoo extends Genome {
     final String nameBase = baseLens.paramName();
     baseLens.forName(nameBase + ".fitness").set(fitness);
     final StoreLens<EdgeDataSparse> solutionLens =
-        baseLens.forTypeName(EdgeDataSparse.class, nameBase + ".genome.0");
+        baseLens.forTypeName(EdgeDataSparse.class, nameBase + ".0");
     solutionLens.set((EdgeDataSparse) solution);
   }
 }
