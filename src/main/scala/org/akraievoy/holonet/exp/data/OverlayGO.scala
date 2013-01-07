@@ -27,6 +27,13 @@ import org.akraievoy.base.runner.domain.RunnableComposite
 import scala.collection.JavaConversions._
 import org.akraievoy.base.ref.{RefRO, Ref}
 import store.StoreLens
+import org.akraievoy.base.runner.vo.Parameter.Strategy
+import org.akraievoy.cnet.opt.api._
+import org.akraievoy.cnet.soo.domain._
+import org.akraievoy.cnet.opt.domain.ExperimentGeneticOpt
+import store.StoreLens
+import store.StoreLens
+import org.akraievoy.base.runner.api.ExperimentTiming
 
 object OverlayGO {
   import java.lang.{
@@ -69,7 +76,27 @@ object OverlayGO {
     val overlayLocationX = ParamName[VertexData]("overlay.locationX")
     val overlayLocationY = ParamName[VertexData]("overlay.locationY")
     val overlayDensity = ParamName[VertexData]("overlay.density")
-
+    //  stage 3 inputs
+    val entropySourceGASeed = ParamName[JLong]("entropySourceGenetics.seed")
+    val gaGeneration = ParamName[JInt]("ovlGenOpt.generation")
+    val gaSpecimen = ParamName[JInt]("ovlGenOpt.specimenIndex")
+    val gaGenLimitRatio = ParamName[JDouble]("ovlGenOpt.generateLimitRatio")
+    val gaEliteRatio = ParamName[JDouble]("ovlGenOpt.eliteRatio")
+    val gaCrossoverRatio = ParamName[JDouble]("ovlGenOpt.crossOverRatio")
+    val gaMutationRatio = ParamName[JDouble]("ovlGenOpt.mutationRatio")
+    val gaStateMaxCrossover = ParamName[JDouble]("geneticState.maxCrossover")
+    val gaStateMaxElemFitPow = ParamName[JDouble]("geneticState.maxElemFitPow")
+    val gaStateMaxMutation = ParamName[JDouble]("geneticState.maxMutation")
+    val gaStrategyTheta = ParamName[JDouble]("geneticStrategy.theta")
+    val gaStrategyThetaTilde = ParamName[JDouble]("geneticStrategy.thetaTilde")
+    val gaStrategySteps = ParamName[JInt]("geneticStrategy.steps")
+    val gaStrategyMinEff = ParamName[JDouble]("geneticStrategy.minEff")
+    val gaStrategyModes = ParamName[String]("geneticStrategy.modes")
+    val gaStrategyFitnessCap = ParamName[JDouble]("geneticStrategy.fitnessCap")
+    //  stage 3 outputs
+    val gaGenome = ParamName[JDouble]("ovlGenOpt.genome")
+    val gaDurationText = ParamName[String]("ovlGenOpt.duration.text")
+    val gaDurationMillis = ParamName[JLong]("ovlGenOpt.duration.millis")
   }
 
   import ParamNames._
@@ -294,6 +321,11 @@ object OverlayGO {
       Param(ovlReqFactoryThreshMinToMaxRatio, "0.001")
     ),
     Config(
+      "nu20",
+      "Default (select 20% of nodes)",
+      Param(ovlNetFactoryNu, "0.2")
+    ),
+    Config(
       "nu50",
       "Default (select 50% of nodes)",
       Param(ovlNetFactoryNu, "0.5")
@@ -307,6 +339,162 @@ object OverlayGO {
       Param(ovlReqFactoryPsi, "1"),
       Param(ovlReqFactoryThreshMinAbsValue, "0.05"),
       Param(ovlReqFactoryThreshMinToMaxRatio, "0.05")
+    )
+  )
+
+  val experiment3genetics = Experiment(
+    "overlayGO-3-genetics",
+    "Overlay GO [stage3] Overlay Genetics",
+    Seq("overlayGO-2-ovlDataset"),
+    {
+      rs =>
+        val entropySourceGenetics = new EntropySourceRandom()
+        entropySourceGenetics.setSeed(
+          rs.lens(entropySourceGASeed).get.get
+        )
+
+        val gaState = new GeneticState()
+        gaState.setFitnessDeviationMax(0.98)
+        gaState.setFitnessDeviationMin(0.02)
+        gaState.setMinElemFitnessNorm(0.005)
+
+        gaState.setMaxCrossover(rs.lens(gaStateMaxCrossover).get.get)
+        gaState.setMaxElemFitPow(rs.lens(gaStateMaxElemFitPow).get.get)
+        gaState.setMaxMutation(rs.lens(gaStateMaxMutation).get.get)
+
+
+        val gaStrategy = new GeneticStrategySoo(
+          new MetricRoutesFloydWarshall()
+        )
+        gaStrategy.setMinEff(rs.lens(gaStrategyMinEff).get.get)
+        gaStrategy.setTheta(rs.lens(gaStrategyTheta).get.get)
+        gaStrategy.setThetaTilde(rs.lens(gaStrategyThetaTilde).get.get)
+        gaStrategy.setModes(rs.lens(gaStrategyModes).get.get)
+        gaStrategy.setSteps(rs.lens(gaStrategySteps).get.get)
+        gaStrategy.setDistSource(rs.lens(overlayDistance).asInstanceOf[StoreLens[EdgeData]])
+        gaStrategy.setRequestSource(rs.lens(overlayRequest).asInstanceOf[StoreLens[EdgeData]])
+
+        val ga = new ExperimentGeneticOpt(
+          gaStrategy.asInstanceOf[GeneticStrategy[Genome]],
+          entropySourceGenetics
+        )
+        ga.setState(gaState)
+        ga.setSeedSource(new SeedSourceHeuristic().asInstanceOf[SeedSource[Genome]])
+        ga.setBreeders(
+          Seq(
+            new BreederSooExpand(),
+            new BreederSooLocalize()
+          ).map(_.asInstanceOf[Breeder[Genome]])
+        )
+        ga.setMutators(
+          Seq(
+            new MutatorSooRewireExpand(),
+            new MutatorSooRewireLocalize()
+          ).map(_.asInstanceOf[Mutator[Genome]])
+        )
+        ga.setConditions(
+          Seq(
+            new ConditionSooFitnessCapping(),
+            new ConditionSooVertexDensity(),
+            new ConditionSooEffectiveness(),
+            new ConditionSooDensity(),
+            new ConditionUnique()
+          ).map(_.asInstanceOf[Condition[Genome]])
+        )
+        ga.setEliteRatio(rs.lens(gaEliteRatio).get.get)
+        ga.setCrossoverRatio(rs.lens(gaCrossoverRatio).get.get)
+        ga.setMutationRatio(rs.lens(gaMutationRatio).get.get)
+        ga.setGenerateLimitRatio(rs.lens(gaGenLimitRatio).get.get)
+        ga.setSpecimenLens(rs.lens(gaSpecimen))
+        ga.setGenerationLens(rs.lens(gaGeneration))
+        ga.setGenomeLens(rs.lens(gaGenome))
+
+        val timing = new ExperimentTiming(ga)
+        timing.setDurationTextRef(rs.lens(gaDurationText))
+        timing.setDurationRef(rs.lens(gaDurationMillis))
+
+        timing.run()
+    },
+    Config(
+      Param(entropySourceGASeed, "42600--42602"),
+      Param(gaGeneration, "0--100", Strategy.ITERATE, Strategy.USE_LAST),
+      Param(gaSpecimen, "0--90", Strategy.USE_FIRST, Strategy.USE_FIRST),
+      Param(gaGenLimitRatio, "233"),
+      Param(gaEliteRatio, "0.1"),
+      Param(gaStateMaxCrossover, "0.25"),
+      Param(gaCrossoverRatio, "0.15"),
+      Param(gaMutationRatio, "0.15"),
+      Param(gaStateMaxElemFitPow, "3"),
+      Param(gaStateMaxMutation, "0.05"),
+      Param(gaStrategyTheta, "1.75"),
+      Param(gaStrategyThetaTilde, "0.75"),
+      Param(gaStrategySteps, "1"),
+      Param(gaStrategyModes, ""),
+      Param(gaStrategyMinEff, "1.2")
+    ),
+    Config(
+      "minEff12x2x3",
+      "MinEff: 1.2 * 2 seeds * 3 gens (debug)",
+      Param(gaStrategyMinEff, "1.2"),
+      Param(entropySourceGASeed, "42600--42601"),
+      Param(gaGeneration, "0--2", Strategy.ITERATE, Strategy.USE_LAST)
+    ),
+    Config("minEff13", "MinEff: 1.3", Param(gaStrategyMinEff, "1.3")),
+    Config(
+      "minEff13x4x64",
+      "MinEff: 1.3 * 4 seeds * 64 gens (fast sim corr study)",
+      Param(gaStrategyMinEff, "1.3"),
+      Param(entropySourceGASeed, "42600--42603"),
+      Param(gaStrategyModes, "R"),
+      Param(
+        gaStrategyFitnessCap,
+        "0.3;0.35;0.4;0.45;0.5;0.55;0.6;0.65;0.7;0.75;0.8;0.85"
+      ),
+      Param(gaStrategyThetaTilde, "0.75"),
+      Param(gaGeneration, "0--63", Strategy.ITERATE, Strategy.USE_LAST),
+      Param(gaEliteRatio, "0.2")
+    ),
+    Config("minEff14", "MinEff: 1.4", Param(gaStrategyMinEff, "1.4")),
+    Config("minEff15", "MinEff: 1.5", Param(gaStrategyMinEff, "1.5")),
+    Config("minEff16", "MinEff: 1.6", Param(gaStrategyMinEff, "1.6")),
+    Config("minEff17", "MinEff: 1.7", Param(gaStrategyMinEff, "1.7")),
+    Config(
+      "minEff17-smoke",
+      "MinEff: 1.7 (smoke)",
+      Param(gaStrategyMinEff, "1.7"),
+      Param(entropySourceGASeed, "42600"),
+      Param(gaSpecimen, "0--9", Strategy.USE_FIRST, Strategy.USE_FIRST)
+    ),
+    Config("minEff19", "MinEff: 1.9", Param(gaStrategyMinEff, "1.9")),
+    Config(
+      "minEff19x50x768",
+      "MinEff: 1.9 * 50 seeds * 768 gens (full opt)",
+      Param(gaStrategyMinEff, "1.9"),
+      Param(entropySourceGASeed, "42600--42649"),
+      Param(gaGeneration, "0--767", Strategy.ITERATE, Strategy.USE_LAST)
+    ),
+    Config(
+      "minEff19x50x256",
+      "MinEff: 1.9 * 50 seeds * 256 gens (tuning)",
+      Param(gaStrategyMinEff, "1.9"),
+      Param(entropySourceGASeed, "42600--42649"),
+      Param(gaGeneration, "0--255", Strategy.ITERATE, Strategy.USE_LAST),
+      Param(gaEliteRatio, "0.01;0.03;0.05;0.1;0.2")
+    ),
+    Config("minEff20", "MinEff: 2.0", Param(gaStrategyMinEff, "2.0")),
+    Config("minEff21", "MinEff: 2.1", Param(gaStrategyMinEff, "2.1")),
+    Config("minEff215", "MinEff: 2.15", Param(gaStrategyMinEff, "2.15")),
+    Config("minEff23", "MinEff: 2.3", Param(gaStrategyMinEff, "2.3")),
+    Config(
+      "thetaProf",
+      "Varying Density (Theta)",
+      Param(gaStrategyTheta, "1;1.25;1.5;1.75")
+    ),
+    Config(
+      "stepsProf",
+      "Varying Steps",
+      Param(gaStrategySteps, "1;3;5"),
+      Param(entropySourceGASeed, "42600--42620")
     )
   )
 }

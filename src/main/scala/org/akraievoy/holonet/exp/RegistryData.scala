@@ -25,7 +25,8 @@ trait RegistryData {
     DlaGenImages.experiment,
     OverlayEnum.experiment,
     OverlayGO.experiment1physDataset,
-    OverlayGO.experiment2overlayDataset
+    OverlayGO.experiment2overlayDataset,
+    OverlayGO.experiment3genetics
   )
 
 }

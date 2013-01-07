@@ -63,7 +63,7 @@ class ExperimentStore(
         )
     }
 
-    val pos = ParamPos.pos(spacePos)
+    val pos = ParamPos.pos(spacePos, chain.length)
     val posStr = java.lang.Long.toString(pos, 16)
     val paramFName = paramKey(paramName, mt, true).get
     if (ExperimentStore.primitiveSerializers.contains(mt)) {
@@ -134,8 +134,7 @@ class ExperimentStore(
   )(
     implicit mt: Manifest[T]
   ): Option[T] = {
-
-    val pos = ParamPos.pos(spacePos)
+    val pos = ParamPos.pos(spacePos, chain.length)
     val posStr = java.lang.Long.toString(pos, 16)
     paramKey(paramName, mt, false).flatMap {
       paramFName =>

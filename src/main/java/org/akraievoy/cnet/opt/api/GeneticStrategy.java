@@ -20,6 +20,7 @@ package org.akraievoy.cnet.opt.api;
 
 import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.cnet.opt.domain.FitnessKey;
+import org.akraievoy.holonet.exp.store.StoreLens;
 
 import java.util.SortedMap;
 
@@ -27,14 +28,18 @@ public interface GeneticStrategy<G extends Genome> {
   /**
    * Set up some static data, which shall be cached across the whole genetics experiment.
    *
-   * @param ctx to load your data from
-   * @param generationParam the name of generation axis
+   * @param gemerationLens the lens of generation param
    */
-  void init(Context ctx, String generationParam);
+  void init(
+      StoreLens<Integer> generationLens
+  );
 
   double computeFitness(G genome);
 
   G createGenome();
 
-  void initOnSeeds(Context ctx, String generationParamName, SortedMap<FitnessKey, G> children);
+  void initOnSeeds(
+      StoreLens<Integer> generationLens,
+      SortedMap<FitnessKey, G> children
+  );
 }

@@ -20,7 +20,6 @@ package org.akraievoy.cnet.opt.domain;
 
 import com.google.common.base.Optional;
 import gnu.trove.TDoubleArrayList;
-import org.akraievoy.base.Die;
 import org.akraievoy.base.Format;
 import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.ref.RefSimple;
@@ -32,6 +31,7 @@ import org.akraievoy.cnet.gen.vo.WeightedEventModelRenorm;
 import org.akraievoy.cnet.metrics.domain.EigenMetric;
 import org.akraievoy.cnet.opt.api.*;
 import org.akraievoy.gear.G4Stat;
+import org.akraievoy.holonet.exp.store.StoreLens;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,11 +79,10 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
   }
 
   protected int generation = 0;
-  protected int specimenIndex = 0;
 
-  protected String genKey = "gen";
-  protected String generationParamName = "main.generation";
-  protected String specimenIndexParamName = "main.specimenIndex";
+  protected StoreLens<Integer> specimenLens;
+  protected StoreLens<Integer> generationLens;
+  protected StoreLens<Double> genomeLens;
 
   protected long specimenLimit;
   protected SortedMap<Long, Long> generateLimits =
@@ -113,24 +112,16 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     this.seedSource = seedSource;
   }
 
-  public void setGeneration(int generation) {
-    this.generation = generation;
+  public void setGenerationLens(final StoreLens<Integer> generationLens) {
+    this.generationLens = generationLens;
   }
 
-  public void setGenerationParamName(final String generationParamName) {
-    this.generationParamName = generationParamName;
+  public void setGenomeLens(final StoreLens<Double> genomeLens) {
+    this.genomeLens = genomeLens;
   }
 
-  public void setSpecimenIndex(int specimenIndex) {
-    this.specimenIndex = specimenIndex;
-  }
-
-  public void setSpecimenIndexParamName(String specimenIndexParamName) {
-    this.specimenIndexParamName = specimenIndexParamName;
-  }
-
-  public void setGenKey(String genKey) {
-    this.genKey = genKey;
+  public void setSpecimenLens(StoreLens<Integer> specimenLens) {
+    this.specimenLens = specimenLens;
   }
 
   public void setCrossoverRatio(double crossoverRatio) {
@@ -194,27 +185,27 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
       for (Genome genome : genomes) {
         storeToPopulation(children, genome);
       }
-      strategy.initOnSeeds(ctx, generationParamName, children);
-      storeToContext(ctx, children);
+      strategy.initOnSeeds(generationLens, children);
+      storeToContext(children);
       log.info("Initialization complete; fitness = {}", fitnessReport(children));
       return;
     }
 
-    loadGen(ctx, parents);
+    loadGen(parents);
 
     if (parents.isEmpty()) {
       log.info("Generation #{} empty: specimens died-out", generation);
       return;
     }
 
-    state.setCompleteness((generation + 1.0) / ctx.getCount(generationParamName));
+    state.setCompleteness((generation + 1.0) / generationLens.fullCount());
     state.setFitnessDeviation(fitnessDeviation(parents));
     state.setSimilarityMean(similarityMean(parents.values()));
 
     state.calibrate(ctx);
 
-    breeders.calibrate(ctx, generationParamName);
-    mutators.calibrate(ctx, generationParamName);
+    breeders.calibrate(generationLens);
+    mutators.calibrate(generationLens);
 
     events.setMinWeight(state.getMinElemFitness());
     events.setAmp(state.getElemFitPow());
@@ -276,9 +267,9 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
 
     report(null);
 
-    storeToContext(ctx, children);
-    mutators.storeRatios(ctx);
-    breeders.storeRatios(ctx);
+    storeToContext(children);
+    mutators.storeRatios(generationLens);
+    breeders.storeRatios(generationLens);
     log.info(
         "Generation #{} filled; fitness {}, consumed {} bits of entropy",
         new Object[] {generation, fitnessReport(children), eSource.consumedBits()}
@@ -327,12 +318,10 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
   }
 
   protected void initOnContext() {
-    //	assert iterated params are set to initial values
-    Die.ifFalse("specimenIndex == 0", specimenIndex == 0);
+    strategy.init(generationLens);
 
-    strategy.init(ctx, generationParamName);
-
-    specimenLimit = ctx.getCount(specimenIndexParamName);
+    generation = generationLens.getValue();
+    specimenLimit = specimenLens.fullCount();
     eliteLimit = (int) Math.ceil(specimenLimit * eliteRatio);
     generateLimits.clear();
     for (Map.Entry<Double, Double> glre : generateLimitRatios.entrySet()) {
@@ -341,7 +330,6 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
           (long) Math.ceil(specimenLimit * glre.getValue())
       );
     }
-    System.out.println("generateLimits = " + generateLimits);
   }
 
   protected Genome generateChild(
@@ -413,41 +401,40 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     return true;
   }
 
-  protected void loadGen(Context ctx, final SortedMap<FitnessKey, Genome> gen) {
+  protected void loadGen(final SortedMap<FitnessKey, Genome> gen) {
     gen.clear();
 
-    for (int specIndex = 0; specIndex < specimenLimit; specIndex++) {
-      final Map<String,Integer> offset = Context.offset(
-          generationParamName, -1,
-          specimenIndexParamName, specIndex
-      );
-
+    final StoreLens<Integer>[] specimenAxis =
+        specimenLens.offset(generationLens.paramName(), -1).axisArr();
+    for (int i = 0; i < specimenAxis.length; i++) {
+      final StoreLens<Double> prevGenomeLens =
+          specimenAxis[i].forTypeName(Double.class, genomeLens.paramName());
       final Genome value = strategy.createGenome();
-
-      if (value.read(ctx, offset, genKey) == null) {
+      if (value.read(prevGenomeLens) == null) {
         break;
       }
-
-      gen.put(new FitnessKey(specIndex, value.getFitness()), value);
+      gen.put(new FitnessKey(i, value.getFitness()), value);
     }
   }
 
-  protected void storeToContext(Context ctx, Map<FitnessKey, Genome> genomes) {
+  protected void storeToContext(Map<FitnessKey, Genome> genomes) {
     if (genomes.size() == 0) {
       return;
     }
 
+    final StoreLens<Integer>[] specimenAxis = specimenLens.axisArr();
     int specimenIndex = 0;
     for (FitnessKey fKey : children.keySet()) {
+      final StoreLens<Double> currGenomeLens =
+          specimenAxis[specimenIndex].forTypeName(Double.class, genomeLens.paramName());
       final Genome genome = genomes.get(fKey);
 
-      genome.write(
-          fKey.getFitness(), genKey, ctx, Context.offset(specimenIndexParamName, specimenIndex)
-      );
+      genome.write(currGenomeLens, fKey.getFitness());
 
       if (specimenIndex == 0) {
         genome.write(
-            fKey.getFitness(), genKey + ".best", ctx, Context.offset()
+            currGenomeLens.forName(currGenomeLens.paramName() + ".best"),
+            fKey.getFitness()
         );
       }
 

@@ -18,18 +18,13 @@
 
 package org.akraievoy.cnet.opt.api;
 
-import org.akraievoy.base.runner.api.Context;
+import org.akraievoy.holonet.exp.store.StoreLens;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 /**
- * To maintain easy access to psolution data, Genome should consist of some number of indexed&typed components.
- * For example, some algo may use two EdgeDatas, one VertexData and a double which then might be analyzed separately.
- * <p/>
- * This type is not written to db via simple Jackson serialization, each component is typed and stored separately (which allows for the goals depicted above).
+ * To maintain easy access to solution data, Genome should consist of some
+ * number of indexed&typed components, stored separately.
  */
 public abstract class Genome {
   protected Object[] genomeData;
@@ -62,37 +57,12 @@ public abstract class Genome {
 
   public abstract double similarity(Genome that);
 
-  public void write(final double fitness, String keybase, Context ctx, Map<String, Integer> offset) {
-    final String keyFitness = keybase +".fitness";
-    final String keyGenome = keybase +".genome";
-    final Object[] genomeArr = getGenomeData();
+  public abstract void write(
+      final StoreLens<Double> baseLens,
+      final double fitness
+  );
 
-    ctx.put(keyFitness, fitness, offset);
-    for (int i = 0, genomeLength = genomeArr.length; i < genomeLength; i++) {
-      final Object genomeItem = genomeArr[i];
-      ctx.put(keyGenome + i, genomeItem, offset);
-    }
-  }
-
-  public Genome read(Context ctx, Map<String, Integer> offset, final String keybase) {
-    final Double fitness = ctx.get(keybase + ".fitness", Double.class, offset);
-    if (fitness == null) {
-      return null;
-    }
-
-    this.fitness = fitness;
-    final List<Object> genome = new ArrayList<Object>();
-    for (int i = 0; i == genome.size(); i++) {
-      final Object genomeComponent = ctx.get(keybase + ".genome" + i, Object.class, offset);
-
-      if (genomeComponent != null) {
-        genome.add(genomeComponent);
-      }
-    }
-    final Object[] genomeArr = genome.toArray(new Object[genome.size()]);
-
-    setGenomeData(genomeArr);
-
-    return this;
-  }
+  public abstract Genome read(
+      StoreLens<Double> baseLens
+  );
 }

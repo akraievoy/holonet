@@ -31,7 +31,7 @@ case class Config(
     val posSeqMap = params.values.groupBy{
       param => param isParallel chained
     }.mapValues{
-      paramSeq => paramSeq.map(_.toPosSeq(chained))
+      paramSeq => paramSeq.map(_.toPosSeq(chained, expIndex))
     }
 
     posSeqMap.mapValues{

@@ -20,7 +20,9 @@ package org.akraievoy.cnet.soo.domain;
 
 import org.akraievoy.base.Die;
 import org.akraievoy.cnet.net.vo.EdgeData;
+import org.akraievoy.cnet.net.vo.EdgeDataSparse;
 import org.akraievoy.cnet.opt.api.Genome;
+import org.akraievoy.holonet.exp.store.StoreLens;
 
 public class GenomeSoo extends Genome {
   protected EdgeData solution;
@@ -63,5 +65,32 @@ public class GenomeSoo extends Genome {
 
   public double similarity(Genome that) {
     return solution.similarity(((GenomeSoo) that).solution);
+  }
+
+  @Override
+  public Genome read(StoreLens<Double> baseLens) {
+    final String nameBase = baseLens.paramName();
+    Double fitness = baseLens.forName(nameBase + ".fitness").getValue();
+    if (fitness == null) {
+      return null;
+    }
+    this.fitness = fitness;
+
+    final StoreLens<EdgeDataSparse> solutionLens =
+        baseLens.forTypeName(EdgeDataSparse.class, nameBase + ".genome.0");
+
+    final EdgeDataSparse solution = solutionLens.getValue();
+    this.setGenomeData(new Object[] {solution});
+
+    return this;
+  }
+
+  @Override
+  public void write(StoreLens<Double> baseLens, double fitness) {
+    final String nameBase = baseLens.paramName();
+    baseLens.forName(nameBase + ".fitness").set(fitness);
+    final StoreLens<EdgeDataSparse> solutionLens =
+        baseLens.forTypeName(EdgeDataSparse.class, nameBase + ".genome.0");
+    solutionLens.set((EdgeDataSparse) solution);
   }
 }

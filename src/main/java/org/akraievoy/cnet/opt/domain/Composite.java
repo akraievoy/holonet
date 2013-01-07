@@ -20,10 +20,10 @@ package org.akraievoy.cnet.opt.domain;
 
 import com.google.common.base.Optional;
 import org.akraievoy.base.Format;
-import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.WeightedEventModel;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelBase;
+import org.akraievoy.holonet.exp.store.StoreLens;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,16 +45,20 @@ public abstract class Composite<Component> {
     this.elemRanks = new double[elems.size()];
   }
 
-  public void calibrate(Context ctx, String generationParamName) {
+  public void calibrate(StoreLens<Integer> generationLens) {
     elemsModel.clear();
 
     for (int i = 0; i < elems.size(); i++) {
-      final Double ratio = ctx.get(getKeyRatio(i), Double.class, Context.offset(generationParamName, -1));
+      final StoreLens<Integer> prevGenLens =
+          generationLens.offsetAxis(-1);
+      final StoreLens<Double> keyRatioLens =
+          prevGenLens.forTypeName(Double.class, getKeyRatio(i));
+      final Double ratio = keyRatioLens.getValue();
       elemsModel.add(i, ratio == null ? 1.0 : ratio);
     }
   }
 
-  public void storeRatios(Context ctx) {
+  public void storeRatios(StoreLens<Integer> generationLens) {
     for (int i = 0; i < elems.size(); i++) {
       final int fails = elemFails[i];
       final int uses = elemUses[i];
@@ -62,9 +66,17 @@ public abstract class Composite<Component> {
 
       final double ratio = ratio(fails, uses, rank);
 
-      ctx.put(getKeyRatio(i), ratio);
-      ctx.put(getKeySuccess(i), ratio);
-      ctx.put(getKeyUses(i), uses);
+      final StoreLens<Double> keyRatioLens =
+          generationLens.forTypeName(Double.class, getKeyRatio(i));
+      keyRatioLens.set(ratio);
+
+      final StoreLens<Double> keySuccessLens =
+          generationLens.forTypeName(Double.class, getKeySuccess(i));
+      keySuccessLens.set((double) uses - fails);
+
+      final StoreLens<Double> keyUsesLens =
+          generationLens.forTypeName(Double.class, getKeyUses(i));
+      keyUsesLens.set((double) uses);
     }
   }
 

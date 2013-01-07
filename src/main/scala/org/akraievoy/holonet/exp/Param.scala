@@ -35,8 +35,8 @@ case class Param(
   }
 
   def toPosSeq(
-    chained: Boolean = false,
-    expIndex: Int = 0
+    chained: Boolean,
+    expIndex: Int
   ): Seq[ParamPos] = {
     val fullSeq = fullPosSeq(chained, expIndex)
     actualStrategy(chained) match {

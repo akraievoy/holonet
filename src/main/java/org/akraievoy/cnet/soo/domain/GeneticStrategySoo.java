@@ -19,7 +19,6 @@
 package org.akraievoy.cnet.soo.domain;
 
 import org.akraievoy.base.ref.RefRO;
-import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.metrics.api.MetricRoutes;
 import org.akraievoy.cnet.metrics.domain.EigenMetric;
@@ -31,6 +30,7 @@ import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataFactory;
 import org.akraievoy.cnet.opt.api.GeneticStrategy;
 import org.akraievoy.cnet.opt.domain.FitnessKey;
+import org.akraievoy.holonet.exp.store.StoreLens;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -111,25 +111,26 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
   public void setModes(@Nonnull String newModes) { this.modes = newModes.toUpperCase(); }
   public boolean mode(@Nonnull String someMode) { return modes.contains(someMode); }
 
-  public void init(Context ctx, final String generationParam) {
-    final long generation = ctx.getEnumerator().getPos(generationParam);
+  public void init(
+      StoreLens<Integer> generationLens
+  ) {
+    final long generation = generationLens.paramPos().index();
 
     if (generation == 0) {
       return; // we have the values already set in the constructor
     }
 
-    final Map<String, Integer> backToSeed = Context.offset(
-        generationParam,
-        -(int) generation
-    );
-
-    final Double minEffStartCtx = ctx.get("minEffStart", Double.class, backToSeed);
+    final StoreLens<Double> minEffStartLens =
+        generationLens.axisArr()[0].forTypeName(Double.class, "minEffStart");
+    final Double minEffStartCtx = minEffStartLens.getValue();
     if (minEffStartCtx != null) {
       minEffStart = minEffStartCtx;
-      minEffTarget = ctx.get("minEffTarget", Double.class, backToSeed);
+      final StoreLens<Double> minEffTargetLens =
+          minEffStartLens.forName("minEffTarget");
+      minEffTarget = minEffTargetLens.getValue();
     }
 
-    generationNum = ctx.getCount(generationParam);
+    generationNum = generationLens.fullCount();
   }
 
   protected int getTotalLinkUpperLimit() {
@@ -160,15 +161,22 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
     ));
   }
 
-  public void initOnSeeds(Context ctx, String generationParam, SortedMap<FitnessKey, GenomeSoo> children) {
+  public void initOnSeeds(
+      final StoreLens<Integer> generationLens,
+      final SortedMap<FitnessKey, GenomeSoo> children
+  ) {
     if (children.isEmpty()) {
       return;
     }
 
     final double eff = computeEff(children.get(children.firstKey()));
     if (eff < minEff) {
-      ctx.put("minEffStart", eff * 0.975);
-      ctx.put("minEffTarget", ctx.getCount(generationParam) * 0.15);
+      final StoreLens<Double> minEffStartLens =
+          generationLens.axisArr()[0].forTypeName(Double.class, "minEffStart");
+      final StoreLens<Double> minEffTargetLens =
+          minEffStartLens.forName("minEffTarget");
+      minEffStartLens.set(eff * 0.975);
+      minEffTargetLens.set(generationLens.fullCount() * 0.15);
     }
   }
 

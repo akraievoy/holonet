@@ -51,8 +51,10 @@ case class ParamPos(
 }
 
 object ParamPos {
-  def pos(spacePos: Seq[ParamPos]): Int = {
-    spacePos.sorted.reverse.foldLeft((0, 1)){
+  def pos(spacePos: Seq[ParamPos], expIndex: Int): Int = {
+    spacePos.filter {
+      pPos => pPos.expIndex <= expIndex
+    }.sorted.reverse.foldLeft((0, 1)){
       case ((expPrevPos, expPrevTotal), paramPos) =>
         combine(expPrevPos, expPrevTotal, paramPos.pos, paramPos.total)
     }._1

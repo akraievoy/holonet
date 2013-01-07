@@ -19,7 +19,7 @@
 package org.akraievoy.holonet.exp.store
 
 import org.akraievoy.base.ref.Ref
-import org.akraievoy.holonet.exp.ParamPos
+import org.akraievoy.holonet.exp.{Param, ParamPos}
 import collection.immutable.IndexedSeq
 
 case class StoreLens[T](
@@ -65,6 +65,12 @@ case class StoreLens[T](
       )
     )
 
+  def offsetAxis(posDelta: Int) =
+    offset(paramName, posDelta)
+
+  def offsetToPos(newPos: Int) =
+    offset(paramName, newPos - paramPos.pos)
+
   def axis: IndexedSeq[StoreLens[T]] = {
     val paramPos = spacePos.find(pPos => pPos.name == paramName).get
     val range = -paramPos.pos until paramPos.total
@@ -82,6 +88,30 @@ case class StoreLens[T](
   def axisGetValueArr: Array[T] = {
     implicit val tManifest = mt
     axisGetValue.toArray
+  }
+
+  lazy val param: Param = {
+    expStore.config.params.get(paramName).orElse(
+      expStore.chain.find(_.config.params.contains(paramName)).map{
+        _.config.params(paramName)
+      }
+    ).getOrElse{
+      throw new IllegalStateException(
+        "param %s not found".format(paramName)
+      )
+    }
+  }
+
+  lazy val paramPos: ParamPos = {
+    spacePos.find(_.name == paramName).getOrElse {
+      throw new IllegalStateException(
+        "param %s not found".format(paramName)
+      )
+    }
+  }
+
+  lazy val fullCount: Int = {
+    param.valueSpec.length
   }
 
   private def applyOffset(

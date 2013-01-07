@@ -23,5 +23,5 @@ case class RunUID (
   confName: String,
   stamp: String
 ) {
-  def dirName = "%s--%s--%s".format(expName, confName, stamp)
+  def dirName = "%s--%s--%s".format(stamp, expName, confName)
 }

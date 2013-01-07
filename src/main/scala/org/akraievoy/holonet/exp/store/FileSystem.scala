@@ -68,7 +68,7 @@ class FileSystem(
           str => str.split(";").map {
             cell => cell.trim
           }.toSeq
-        }.toSeq
+        }.toIndexedSeq  //  toSeq does not force stream materialization, hmmm
         Some(lineSeq)
       } finally {
         in.close()
