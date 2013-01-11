@@ -25,8 +25,8 @@ case class Config(
 ) extends Named {
 
   def paramSpace(
-    chained: Boolean = false,
-    expIndex: Int = 0
+    chained: Boolean,
+    expIndex: Int
   ): Map[Boolean, Stream[Seq[ParamPos]]] = {
     val posSeqMap = params.values.groupBy{
       param => param isParallel chained

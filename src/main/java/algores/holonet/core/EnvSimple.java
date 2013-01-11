@@ -22,6 +22,7 @@ import algores.holonet.core.api.Address;
 import algores.holonet.core.api.AddressMeta;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.Range;
+import com.google.common.base.Optional;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 import java.util.*;
@@ -86,12 +87,18 @@ public class EnvSimple implements Env {
   }
 
   @Override
-  public RequestPair generateRequestPair(EntropySource entropy) {
+  public Optional<RequestPair> generateRequestPair(EntropySource entropy) {
     final Collection<Node> allNodes = getAllNodes();
 
-    return new RequestPair(
-      entropy.randomElement(allNodes),
-      entropy.randomElement(allNodes)
-    );
+    if (allNodes.isEmpty()) {
+      return Optional.absent();
+    } else {
+      return Optional.of(
+          new RequestPair(
+            entropy.randomElement(allNodes),
+            entropy.randomElement(allNodes)
+          )
+      );
+    }
   }
 }

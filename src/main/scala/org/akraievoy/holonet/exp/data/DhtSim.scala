@@ -142,7 +142,7 @@ object DhtSim {
       Param(tbNodes, "192"),
       Param(tbFailProb, "0.64"),
       Param(tbElems, "256"),
-      Param(tbLoops, "80")
+      Param(tbLoops, "4")
     ),
     Config(
       "attackProf",

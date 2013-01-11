@@ -48,12 +48,28 @@ case class ParamPos(
     }
   }
 
+  override def toString = {
+    val str =
+      if (total > 1) {
+        "%s=%s %d/%d".format(name, value, pos, total)
+      } else {
+        "%s=%s".format(name, value)
+      }
+
+    val format = if (parallel) {
+      "<%s>"
+    } else {
+      "[%s]"
+    }
+
+    format.format(str)
+  }
 }
 
 object ParamPos {
-  def pos(spacePos: Seq[ParamPos], expIndex: Int): Int = {
+  def pos(spacePos: Seq[ParamPos], requiredExpIndexes: Set[Int]): Int = {
     spacePos.filter {
-      pPos => pPos.expIndex <= expIndex
+      pPos => requiredExpIndexes.contains(pPos.expIndex)
     }.sorted.reverse.foldLeft((0, 1)){
       case ((expPrevPos, expPrevTotal), paramPos) =>
         combine(expPrevPos, expPrevTotal, paramPos.pos, paramPos.total)
@@ -70,5 +86,34 @@ object ParamPos {
         prevPos + curPos * prevTotal,
         curTotal * prevTotal
     )
+  }
+
+  def seqToString(
+    spacePos: Seq[ParamPos],
+    requiredIndexes: Set[Int],
+    filterFixed: Boolean = true
+  ) = {
+    val spacePosFiltered = if (filterFixed) {
+      spacePos.filter(_.total > 1)
+    } else {
+      spacePos
+    }
+
+    val requiredToPos = spacePosFiltered.groupBy{
+      pos =>
+        requiredIndexes.contains(pos.expIndex)
+    }.mapValues(
+      seq =>
+        seq.mkString(":")
+    ).withDefaultValue("-")
+
+    if (requiredToPos.contains(false)) {
+      "%s // %s".format(
+        requiredToPos(true),
+        requiredToPos(false)
+      )
+    } else {
+      requiredToPos(true)
+    }
   }
 }

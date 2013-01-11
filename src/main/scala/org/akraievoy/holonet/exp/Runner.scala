@@ -39,7 +39,7 @@ object Runner extends App {
         "overlayGO-1-physDataset" -> "big-1k",
         "overlayGO-2-ovlDataset" -> "nu20",
         //  "overlayGO-2-ovlDataset" -> "minEff13x4x64"
-        "overlayGO-3-genetics" -> "minEff17-smoke"
+        "overlayGO-3-genetics" -> "minEff13-smoke"
       )
     )
   } else {
@@ -48,9 +48,9 @@ object Runner extends App {
       Map(
         "overlayGO-1-physDataset" -> "big-1k",
         "overlayGO-2-ovlDataset" -> "nu20",
-        "overlayGO-3-genetics" -> "minEff17-smoke",
+        "overlayGO-3-genetics" -> "minEff13-smoke",
         "p2p-stage1-seed" -> "3x2",
-        "p2p-stage2-paramSpace" -> "failProf-large-192",
+        "p2p-stage2-paramSpace" -> "corrStudy-large-192",
         "p2p-stage3-attack-chained" -> "default"
       )
     )

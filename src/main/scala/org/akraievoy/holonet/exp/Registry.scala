@@ -93,6 +93,30 @@ object Registry extends RegistryData {
     )
   }
 
+  private def indexesOfRequired(pairs: Seq[ExpConfPair]): Set[Int] = {
+    val pairsIndexed = pairs.zipWithIndex
+
+    def require(queue: Set[Int], required: Set[Int]): Set[Int] = {
+      val newQueue = queue.flatMap{
+        qElem =>
+          val pairQ = pairs(qElem)
+          pairsIndexed.filter{
+            case (pairI, index) =>
+              pairQ._1.depends.contains(pairI._1.name)
+          }.map{
+            case (pairI, index) => index
+          }
+      }
+      if (newQueue.isEmpty) {
+        queue ++ required
+      } else {
+        require(newQueue, queue ++ required)
+      }
+    }
+
+    require(Set(pairs.size - 1), Set.empty[Int])
+  }
+
   private def execute(expPairSeq: Seq[ExpConfPair]) = {
     val fs = new FileSystem(new File("data"))
     val registryStore = new RegistryStore(fs)
@@ -101,14 +125,21 @@ object Registry extends RegistryData {
     (1 to expPairSeq.length).toSeq.foldLeft(Seq.empty[ExperimentStore]){
       (runChain, length) =>
         val subchain = expPairSeq.take(length)
-        val currentExpPair = expPairSeq(length - 1)
+        val requiredIndexes = indexesOfRequired(subchain)
+        val currentExpPair = subchain.last
         val emptyParamSpace = Map(
           true -> Config.EMPTY_SPACE,
           false -> Config.EMPTY_SPACE
         )
-        val paramSpace = subchain.zipWithIndex.map{
+        val paramSpace = subchain.zipWithIndex.filter{
+          case (expPair, index) =>
+            requiredIndexes.contains(index)
+        }.map{
           case ((exp, conf), index) =>
-            conf.paramSpace(index < length - 1, index)
+            conf.paramSpace(
+              index < subchain.length - 1,
+              index
+            )
         }.foldLeft(emptyParamSpace) {
           case (mapChained, mapCurrent) =>
             mapChained.map{
@@ -145,7 +176,8 @@ object Registry extends RegistryData {
           currentUID,
           currentExpPair._1,
           currentExpPair._2,
-          runChain
+          runChain,
+          requiredIndexes
         )
 
         paramSpace.getOrElse(
@@ -159,7 +191,9 @@ object Registry extends RegistryData {
             ).par.foreach {
               parallelPos =>
                 val spacePos = sequentialPos ++ parallelPos
-                log.debug("spacePos = " + spacePos)
+                log.debug("spacePos = %s".format(
+                  ParamPos.seqToString( spacePos, requiredIndexes)
+                ))
                 currentExpPair._1.executeFun(RunStore(expStore, spacePos))
             }
         }

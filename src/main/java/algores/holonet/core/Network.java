@@ -25,6 +25,7 @@ import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.rpc.NetworkRpc;
 import algores.holonet.core.api.tier0.rpc.NetworkRpcBase;
 import algores.holonet.core.api.tier1.delivery.LookupService;
+import com.google.common.base.Optional;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 import java.util.Collection;
@@ -71,7 +72,7 @@ public class Network {
     return eSource.randomElement(allNodes);
   }
 
-  public RequestPair generateRequestPair(EntropySource entropy) {
+  public Optional<RequestPair> generateRequestPair(EntropySource entropy) {
     return getEnv().generateRequestPair(entropy);
   }
 

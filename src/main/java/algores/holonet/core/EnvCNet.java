@@ -132,6 +132,9 @@ public class EnvCNet implements Env {
 
   protected void renewRequestModel() {
     requestModel.clear();
+    if (req.getValue().getNonDefCount() == 0) {
+      throw new IllegalStateException("empty request network");
+    }
     req.getValue().visitNonDef(new EdgeData.EdgeVisitor() {
       public void visit(int from, int into, double e) {
         if (addressIdxToNode.containsKey(from) && addressIdxToNode.containsKey(into)) {
@@ -237,15 +240,24 @@ public class EnvCNet implements Env {
   }
 
   @Override
-  public RequestPair generateRequestPair(EntropySource entropy) {
+  public Optional<RequestPair> generateRequestPair(EntropySource entropy) {
+    if (fallback != null) {
+      return fallback.generateRequestPair(entropy);
+    }
+    if (requestModel.getSize() == 0) {
+      return Optional.absent();
+    }
+
     final int pairId = requestModel.generate(entropy, false, null);
 
     final int clientId = requestCodec.id2leading(pairId);
     final int serverId = requestCodec.id2trailing(pairId);
 
-    return new RequestPair(
-        addressIdxToNode.get(clientId),
-        addressIdxToNode.get(serverId)
+    return Optional.of(
+        new RequestPair(
+          addressIdxToNode.get(clientId),
+          addressIdxToNode.get(serverId)
+        )
     );
   }
 

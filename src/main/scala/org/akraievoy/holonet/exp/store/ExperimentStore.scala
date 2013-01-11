@@ -30,7 +30,8 @@ class ExperimentStore(
   val uid: RunUID,
   val experiment: Experiment,
   val config: Config,
-  val chain: Seq[ExperimentStore]
+  val chain: Seq[ExperimentStore],
+  val requiredIndexes: Set[Int]
 ) {
   private var schema: Map[String, String] = Map.empty
   private var openStreams: Map[File, Closeable] = Map.empty
@@ -54,6 +55,13 @@ class ExperimentStore(
   )(
     implicit mt: Manifest[T]
   ) {
+    if (!mt.erasure.isInstance(value)) {
+      throw new IllegalArgumentException(
+        "storing to %s value of type %s instead of %s".format(
+          paramName, value.getClass, mt.erasure
+        )
+      )
+    }
     spacePos.find {
       paramPos => paramPos.name == paramName
     }.map {
@@ -88,7 +96,7 @@ class ExperimentStore(
       )
     }
 
-    val pos = ParamPos.pos(spacePos, chain.length)
+    val pos = ParamPos.pos(spacePos, requiredIndexes)
     val posStr = java.lang.Long.toString(pos, 16)
     val paramFName = paramKey(paramName, mt, true).get
     if (ExperimentStore.primitiveSerializers.contains(mt)) {
@@ -159,8 +167,16 @@ class ExperimentStore(
   )(
     implicit mt: Manifest[T]
   ): Option[T] = {
-    val pos = ParamPos.pos(spacePos, chain.length)
+    val pos = ParamPos.pos(spacePos, requiredIndexes)
     val posStr = java.lang.Long.toString(pos, 16)
+/*
+    if (paramName == "ovlGenOpt.genome.best.0") {
+      println("query for overlay: posStr %s pos:\n%s\n".format(
+        posStr,
+        ParamPos.seqToString(spacePos, requiredIndexes)
+      ))
+    }
+*/
     paramKey(paramName, mt, false).flatMap {
       paramFName =>
         if (ExperimentStore.primitiveSerializers.contains(mt)) {

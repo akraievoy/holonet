@@ -27,8 +27,8 @@ import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 public class Progress {
-  private final static int SILENT = 32;
-  private final static int MULTILINE_ITERATIONS = 128;
+  private final static int SILENT = 1024;
+  private final static int MULTILINE_ITERATIONS = 32768;
   public static final int WIDTH = 32;
 
   private final String description;

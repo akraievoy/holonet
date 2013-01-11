@@ -25,6 +25,7 @@ import algores.holonet.core.RequestPair;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.tier1.delivery.LookupService;
+import com.google.common.base.Optional;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 import java.util.Collection;
@@ -38,8 +39,18 @@ public class EventNetLookup extends Event<EventNetLookup> {
   public Result executeInternal(final Network network, final EntropySource eSource) {
     Result aggregateResult = Result.PASSIVE;
     for (int sequentialIndex = 0; sequentialIndex < retries; sequentialIndex++) {
-      RequestPair request =
+      Optional<RequestPair> optRequest =
           network.generateRequestPair(eSource);
+      if (!optRequest.isPresent()) {
+        if (sequentialIndex > 0) {
+          throw new IllegalStateException(
+              "request model became empty amid request generation streak?"
+          );
+        }
+        break;
+      }
+      RequestPair request = optRequest.get();
+
       Collection<Key> serverKeys =
           request.server.getServices().getStorage().getKeys();
 

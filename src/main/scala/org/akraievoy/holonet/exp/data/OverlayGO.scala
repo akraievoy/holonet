@@ -460,10 +460,11 @@ object OverlayGO {
     Config("minEff16", "MinEff: 1.6", Param(gaStrategyMinEff, "1.6")),
     Config("minEff17", "MinEff: 1.7", Param(gaStrategyMinEff, "1.7")),
     Config(
-      "minEff17-smoke",
-      "MinEff: 1.7 (smoke)",
-      Param(gaStrategyMinEff, "1.7"),
+      "minEff13-smoke",
+      "MinEff: 1.3 (smoke)",
+      Param(gaStrategyMinEff, "1.3"),
       Param(entropySourceGASeed, "42600"),
+      Param(gaGeneration, "0--7", Strategy.ITERATE, Strategy.USE_LAST),
       Param(gaSpecimen, "0--9", Strategy.USE_FIRST, Strategy.USE_FIRST)
     ),
     Config("minEff19", "MinEff: 1.9", Param(gaStrategyMinEff, "1.9")),
