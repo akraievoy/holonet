@@ -352,7 +352,16 @@ class ExperimentStore(
 
       writeLocked = true
     }
+  }
 
+  def primitives: Map[String, Manifest[_]] = {
+    schema.filter {
+      case (name, alias) =>
+        ExperimentStore.primitiveAliases.contains(alias)
+    }.mapValues {
+      alias =>
+        ExperimentStore.primitiveAliasToSerializer(alias).mt
+    }
   }
 }
 
@@ -449,6 +458,25 @@ object ExperimentStore {
       }
       serSeq.head
     }
+
+  protected lazy val primitiveAliases =
+    primitiveSerializers.values.map{
+      ser => ser.alias
+    }.toSet
+
+  protected lazy val primitiveAliasToSerializer =
+    primitiveAliases.map{
+      alias =>
+        (
+            alias ->
+            primitiveSerializers.values.find{
+              serializer =>
+                serializer.alias == alias &&
+                  serializer.mt <:< manifest[AnyRef]
+            }.get
+        )
+    }.toMap[String, ValueSerializer[String, _]]
+
   protected lazy val paramSerializers: Map[Manifest[_], ValueSerializer[String, _]] =
     Seq[ValueSerializer[String, _]](
       ValueSerializer(

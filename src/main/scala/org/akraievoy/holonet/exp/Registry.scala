@@ -117,6 +117,93 @@ object Registry extends RegistryData {
     require(Set(pairs.size - 1), Set.empty[Int])
   }
 
+  private val emptyParamSpace = Map(
+    true -> Config.EMPTY_SPACE,
+    false -> Config.EMPTY_SPACE
+  )
+
+  private def spacePosStreams(
+    subchain: Seq[Registry.ExpConfPair],
+    requiredIndexes: Set[Int]
+  ): Map[Boolean, Stream[Seq[ParamPos]]] = {
+    subchain.zipWithIndex.filter {
+      case (expPair, index) =>
+        requiredIndexes.contains(index)
+    }.map {
+      case ((exp, conf), index) =>
+        conf.spacePosStreams(
+          index < subchain.length - 1,
+          index
+        )
+    }.foldLeft(emptyParamSpace) {
+      case (mapChained, mapCurrent) =>
+        mapChained.map {
+          case (parallelFlag, paramPosSeq) =>
+            (
+                parallelFlag,
+                for (
+                  chainedPoses <- paramPosSeq;
+                  currentPoses <- mapCurrent.getOrElse(
+                    parallelFlag,
+                    Config.EMPTY_SPACE
+                  )
+                ) yield {
+                  val posSeq = chainedPoses ++ currentPoses
+                  posSeq
+                }
+            )
+        }
+    }
+  }
+
+  def spacePosMap[T](
+    subchain: Seq[Registry.ExpConfPair],
+    requiredIndexes: Set[Int],
+    expStore: ExperimentStore,
+    visitFun: RunStore => T,
+    parallel: Boolean = true
+  ): IndexedSeq[T] = {
+    val posStreams = spacePosStreams(subchain, requiredIndexes)
+    posStreams.getOrElse(
+      false,
+      Config.EMPTY_SPACE
+    ).flatMap {
+      sequentialPos =>
+        val stream = posStreams.getOrElse(true, Config.EMPTY_SPACE)
+        def visitFun0(parallelPos: Seq[ParamPos]) = {
+          visitFun(RunStore(expStore, sequentialPos ++ parallelPos))
+        }
+        if (parallel) {
+          stream.par.map(visitFun0)
+        } else {
+          stream.map(visitFun0)
+        }
+    }.toIndexedSeq
+  }
+
+  private val emptyAxis = Map(
+    false -> Seq.empty[Param],
+    true -> Seq.empty[Param]
+  )
+
+  def spaceAxis(
+    subchain: Seq[Registry.ExpConfPair],
+    requiredIndexes: Set[Int]
+  ): Seq[Param] = {
+    val axisMap = subchain.zipWithIndex.filter {
+      case (expPair, index) =>
+        requiredIndexes.contains(index)
+    }.foldLeft(emptyAxis) {
+      case (axisMap, ((exp, conf), index)) =>
+        val curMap = conf.spacePosAxis(index < subchain.length - 1)
+        axisMap.map {
+          case (key, valueSeq) =>
+            (key, valueSeq ++ curMap.getOrElse(key, Seq.empty))
+        }
+    }
+    axisMap(false) ++ axisMap(true)
+  }
+
   private def execute(expPairSeq: Seq[ExpConfPair]) = {
     val fs = new FileSystem(new File("data"))
     val registryStore = new RegistryStore(fs)
@@ -127,38 +214,6 @@ object Registry extends RegistryData {
         val subchain = expPairSeq.take(length)
         val requiredIndexes = indexesOfRequired(subchain)
         val currentExpPair = subchain.last
-        val emptyParamSpace = Map(
-          true -> Config.EMPTY_SPACE,
-          false -> Config.EMPTY_SPACE
-        )
-        val paramSpace = subchain.zipWithIndex.filter{
-          case (expPair, index) =>
-            requiredIndexes.contains(index)
-        }.map{
-          case ((exp, conf), index) =>
-            conf.paramSpace(
-              index < subchain.length - 1,
-              index
-            )
-        }.foldLeft(emptyParamSpace) {
-          case (mapChained, mapCurrent) =>
-            mapChained.map{
-              case (parallelFlag, paramPosSeq) =>
-                (
-                  parallelFlag,
-                  for (
-                    chainedPoses <- paramPosSeq;
-                    currentPoses <- mapCurrent.getOrElse(
-                      parallelFlag,
-                      Config.EMPTY_SPACE
-                    )
-                  ) yield {
-                    val posSeq = chainedPoses ++ currentPoses
-                    posSeq
-                  }
-                )
-            }
-        }
 
         log.info(
           "starting {} with conf {}",
@@ -180,27 +235,41 @@ object Registry extends RegistryData {
           requiredIndexes
         )
 
-        paramSpace.getOrElse(
-          false,
-          Config.EMPTY_SPACE
-        ).foreach {
-          sequentialPos =>
-            paramSpace.getOrElse(
-              true,
-              Config.EMPTY_SPACE
-            ).par.foreach {
-              parallelPos =>
-                val spacePos = sequentialPos ++ parallelPos
-                log.debug("spacePos = %s".format(
-                  ParamPos.seqToString( spacePos, requiredIndexes)
-                ))
-                currentExpPair._1.executeFun(RunStore(expStore, spacePos))
-            }
-        }
+        spacePosMap(
+          subchain,
+          requiredIndexes,
+          expStore,
+          {
+            runStore =>
+              log.debug(
+                "spacePos = %s".format(
+                  ParamPos.seqToString(runStore.spacePos, requiredIndexes)
+                )
+              )
+              currentExpPair._1.executeFun(runStore)
+          }
+        )
 
         println("write shutdown for " + currentExpPair._1.name)
 
         expStore.writeShutdown()
+
+        val primitives = expStore.primitives
+        val axis = spaceAxis(subchain, requiredIndexes)
+        val primitiveExport =
+          Stream(
+            Seq("spacePos") ++ axis.map(_.name) ++ primitives.map(_._1)
+          ) ++ spacePosMap(
+            subchain, requiredIndexes, expStore, {
+              runStore =>
+                val posInt = ParamPos.pos(runStore.spacePos, requiredIndexes )
+                val rowSeq = Seq[Option[Any]](Some(posInt)) ++
+                  axis.map(p => expStore.get(p.name, runStore.spacePos)(p.mt)) ++
+                  primitives.map(p => expStore.get(p._1, runStore.spacePos)(p._2))
+                rowSeq.map(elem=>elem.map(String.valueOf).getOrElse(""))
+            }, false
+        )
+        fs.dumpCSV(expStore.uid, "export/primitives.csv", Map.empty)(primitiveExport)
 
         runChain :+ expStore
     }

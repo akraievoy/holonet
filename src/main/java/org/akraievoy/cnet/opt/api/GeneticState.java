@@ -19,7 +19,7 @@
 package org.akraievoy.cnet.opt.api;
 
 import org.akraievoy.base.Format;
-import org.akraievoy.base.runner.api.Context;
+import org.akraievoy.holonet.exp.store.StoreLens;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -140,7 +140,7 @@ public class GeneticState {
     return mutateRatio;
   }
 
-  public void calibrate(Context ctx) {
+  public void calibrate(StoreLens<Integer> generationLens) {
     final double fitnessDev = Math.max(Math.min(fitnessDeviationMax, fitnessDeviation), fitnessDeviationMin);
 
     log.info(
@@ -153,11 +153,14 @@ public class GeneticState {
         }
     );
 
-    if (ctx != null) {
-      ctx.put(keyPrefix + ".fitnessDev", getFitnessDeviation());
-      ctx.put(keyPrefix + ".completeness", getCompleteness());
-      ctx.put(keyPrefix + ".similarityMean", getSimilarityMean());
-    }
+    final StoreLens<Double> reportLens =
+        generationLens.forTypeName(
+            Double.class,
+            generationLens.paramName()+"-report"
+        );
+    reportLens.forName(keyPrefix + ".fitnessDev").set(getFitnessDeviation());
+    reportLens.forName(keyPrefix + ".completeness").set(getCompleteness());
+    reportLens.forName(keyPrefix + ".similarityMean").set(getSimilarityMean());
 
     minElemFitness = (1 - completeness) * similarityMean * minElemFitnessNorm;
     elemFitPow = 1 + Math.ceil(2 * fitnessDev * (maxElemFitPow - 1)) / 2;
@@ -174,11 +177,9 @@ public class GeneticState {
         }
     );
 
-    if (ctx != null) {
-      ctx.put(keyPrefix + ".minElemFitness", getMinElemFitness());
-      ctx.put(keyPrefix + ".elemFitPow", getElemFitPow());
-      ctx.put(keyPrefix + ".crossover", getCrossoverRatio());
-      ctx.put(keyPrefix + ".mutate", getMutateRatio());
-    }
+    reportLens.forName(keyPrefix + ".minElemFitness").set(getMinElemFitness());
+    reportLens.forName(keyPrefix + ".elemFitPow").set(getElemFitPow());
+    reportLens.forName(keyPrefix + ".crossover").set(getCrossoverRatio());
+    reportLens.forName(keyPrefix + ".mutate").set(getMutateRatio());
   }
 }

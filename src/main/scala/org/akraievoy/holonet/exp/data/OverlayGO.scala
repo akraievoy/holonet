@@ -363,7 +363,6 @@ object OverlayGO {
         gaState.setMaxElemFitPow(rs.lens(gaStateMaxElemFitPow).get.get)
         gaState.setMaxMutation(rs.lens(gaStateMaxMutation).get.get)
 
-
         val gaStrategy = new GeneticStrategySoo(
           new MetricRoutesFloydWarshall()
         )
@@ -374,6 +373,7 @@ object OverlayGO {
         gaStrategy.setSteps(rs.lens(gaStrategySteps).get.get)
         gaStrategy.setDistSource(rs.lens(overlayDistance).asInstanceOf[StoreLens[EdgeData]])
         gaStrategy.setRequestSource(rs.lens(overlayRequest).asInstanceOf[StoreLens[EdgeData]])
+        gaStrategy.setFitnessCap(rs.lens(gaStrategyFitnessCap).get.get)
 
         val ga = new ExperimentGeneticOpt(
           gaStrategy.asInstanceOf[GeneticStrategy[Genome]],
@@ -431,7 +431,8 @@ object OverlayGO {
       Param(gaStrategyThetaTilde, "0.75"),
       Param(gaStrategySteps, "1"),
       Param(gaStrategyModes, ""),
-      Param(gaStrategyMinEff, "1.2")
+      Param(gaStrategyMinEff, "1.2"),
+      Param(gaStrategyFitnessCap, "1")
     ),
     Config(
       "minEff12x2x3",
@@ -464,7 +465,7 @@ object OverlayGO {
       "MinEff: 1.3 (smoke)",
       Param(gaStrategyMinEff, "1.3"),
       Param(entropySourceGASeed, "42600"),
-      Param(gaGeneration, "0--7", Strategy.ITERATE, Strategy.USE_LAST),
+      Param(gaGeneration, "0--12", Strategy.ITERATE, Strategy.USE_LAST),
       Param(gaSpecimen, "0--9", Strategy.USE_FIRST, Strategy.USE_FIRST)
     ),
     Config("minEff19", "MinEff: 1.9", Param(gaStrategyMinEff, "1.9")),

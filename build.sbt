@@ -40,6 +40,8 @@ libraryDependencies += "junit" % "junit" % "4.10" % "test"
 
 libraryDependencies += "com.novocode" % "junit-interface" % "0.8" % "test->default"
 
+mainClass in (Compile, run) := Some("org.akraievoy.holonet.exp.Runner")
+
 // parallelExecution in Test := false
 
 

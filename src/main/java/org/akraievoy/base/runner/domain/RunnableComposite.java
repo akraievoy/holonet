@@ -18,57 +18,28 @@
 
 package org.akraievoy.base.runner.domain;
 
-import org.akraievoy.base.Startable;
-import org.akraievoy.base.runner.api.Context;
-import org.akraievoy.base.runner.api.ContextInjectable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class RunnableComposite implements Startable, ContextInjectable, Runnable {
+public class RunnableComposite implements Runnable {
   private static final Logger log = LoggerFactory.getLogger(RunnableComposite.class);
 
   protected List<Runnable> group = new ArrayList<Runnable>();
-
-  protected Context ctx;
 
   public void setGroup(List<Runnable> group) {
     this.group.clear();
     this.group.addAll(group);
   }
 
-  public void start() {
-    for (Runnable experiment : group) {
-      if (experiment instanceof ContextInjectable) {
-        ((ContextInjectable) experiment).setCtx(ctx);
-      }
-    }
-  }
-
-  public void stop() {
-    //	nothing to do...
-  }
-
   public void run() {
-    runGroup(ctx);
-  }
-
-  protected void runGroup(Context ctx) {
     for (int i = 0, groupSize = group.size(); i < groupSize; i++) {
       final Runnable experiment = group.get(i);
 
       log.debug("starting #{} of {}: {}", new Object[]{i, groupSize, experiment.toString()});
-      runChild(experiment, ctx);
+      experiment.run();
     }
-  }
-
-  protected void runChild(Runnable runnable, Context ctx) {
-    runnable.run();
-  }
-
-  public void setCtx(Context ctx) {
-    this.ctx = ctx;
   }
 }

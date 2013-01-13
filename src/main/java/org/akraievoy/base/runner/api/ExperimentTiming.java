@@ -29,12 +29,11 @@ import java.util.Date;
 /**
  * Simple decorator to track Experiment execution times.
  */
-public class ExperimentTiming implements Runnable, ContextInjectable {
+public class ExperimentTiming implements Runnable {
   private static final Logger log = LoggerFactory.getLogger(ExperimentTiming.class);
 
   protected final int durationReportThresh = 10000;
 
-  protected Context ctx;
   protected Runnable wrapped;
   protected Ref<Long> durationRef = new RefLong();
   protected Ref<String> durationTextRef = new RefString();
@@ -71,13 +70,5 @@ public class ExperimentTiming implements Runnable, ContextInjectable {
       durationRef.setValue(runMillis);
       durationTextRef.setValue(Format.formatDuration(runMillis));
     }
-  }
-
-  public void setCtx(Context ctx) {
-    if (wrapped instanceof ContextInjectable) {
-      ((ContextInjectable) wrapped).setCtx(ctx);
-    }
-
-    this.ctx = ctx;
   }
 }

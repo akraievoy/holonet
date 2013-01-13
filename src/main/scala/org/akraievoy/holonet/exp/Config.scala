@@ -24,13 +24,21 @@ case class Config(
   params: Map[String, Param]
 ) extends Named {
 
-  def paramSpace(
+  def spacePosAxis(
+    chained: Boolean
+  ): Map[Boolean, IndexedSeq[Param]] = {
+    params.values.groupBy {
+      param => param isParallel chained
+    }.mapValues{
+      paramIterable => paramIterable.toIndexedSeq
+    }
+  }
+
+  def spacePosStreams(
     chained: Boolean,
     expIndex: Int
   ): Map[Boolean, Stream[Seq[ParamPos]]] = {
-    val posSeqMap = params.values.groupBy{
-      param => param isParallel chained
-    }.mapValues{
+    val posSeqMap = spacePosAxis(chained).mapValues{
       paramSeq => paramSeq.map(_.toPosSeq(chained, expIndex))
     }
 

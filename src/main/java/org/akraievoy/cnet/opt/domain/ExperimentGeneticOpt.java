@@ -23,8 +23,6 @@ import gnu.trove.TDoubleArrayList;
 import org.akraievoy.base.Format;
 import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.ref.RefSimple;
-import org.akraievoy.base.runner.api.Context;
-import org.akraievoy.base.runner.api.ContextInjectable;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.EntropySourceRandom;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelRenorm;
@@ -37,10 +35,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
+public class ExperimentGeneticOpt implements Runnable {
   private static final Logger log = LoggerFactory.getLogger(ExperimentGeneticOpt.class);
-
-  protected Context ctx;
 
   protected final SortedMap<FitnessKey, Genome> parents = new TreeMap<FitnessKey, Genome>();
   protected final SortedMap<FitnessKey, Genome> children = new TreeMap<FitnessKey, Genome>();
@@ -202,7 +198,7 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
     state.setFitnessDeviation(fitnessDeviation(parents));
     state.setSimilarityMean(similarityMean(parents.values()));
 
-    state.calibrate(ctx);
+    state.calibrate(generationLens);
 
     breeders.calibrate(generationLens);
     mutators.calibrate(generationLens);
@@ -440,9 +436,5 @@ public class ExperimentGeneticOpt implements Runnable, ContextInjectable {
 
       specimenIndex++;
     }
-  }
-
-  public void setCtx(Context ctx) {
-    this.ctx = ctx;
   }
 }
