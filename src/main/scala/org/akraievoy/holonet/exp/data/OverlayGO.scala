@@ -253,6 +253,17 @@ object OverlayGO {
       "Big (4k nodes, 1 seed)",
       Param(locationMetricNodes, "4096")
     )
+  ).withGraphvizExport(
+    GraphvizExport(
+      name = "physical", desc = "physical network structure export",
+      edgeStructure = {_.lens(physStructure)},
+      edgeLabel = {rs => Some(rs.lens(physDistance))},
+      edgeColor = {rs => Some(rs.lens(physDistance))},
+      vertexColor = {rs => Some(rs.lens(physDensity))},
+      vertexCoordX = {rs => Some(rs.lens(physLocationX))},
+      vertexCoordY = {rs => Some(rs.lens(physLocationY))},
+      vertexRadius = {rs => Some(rs.lens(physDensity))}
+    )
   )
 
   val experiment2overlayDataset = Experiment(
@@ -340,6 +351,23 @@ object OverlayGO {
       Param(ovlReqFactoryPsi, "1"),
       Param(ovlReqFactoryThreshMinAbsValue, "0.05"),
       Param(ovlReqFactoryThreshMinToMaxRatio, "0.05")
+    )
+  ).withGraphvizExport(
+    GraphvizExport(
+      name = "request", desc = "overlay request network",
+      edgeStructure = {_.lens(overlayRequest)},
+      edgeLabel = {rs => Some(rs.lens(overlayRequest))},
+      edgeColor = {rs => Some(rs.lens(overlayDistance))},
+      vertexColor = {rs => Some(rs.lens(overlayDensity))},
+      vertexCoordX = {rs => Some(rs.lens(overlayLocationX))},
+      vertexCoordY = {rs => Some(rs.lens(overlayLocationY))},
+      vertexRadius = {
+        rs =>
+          val powers = new MetricVDataPowers()
+          powers.setSource(rs.lens(overlayRequest).asInstanceOf[Ref[EdgeData]])
+          Some(powers)
+      },
+      vertexLabel = {rs => Some(rs.lens(overlayIndex))}
     )
   )
 
@@ -498,6 +526,27 @@ object OverlayGO {
       "Varying Steps",
       Param(gaStrategySteps, "1;3;5"),
       Param(entropySourceGASeed, "42600--42620")
+    )
+  ).withGraphvizExport(
+    GraphvizExport(
+      name = "overlay-best", desc = "overlay network - best specimen",
+      edgeStructure = {_.lens(gaGenomeBest)},
+      edgeColor = {rs => Some(rs.lens(overlayDistance))},
+      vertexColor = {
+        rs =>
+          val powers = new MetricVDataPowers()
+          powers.setSource(rs.lens(overlayRequest).asInstanceOf[Ref[EdgeData]])
+          Some(powers)
+      },
+      vertexCoordX = {rs => Some(rs.lens(overlayLocationX))},
+      vertexCoordY = {rs => Some(rs.lens(overlayLocationY))},
+      vertexRadius = {
+        rs =>
+          val powers = new MetricVDataPowers()
+          powers.setSource(rs.lens(gaGenomeBest).asInstanceOf[Ref[EdgeData]])
+          Some(powers)
+      },
+      vertexLabel = {rs => Some(rs.lens(overlayIndex))}
     )
   )
 }

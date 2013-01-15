@@ -20,8 +20,9 @@ package org.akraievoy.holonet.exp
 
 import annotation.tailrec
 import store.{RunStore, ExperimentStore, RegistryStore, FileSystem}
-import java.io.File
+import java.io.{ByteArrayInputStream, StringWriter, PrintWriter, File}
 import org.slf4j.LoggerFactory
+import org.akraievoy.cnet.net.vo.{EdgeData, VertexData}
 
 object Registry extends RegistryData {
   val log = LoggerFactory.getLogger(classOf[RegistryData])
@@ -242,41 +243,279 @@ object Registry extends RegistryData {
           {
             runStore =>
               log.debug(
-                "spacePos = %s".format(
-                  ParamPos.seqToString(runStore.spacePos, requiredIndexes)
-                )
+                "spacePos = {}",
+                ParamPos.seqToString(runStore.spacePos, requiredIndexes)
               )
               currentExpPair._1.executeFun(runStore)
           }
         )
 
-        println("write shutdown for " + currentExpPair._1.name)
-
+        log.info("write shutdown for {}", currentExpPair._1.name)
         expStore.writeShutdown()
 
-        val primitives = expStore.primitives
-        val axis = spaceAxis(subchain, requiredIndexes)
-        val primitiveExport =
-          Stream(
-            Seq("spacePos") ++ axis.map(_.name) ++ primitives.map(_._1)
-          ) ++ spacePosMap(
-            subchain, requiredIndexes, expStore, {
-              runStore =>
-                val posInt = ParamPos.pos(runStore.spacePos, requiredIndexes )
-                val rowSeq = Seq[Option[Any]](Some(posInt)) ++
-                  axis.map(p => expStore.get(p.name, runStore.spacePos)(p.mt)) ++
-                  primitives.map(p => expStore.get(p._1, runStore.spacePos)(p._2))
-                rowSeq.map(elem=>elem.map(String.valueOf).getOrElse(""))
-            }, false
-        )
-        fs.dumpCSV(expStore.uid, "export/primitives.csv", Map.empty)(primitiveExport)
+        exportPrimitives(expStore, subchain, requiredIndexes, fs)
+        exportGraphvis(expStore, subchain, requiredIndexes, fs)
 
         runChain :+ expStore
     }
 
     //  FIXME PROCEED on-completion triggers
     log.info("chain complete")
+  }
 
+  def exportPrimitives(
+    expStore: ExperimentStore,
+    subchain: Seq[Registry.ExpConfPair],
+    requiredIndexes: Set[Int],
+    fs: FileSystem
+  ) {
+    val primitives = expStore.primitives
+    val axis = spaceAxis(subchain, requiredIndexes)
+    val primitiveExport =
+      Stream(
+        Seq("spacePos") ++ axis.map(_.name) ++ primitives.map(_._1)
+      ) ++ spacePosMap(
+        subchain, requiredIndexes, expStore, {
+          runStore =>
+            val posInt = ParamPos.pos(runStore.spacePos, requiredIndexes)
+            val rowSeq = Seq[Option[Any]](Some(posInt)) ++
+                axis.map(p => expStore.get(p.name, runStore.spacePos)(p.mt)) ++
+                primitives.map(p => expStore.get(p._1, runStore.spacePos)(p._2))
+            rowSeq.map(elem => elem.map(String.valueOf).getOrElse(""))
+        }, false
+      )
+
+    fs.dumpCSV(
+      expStore.uid,
+      "export/primitives.csv",
+      Map.empty
+    )(primitiveExport)
+  }
+
+  /** extract method refactoring is for PUSSIES */
+  def exportGraphvis(
+    expStore: ExperimentStore,
+    subchain: Seq[Registry.ExpConfPair],
+    requiredIndexes: Set[Int],
+    fs: FileSystem
+  ) {
+    def rangeVData(vData: VertexData) = {
+      (0 until vData.getSize).foldLeft(
+        (Double.PositiveInfinity, Double.NegativeInfinity)
+      ) {
+        case ((minR1, maxR1), radius) =>
+          (minR1 min radius, maxR1 max radius)
+      }
+    }
+
+    def rangeEData(eData: EdgeData) = {
+      val size = eData.getSize
+      val elems = for (
+        f <- 0 until size;
+        t <- 0 until size
+      ) yield {
+        eData.get(f,t)
+      }
+      elems.foldLeft(
+        (Double.PositiveInfinity, Double.NegativeInfinity)
+      ) {
+        case ((minR1, maxR1), radius) =>
+          (minR1 min radius, maxR1 max radius)
+      }
+    }
+
+    val log2 = scala.math.log(2)
+    def normalize(range: Pair[Double, Double])(v: Double) = {
+      val (min, max) = range
+      if (min < max) {
+        scala.math.log(1 + (v - min) / (max - min)) / log2
+      } else {
+        0.0
+      }
+    }
+
+    val pageSize = 720
+    val pageZero = 36
+    val pageFullSize = pageSize + 2 * pageZero
+    def locToPagePos(x: Double, y: Double) = {
+      (x * pageSize + pageZero, y * pageSize + pageZero)
+    }
+    expStore.experiment.graphvisExports.foreach{
+      case (exportName, export) =>
+        spacePosMap(
+          subchain, requiredIndexes, expStore, {
+            rs =>
+              val structureRef = export.edgeStructure(rs)
+              Option(structureRef.getValue).map{
+                structure =>
+                  val pos = ParamPos.pos(rs.spacePos, requiredIndexes)
+                  val out = new StringWriter()
+                  val p = new PrintWriter(out)
+
+                  val (graphToken, linkToken) = if (structure.isSymmetric) {
+                    ("graph", "--")
+                  } else {
+                    ("digraph", "->")
+                  }
+
+                  val optVertexCoords = for (
+                    refX <- export.vertexCoordX(rs);
+                    refY <- export.vertexCoordY(rs);
+                    xData <- Option(refX.getValue);
+                    yData <- Option(refY.getValue)
+                  ) yield {
+                    (xData, yData)
+                  }
+                  val optVertexRadiusRange = for (
+                    refVertexRadius <- export.vertexRadius(rs);
+                    vertexRadius <- Option(refVertexRadius.getValue)
+                  ) yield {
+                    (vertexRadius, rangeVData(vertexRadius))
+                  }
+                  val optVertexColorRange = for (
+                    refVertexColor <- export.vertexColor(rs);
+                    vertexColor <- Option(refVertexColor.getValue)
+                  ) yield {
+                     (vertexColor, rangeVData(vertexColor))
+                  }
+                  val optVertexLabel = for (
+                    refVertexLabel <- export.vertexLabel(rs);
+                    vertexLabel <- Option(refVertexLabel.getValue)
+                  ) yield {
+                    vertexLabel
+                  }
+
+                  val optEdgeLabel = for (
+                    refEdgeLabel <- export.edgeLabel(rs);
+                    edgeLabel <- Option(refEdgeLabel.getValue)
+                  ) yield {
+                    edgeLabel
+                  }
+                  val optEdgeWidthRange = for (
+                    refEdgeWidth <- export.edgeWidth(rs);
+                    edgeWidth <- Option(refEdgeWidth.getValue)
+                  ) yield {
+                    (edgeWidth, rangeEData(edgeWidth))
+                  }
+                  val optEdgeColorRange = for (
+                    refEdgeColor <- export.edgeColor(rs);
+                    edgeColor <- Option(refEdgeColor.getValue)
+                  ) yield {
+                    (edgeColor, rangeEData(edgeColor))
+                  }
+
+                  p.println("%s %s {".format(graphToken, pos))
+                  p.println(
+                    """  size="%s,%s";
+                      |  node [fixedsize=true, colorscheme="%s"];
+                      |  edge [splines=true, colorscheme="%s"]
+                      | """.stripMargin.format(
+                    pageFullSize, pageFullSize,
+                    export.vertexColorScheme.toString,
+                    export.edgeColorScheme.toString
+                  ))
+
+                  val size = structure.getSize
+                  for (
+                    nodeIdx <- 0 until size
+                  ) yield {
+                    val nodeAttrs = Seq.empty[String] ++
+                      optVertexCoords.map{
+                        case (coordX, coordY) =>
+                          val (pagePosX, pagePosY) = locToPagePos(
+                            coordX.get(nodeIdx),
+                            coordY.get(nodeIdx)
+                          )
+                          "pos=\"%.6g,%.6g!\"".format(pagePosX, pagePosY)
+                      }.toSeq ++
+                      optVertexRadiusRange.map{
+                        case (radius, range) =>
+                          val radius_1_11 = 1 + 10 * normalize(range)(
+                            radius.get(nodeIdx)
+                          )
+                          val width = 4 * radius_1_11
+                          "width=%.2g".format(width)
+                      }.toSeq ++
+                      optVertexColorRange.map{
+                        case (color, range) =>
+                          val color_1_11 = 1 + math.round(10 * normalize(range)(
+                            color.get(nodeIdx)
+                          ))
+                          "fillcolor=\"%d\"".format(12 - color_1_11)
+                      }.toSeq ++
+                      optVertexLabel.map{
+                        vertexLabel =>
+                          "label=\"%s\"".format(
+                            optVertexLabel.map {
+                              vertexLabel =>
+                                "%6g".format(vertexLabel.get(nodeIdx))
+                            }.getOrElse {
+                              "%d".format(nodeIdx)
+                            }
+                          )
+                      }.toSeq
+
+                    p.println(
+                      "    n%s [%s];".format(nodeIdx, nodeAttrs.mkString(", "))
+                    )
+                  }
+
+                  for (
+                    fromIdx <- 0 until size;
+                    toIdx <- (if (structure.isSymmetric) {
+                      fromIdx
+                    } else {
+                      0
+                    }) until size if structure.conn(fromIdx, toIdx)
+                  ) yield {
+                    val edgeAttrs = Seq.empty[String] ++
+                      optEdgeLabel.map{
+                        edgeLabel =>
+                          "xlabel=\"%.6g\"".format(edgeLabel.get(fromIdx, toIdx))
+                      }.toSeq ++
+                      optEdgeWidthRange.map{
+                        case (width, range) =>
+                          val width_1_11 = 1 + 10 * normalize(range)(
+                            width.get(fromIdx, toIdx)
+                          )
+                          "penwidth=\"%.2g\"".format(width_1_11 / 2)
+                      }.toSeq ++
+                      optEdgeColorRange.map{
+                        case (color, range) =>
+                          val color_1_11 = 1 + math.round(
+                            10 * normalize(range)(
+                              color.get(fromIdx,toIdx)
+                            )
+                          )
+                          "pencolor=\"%d\"".format(12 - color_1_11)
+                      }.toSeq
+
+                    p.println(
+                      "    n%s %s n%s [%s];".format(
+                        fromIdx, linkToken, toIdx,
+                        edgeAttrs.mkString(", ")
+                      )
+                    )
+                  }
+
+                  p.println("}")
+                  p.flush()
+                  p.close()
+
+                  fs.appendBinary(
+                    expStore.uid,
+                    "export/graphviz_%s/%s.dot".format(exportName, pos),
+                    Map.empty
+                  )(
+                    new ByteArrayInputStream(out.toString.getBytes)
+                  )
+                  true
+              }.getOrElse{
+                false
+              }
+          }, false
+        )
+    }
   }
 
   private def execute(targetExpName: String, configFun: Experiment => Config) {
