@@ -38,7 +38,7 @@ class FileSystem(
   )(
     data: Stream[Seq[String]]
   ): Option[(File, PrintWriter)] = {
-    val destFile = new File(expDir(runUID), fName)
+    val destFile = fileForUid(runUID, fName)
     val (w, opened) = openStreams.get(destFile).map{
       closeable => (closeable.asInstanceOf[PrintWriter], false)
     }.getOrElse{
@@ -60,7 +60,7 @@ class FileSystem(
     runUID: RunUID,
     fName: String
   ): Option[Seq[Seq[String]]] = {
-    val destFile = new File(expDir(runUID), fName)
+    val destFile = fileForUid(runUID, fName)
     if (destFile.isFile) {
       val in = new FileInputStream(destFile)
       try {
@@ -85,7 +85,7 @@ class FileSystem(
   )(
     data: Stream[Seq[String]]
   ) {
-    val destFile = new File(expDir(runUID), fName)
+    val destFile = fileForUid(runUID, fName)
 
     noReadsAndDumpsOverAppends(openStreams, destFile)
 
@@ -103,7 +103,7 @@ class FileSystem(
     readOp: BufferedInputStream => Stream[T],
     openStreams: Map[File, Closeable] = Map.empty
   ): Option[T] = {
-    val srcFile = new File(expDir(runUID), fName)
+    val srcFile = fileForUid(runUID, fName)
 
     noReadsAndDumpsOverAppends(openStreams, srcFile)
     if (srcFile.isFile) {
@@ -124,7 +124,7 @@ class FileSystem(
     openStreams: Map[File, Closeable],
     forceKeepOpen: Boolean = false
   )(in: InputStream): Option[(File, FileOutputStream)] = {
-    val destFile = new File(expDir(runUID), fName)
+    val destFile = fileForUid(runUID, fName)
     val (out, opened) = openStreams.get(destFile).map {
       closeable => (closeable.asInstanceOf[FileOutputStream], false)
     }.getOrElse {
@@ -151,6 +151,10 @@ class FileSystem(
     }
 
     res
+  }
+
+  def fileForUid(runUID: RunUID, fName: String): File = {
+    new File(expDir(runUID), fName)
   }
 
   private def noReadsAndDumpsOverAppends(

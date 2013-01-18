@@ -39,7 +39,7 @@ case class GraphvizExport(
   vertexRadius: RunStore => Option[RefRO[VertexData]] = {rs => None},
   vertexColor: RunStore => Option[RefRO[VertexData]] = {rs => None},
   vertexColorScheme: GraphvizExport.ColorScheme.Value =
-    GraphvizExport.ColorScheme.GRAY_RED
+    GraphvizExport.ColorScheme.VIOLET_RED
 ) extends Named
 
 object GraphvizExport {

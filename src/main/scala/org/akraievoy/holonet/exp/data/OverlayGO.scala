@@ -26,14 +26,16 @@ import org.akraievoy.cnet.metrics.domain._
 import org.akraievoy.base.runner.domain.RunnableComposite
 import scala.collection.JavaConversions._
 import org.akraievoy.base.ref.{RefRO, Ref}
-import store.StoreLens
+import org.akraievoy.holonet.exp.store.StoreLens
 import org.akraievoy.base.runner.vo.Parameter.Strategy
 import org.akraievoy.cnet.opt.api._
 import org.akraievoy.cnet.soo.domain._
 import org.akraievoy.cnet.opt.domain.ExperimentGeneticOpt
-import store.StoreLens
-import store.StoreLens
+import org.akraievoy.holonet.exp.store.StoreLens
+import org.akraievoy.holonet.exp.store.StoreLens
 import org.akraievoy.base.runner.api.ExperimentTiming
+import scala.Some
+import store.StoreLens
 
 object OverlayGO {
   import java.lang.{
@@ -241,7 +243,9 @@ object OverlayGO {
     Config(
       "big-1k",
       "Big (1k nodes, 1 seed)",
-      Param(locationMetricNodes, "1024")
+      Param(locationMetricNodes, "1024"),
+      Param(structureBaseDegree, "2"),
+      Param(connPreferenceBeta, "2.75")
     ),
     Config(
       "big-2k",
@@ -356,6 +360,7 @@ object OverlayGO {
     GraphvizExport(
       name = "request", desc = "overlay request network",
       edgeStructure = {_.lens(overlayRequest)},
+      edgeWidth = {rs => Some(rs.lens(overlayRequest))},
       edgeLabel = {rs => Some(rs.lens(overlayRequest))},
       edgeColor = {rs => Some(rs.lens(overlayDistance))},
       vertexColor = {rs => Some(rs.lens(overlayDensity))},
