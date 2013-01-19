@@ -19,13 +19,13 @@
 package org.akraievoy.cnet.soo.domain;
 
 import org.akraievoy.base.ref.RefRO;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.metrics.api.MetricRoutes;
 import org.akraievoy.cnet.metrics.domain.EigenMetric;
 import org.akraievoy.cnet.metrics.domain.MetricEDataRouteLen;
 import org.akraievoy.cnet.metrics.domain.MetricScalarEffectiveness;
 import org.akraievoy.cnet.metrics.domain.MetricScalarEigenGap;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataFactory;
 import org.akraievoy.cnet.opt.api.GeneticStrategy;
@@ -35,7 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import java.util.Map;
 import java.util.SortedMap;
 
 public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
@@ -78,8 +77,8 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
   public double getFitnessCap() { return fitnessCap; }
   public void setFitnessCap(double fitnessCap) { this.fitnessCap = fitnessCap; }
 
-  protected RefRO<EdgeData> distSource = new RefEdgeData();
-  protected RefRO<EdgeData> requestSource = new RefEdgeData();
+  protected RefRO<EdgeData> distSource = new RefObject<EdgeData>();
+  protected RefRO<EdgeData> requestSource = new RefObject<EdgeData>();
 
   protected int steps = 1;
 
@@ -181,7 +180,7 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
   }
 
   public double computeFitness(GenomeSoo genome) {
-    metricScalarEigenGap.setSource(new RefEdgeData(genome.getSolution()));
+    metricScalarEigenGap.setSource(new RefObject<EdgeData>(genome.getSolution()));
     try {
       return (Double) MetricResultFetcher.fetch(metricScalarEigenGap);
     } catch (EigenMetric.EigenSolverException e) {
@@ -192,11 +191,11 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
 
   public Double computeEff(GenomeSoo child) {
     metricEDataRouteLen.getRoutes().setDistSource(distSource);
-    metricEDataRouteLen.getRoutes().setSource(new RefEdgeData(child.getSolution()));
+    metricEDataRouteLen.getRoutes().setSource(new RefObject<EdgeData>(child.getSolution()));
 
     final EdgeData lenEData = (EdgeData) MetricResultFetcher.fetch(metricEDataRouteLen);
 
-    metricEff.setSource(new RefEdgeData(lenEData));
+    metricEff.setSource(new RefObject<EdgeData>(lenEData));
     metricEff.setWeightSource(requestSource);
 
     final Double eff = (Double) MetricResultFetcher.fetch(metricEff);

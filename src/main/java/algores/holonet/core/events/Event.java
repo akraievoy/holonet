@@ -21,7 +21,7 @@ package algores.holonet.core.events;
 import algores.holonet.core.Network;
 import algores.holonet.core.SimulatorException;
 import org.akraievoy.base.ref.Ref;
-import org.akraievoy.base.runner.api.RefDouble;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +35,7 @@ public abstract class Event<SelfType extends Event<?>> {
   private static boolean reporting = false;
 
   protected boolean failOnError;
-  protected Ref<Double> probability = new RefDouble(1.0);
+  protected Ref<Double> probability = new RefObject<Double>(1.0);
 
   public void setFailOnError(boolean failOnError) {
     this.failOnError = failOnError;

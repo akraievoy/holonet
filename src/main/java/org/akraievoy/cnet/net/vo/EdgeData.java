@@ -20,7 +20,7 @@ package org.akraievoy.cnet.net.vo;
 
 import gnu.trove.TIntArrayList;
 import org.akraievoy.base.soft.Soft;
-import org.akraievoy.db.Streamable;
+import org.akraievoy.holonet.exp.store.Streamable;
 import org.codehaus.jackson.annotate.JsonIgnore;
 
 /**

@@ -19,17 +19,16 @@
 package org.akraievoy.cnet.metrics.domain;
 
 import org.akraievoy.base.ref.RefRO;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.metrics.api.MetricRoutes;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
-import org.akraievoy.cnet.net.vo.RefKeys;
 import org.akraievoy.cnet.net.vo.Routes;
 
 import java.util.Arrays;
 
 public class MetricRoutesFloydWarshall extends MetricRoutes {
-  protected RefRO<EdgeData> distSource = RefEdgeData.forPath(RefKeys.LAYER_DISTANCE);
-  protected RefRO<EdgeData> source = RefEdgeData.forPath(RefKeys.LAYER_STRUCTURE);
+  protected RefRO<EdgeData> distSource = new RefObject<EdgeData>();
+  protected RefRO<EdgeData> source = new RefObject<EdgeData>();
 
   public String getName() {
     return "Floyd-Warshall Routes";

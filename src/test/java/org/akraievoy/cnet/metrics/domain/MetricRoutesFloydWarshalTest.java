@@ -20,9 +20,9 @@ package org.akraievoy.cnet.metrics.domain;
 
 import gnu.trove.TIntArrayList;
 import junit.framework.TestCase;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.metrics.api.MetricRoutes;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataFactory;
 import org.akraievoy.cnet.net.vo.Route;
@@ -80,7 +80,7 @@ public class MetricRoutesFloydWarshalTest extends TestCase {
     eData.set(2, 4, 3.0);
 
     final MetricRoutes metric = new MetricRoutesFloydWarshall();
-    metric.setSource(new RefEdgeData(eData));
+    metric.setSource(new RefObject<EdgeData>(eData));
 
     final Routes routeData = (Routes) MetricResultFetcher.fetch(metric);
 

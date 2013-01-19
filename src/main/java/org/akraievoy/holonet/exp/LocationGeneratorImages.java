@@ -16,7 +16,7 @@
  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.akraievoy.holonet.runner.dlaGenTest;
+package org.akraievoy.holonet.exp;
 
 import com.google.common.base.Throwables;
 import org.akraievoy.cnet.gen.domain.LocationGeneratorFractalDLA;

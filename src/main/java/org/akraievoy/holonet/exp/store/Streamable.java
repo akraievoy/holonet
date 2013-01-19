@@ -1,5 +1,5 @@
 /*
- Copyright 2011 Anton Kraievoy akraievoy@gmail.com
+ Copyright 2012 Anton Kraievoy akraievoy@gmail.com
  This file is part of Holonet.
 
  Holonet is free software: you can redistribute it and/or modify
@@ -15,12 +15,13 @@
  You should have received a copy of the GNU General Public License
  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
  */
+package org.akraievoy.holonet.exp.store;
 
-package org.akraievoy.base.runner;
+import java.io.IOException;
+import java.io.InputStream;
 
-/**
- * LATER add javadocs for a class created by ak
- */
-public interface ContainerStopper {
-  void forceStop();
+public interface Streamable {
+  InputStream createStream();
+
+  Streamable fromStream(InputStream in) throws IOException;
 }

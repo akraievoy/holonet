@@ -16,11 +16,12 @@
  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.akraievoy.base.runner.api;
+package org.akraievoy.holonet.exp;
 
 import com.google.common.base.Throwables;
 import org.akraievoy.base.Format;
 import org.akraievoy.base.ref.Ref;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,8 +36,8 @@ public class ExperimentTiming implements Runnable {
   protected final int durationReportThresh = 10000;
 
   protected Runnable wrapped;
-  protected Ref<Long> durationRef = new RefLong();
-  protected Ref<String> durationTextRef = new RefString();
+  protected Ref<Long> durationRef = new RefObject<Long>();
+  protected Ref<String> durationTextRef = new RefObject<String>();
 
   public ExperimentTiming(Runnable wrapped) {
     this.wrapped = wrapped;

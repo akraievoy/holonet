@@ -21,14 +21,14 @@ package algores.holonet.core.events;
 import algores.holonet.core.Network;
 import algores.holonet.core.SimulatorException;
 import org.akraievoy.base.ref.Ref;
-import org.akraievoy.base.runner.api.RefLong;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 /**
  * Adding a data entry to a node.
  */
 public class EventNetPutEntry extends Event<EventNetPutEntry> {
-  protected Ref<Long> count = new RefLong(1);
+  protected Ref<Long> count = new RefObject<Long>(1L);
 
   public void setCountRef(final Ref<Long> countRef) {
     this.count = countRef;

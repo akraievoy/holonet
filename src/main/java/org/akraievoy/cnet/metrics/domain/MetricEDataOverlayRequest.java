@@ -19,9 +19,9 @@
 package org.akraievoy.cnet.metrics.domain;
 
 import org.akraievoy.base.ref.RefRO;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.metrics.api.MetricEData;
-import org.akraievoy.cnet.net.ref.RefVertexData;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataFactory;
 import org.akraievoy.cnet.net.vo.VertexData;
@@ -29,7 +29,7 @@ import org.akraievoy.cnet.net.vo.VertexData;
 public class MetricEDataOverlayRequest extends MetricEData {
   protected final EntropySource eSource;
 
-  protected RefRO<VertexData> source = RefVertexData.forPath("density");
+  protected RefRO<VertexData> source = new RefObject<VertexData>();
 
   protected double phi = 0.25;
   protected double psi = 0.75;

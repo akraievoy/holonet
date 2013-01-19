@@ -16,25 +16,27 @@
  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.akraievoy.base.runner.domain.spring;
+package org.akraievoy.holonet.exp.store;
 
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.AbstractXmlApplicationContext;
-import org.springframework.core.io.Resource;
+import org.akraievoy.base.ref.Ref;
 
-public class StringXmlApplicationContext extends AbstractXmlApplicationContext {
-  protected Resource[] resources;
+public class RefObject<T> implements Ref<T> {
+  private T value;
 
-  public StringXmlApplicationContext(final String xmlSource, final boolean refresh, ApplicationContext parent) {
-    super(parent);
-    resources = new Resource[]{new StringResource(xmlSource)};
-    if (refresh) {
-      refresh();
-    }
+  public RefObject() {
   }
 
-  protected Resource[] getConfigResources() {
-    return resources;
+  public RefObject(T value) {
+    this.value = value;
+  }
+
+  @Override
+  public void setValue(T value) {
+    this.value = value;
+  }
+
+  @Override
+  public T getValue() {
+    return value;
   }
 }
-

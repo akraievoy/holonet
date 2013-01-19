@@ -19,8 +19,8 @@
 package org.akraievoy.cnet.metrics.domain;
 
 import junit.framework.TestCase;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataFactory;
 
@@ -43,7 +43,7 @@ public class ScalarEigenGapTest extends TestCase {
     netEData.set(1, 0, 1.0);
 
     final MetricScalarEigenGap metric = new MetricScalarEigenGap();
-    metric.setSource(new RefEdgeData(netEData));
+    metric.setSource(new RefObject<EdgeData>(netEData));
 
     final double v = (Double) MetricResultFetcher.fetch(metric);
 
@@ -59,7 +59,7 @@ public class ScalarEigenGapTest extends TestCase {
     netEData.set(3, 4, 1.0);
 
     final MetricScalarEigenGap metric = new MetricScalarEigenGap();
-    metric.setSource(new RefEdgeData(netEData));
+    metric.setSource(new RefObject<EdgeData>(netEData));
 
     final double v = (Double) MetricResultFetcher.fetch(metric);
 

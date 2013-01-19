@@ -19,13 +19,12 @@
 package org.akraievoy.cnet.metrics.domain;
 
 import org.akraievoy.base.ref.RefRO;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.metrics.api.MetricEData;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
-import org.akraievoy.cnet.net.vo.RefKeys;
 
 public class MetricEDataRenorm extends MetricEData {
-  protected RefRO<EdgeData> source = RefEdgeData.forPath(RefKeys.LAYER_STRUCTURE);
+  protected RefRO<EdgeData> source = new RefObject<EdgeData>();
 
   protected double min = 0.0;
   protected double max = 1.0;

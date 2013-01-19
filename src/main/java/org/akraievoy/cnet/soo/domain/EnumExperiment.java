@@ -21,13 +21,12 @@ package org.akraievoy.cnet.soo.domain;
 import org.akraievoy.base.Format;
 import org.akraievoy.base.ObjArrays;
 import org.akraievoy.base.ref.Ref;
-import org.akraievoy.base.runner.api.*;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.EntropySourceRandom;
 import org.akraievoy.cnet.metrics.domain.MetricScalarEigenGap;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataFactory;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.holonet.exp.store.StoreLens;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,17 +34,16 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Map;
 
 public class EnumExperiment implements Runnable {
   private static final Logger log = LoggerFactory.getLogger(EnumExperiment.class);
 
   protected static final double MAX_EVALS = 1e6;
 
-  protected Ref<Long> sizeRef = new RefLong(8);
-  protected Ref<Double> thetaRef = new RefDouble(1.5);
-  protected Ref<Double> thetaTildeRef = new RefDouble(1);
-  protected Ref<Double> lambdaRef = new RefDouble(0.2);
+  protected Ref<Long> sizeRef = new RefObject<Long>(8L);
+  protected Ref<Double> thetaRef = new RefObject<Double>(1.5);
+  protected Ref<Double> thetaTildeRef = new RefObject<Double>(1.0);
+  protected Ref<Double> lambdaRef = new RefObject<Double>(0.2);
   protected EntropySource evalSource = new EntropySourceRandom();
   protected static final int TIME_THROTTLE_RANGE = -8192;
 
@@ -125,7 +123,7 @@ public class EnumExperiment implements Runnable {
     final EdgeData eData = EdgeDataFactory.dense(true, 0, size);
     final MetricScalarEigenGap mseg = new MetricScalarEigenGap();
 
-    mseg.setSource(new RefEdgeData(eData));
+    mseg.setSource(new RefObject<EdgeData>(eData));
 
     final long firstStatus = System.currentTimeMillis();
     long lastStatus = firstStatus;

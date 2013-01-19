@@ -20,13 +20,12 @@ package org.akraievoy.cnet.metrics.api;
 
 import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.ref.RefRO;
-import org.akraievoy.base.runner.api.RefObject;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.Routes;
 
 public abstract class MetricRoutes extends Metric<Routes> {
-  @SuppressWarnings({"unchecked"})
-  public Ref<Routes> target = (Ref) new RefObject();
+  public Ref<Routes> target = new RefObject<Routes>();
 
   public void setTarget(Ref<Routes> target) {
     this.target = target;

@@ -18,7 +18,7 @@
 
 package org.akraievoy.cnet.gen.vo;
 
-import org.akraievoy.base.runner.api.RefLong;
+import org.akraievoy.base.ref.Ref;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +38,7 @@ public class EntropySourceRandom implements EntropySource {
     this.random = new Random();
   }
 
-  public void setSeedRef(final RefLong seed) {
+  public void setSeedRef(final Ref<Long> seed) {
     setSeed(seed.getValue());
     consumed = 0;
   }

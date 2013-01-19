@@ -19,16 +19,15 @@
 package org.akraievoy.cnet.metrics.domain;
 
 import org.akraievoy.base.ref.RefRO;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.metrics.api.MetricStat;
 import org.akraievoy.cnet.metrics.vo.Stat;
 import org.akraievoy.cnet.metrics.vo.StatImpl;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
-import org.akraievoy.cnet.net.vo.RefKeys;
 
 public class MetricStatLengths extends MetricStat {
-  protected RefRO<EdgeData> source = RefEdgeData.forPath(RefKeys.LAYER_STRUCTURE);
-  protected RefRO<EdgeData> distSource = RefEdgeData.forPath(RefKeys.LAYER_STRUCTURE);
+  protected RefRO<EdgeData> source = new RefObject<EdgeData>();
+  protected RefRO<EdgeData> distSource = new RefObject<EdgeData>();
 
   public String getName() {
     return "Degree Distribution";

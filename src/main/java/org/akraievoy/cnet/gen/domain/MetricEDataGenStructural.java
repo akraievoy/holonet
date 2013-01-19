@@ -20,10 +20,8 @@ package org.akraievoy.cnet.gen.domain;
 
 import org.akraievoy.base.Die;
 import org.akraievoy.cnet.metrics.api.MetricEData;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataFactory;
-import org.akraievoy.cnet.net.vo.RefKeys;
 
 import java.util.BitSet;
 
@@ -47,9 +45,6 @@ public class MetricEDataGenStructural extends MetricEData {
   public MetricEDataGenStructural(String type, int netNodeNum) {
     this.netNodeNum = netNodeNum;
     this.type = type;
-    if (target instanceof RefEdgeData) {
-      ((RefEdgeData) target).setPath(RefKeys.LAYER_STRUCTURE);
-    }
   }
 
   public MetricEDataGenStructural(String type) {

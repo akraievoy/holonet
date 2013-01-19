@@ -19,9 +19,9 @@
 package org.akraievoy.cnet.soo.domain;
 
 import org.akraievoy.base.Die;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.metrics.domain.MetricScalarEigenGap;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataFactory;
 import org.akraievoy.cnet.opt.api.GeneticStrategy;
@@ -71,7 +71,7 @@ public class SeedSourceHeuristic implements SeedSource<GenomeSoo> {
     }
 
     final MetricScalarEigenGap eigenGapScalar = new MetricScalarEigenGap();
-    eigenGapScalar.setSource(new RefEdgeData(solution));
+    eigenGapScalar.setSource(new RefObject<EdgeData>(solution));
     final double eigenGap = (Double) MetricResultFetcher.fetch(eigenGapScalar);
     log.info("seed eigengap = {}", eigenGap);
 

@@ -20,7 +20,6 @@ package org.akraievoy.cnet.net.vo;
 
 import com.google.common.io.Closeables;
 import gnu.trove.TIntArrayList;
-import org.akraievoy.db.Streamable;
 
 import static org.akraievoy.cnet.net.vo.StoreUtils.*;
 

@@ -19,10 +19,9 @@
 package org.akraievoy.cnet.metrics.domain;
 
 import org.akraievoy.base.ref.RefRO;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.metrics.api.MetricScalar;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
-import org.akraievoy.cnet.net.vo.RefKeys;
 
 public class MetricScalarEffectiveness extends MetricScalar {
   protected double minThresh = 1e-9;
@@ -30,8 +29,8 @@ public class MetricScalarEffectiveness extends MetricScalar {
 
   protected double pow = -1;
 
-  protected RefRO<EdgeData> weightSource = new RefEdgeData();
-  protected RefRO<EdgeData> source = RefEdgeData.forPath(RefKeys.LAYER_STRUCTURE);
+  protected RefRO<EdgeData> weightSource = new RefObject<EdgeData>();
+  protected RefRO<EdgeData> source = new RefObject<EdgeData>();
 
   public String getName() {
     return "Effectiveness";

@@ -21,8 +21,6 @@ package org.akraievoy.holonet.exp.data
 import org.akraievoy.holonet.exp._
 import org.akraievoy.cnet.gen.vo.EntropySourceRandom
 import org.akraievoy.cnet.gen.domain.LocationGeneratorRecursive
-import org.akraievoy.holonet.runner.dlaGenTest.LocationGeneratorImages
-import org.akraievoy.base.runner.api.ExperimentTiming
 
 object DlaGenImages {
   import java.lang.{

@@ -20,13 +20,12 @@ package org.akraievoy.cnet.metrics.domain;
 
 import org.akraievoy.base.Format;
 import org.akraievoy.base.ref.RefRO;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.metrics.api.MetricVData;
-import org.akraievoy.cnet.net.ref.RefVertexData;
-import org.akraievoy.cnet.net.vo.RefKeys;
 import org.akraievoy.cnet.net.vo.VertexData;
 
 public class MetricVDataLogScale extends MetricVData {
-  protected RefRO<VertexData> source = RefVertexData.forPath(RefKeys.LAYER_STRUCTURE);
+  protected RefRO<VertexData> source = new RefObject<VertexData>();
 
   protected double base = 2;
   protected double invalid = 0;

@@ -19,14 +19,13 @@
 package org.akraievoy.cnet.metrics.domain;
 
 import org.akraievoy.base.ref.RefRO;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.metrics.api.MetricVData;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
-import org.akraievoy.cnet.net.vo.RefKeys;
 import org.akraievoy.cnet.net.vo.VertexData;
 
 public class MetricVDataPowers extends MetricVData {
-  protected RefRO<EdgeData> source = RefEdgeData.forPath(RefKeys.LAYER_STRUCTURE);
+  protected RefRO<EdgeData> source = new RefObject<EdgeData>();
 
   public String getName() {
     return "Degrees";

@@ -21,9 +21,7 @@ package algores.holonet.testbench;
 import algores.holonet.core.Network;
 import algores.holonet.core.events.Event;
 import org.akraievoy.base.ref.Ref;
-import org.akraievoy.base.runner.api.Context;
-import org.akraievoy.base.runner.api.ContextInjectable;
-import org.akraievoy.base.runner.api.RefLong;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.vo.EntropySourceRandom;
 import org.akraievoy.holonet.exp.store.StoreLens;
 
@@ -46,8 +44,8 @@ public class Testbench implements Runnable {
   private List<Snapshot> snapshots = new ArrayList<Snapshot>();
 
   private StoreLens<Double> reportLens;
-  private Ref<Long> initSeedRef = new RefLong(123456);
-  private Ref<Long> runSeedRef = new RefLong(654321);
+  private Ref<Long> initSeedRef = new RefObject<Long>(123456L);
+  private Ref<Long> runSeedRef = new RefObject<Long>(654321L);
 
   private EntropySourceRandom initEntropySource = new EntropySourceRandom();
   private EntropySourceRandom runEntropySource = new EntropySourceRandom();

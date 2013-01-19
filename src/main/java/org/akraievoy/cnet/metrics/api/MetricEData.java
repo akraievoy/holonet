@@ -19,11 +19,11 @@
 package org.akraievoy.cnet.metrics.api;
 
 import org.akraievoy.base.ref.Ref;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.net.vo.EdgeData;
 
 public abstract class MetricEData extends Metric<EdgeData> {
-  protected Ref<EdgeData> target = new RefEdgeData();
+  protected Ref<EdgeData> target = new RefObject<EdgeData>();
 
   public void setTarget(Ref<EdgeData> target) {
     this.target = target;

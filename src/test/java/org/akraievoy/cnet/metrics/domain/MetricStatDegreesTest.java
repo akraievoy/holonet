@@ -19,9 +19,9 @@
 package org.akraievoy.cnet.metrics.domain;
 
 import junit.framework.TestCase;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.metrics.vo.Histogram;
 import org.akraievoy.cnet.metrics.vo.Stat;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataFactory;
 
@@ -40,7 +40,7 @@ public class MetricStatDegreesTest extends TestCase {
     }
 
     final MetricStatDegrees msd = new MetricStatDegrees();
-    msd.setSource(new RefEdgeData(edgeData));
+    msd.setSource(new RefObject<EdgeData>(edgeData));
 
     msd.run();
 

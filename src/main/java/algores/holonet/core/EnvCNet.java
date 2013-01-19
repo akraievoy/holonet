@@ -25,13 +25,13 @@ import algores.holonet.core.api.Range;
 import com.google.common.base.Optional;
 import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.ref.RefRO;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.WeightedEventModel;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelBase;
 import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.metrics.domain.MetricEDataRouteLen;
 import org.akraievoy.cnet.metrics.domain.MetricRoutesFloydWarshall;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.IndexCodec;
 import org.akraievoy.cnet.net.vo.VertexData;
@@ -52,7 +52,7 @@ public class EnvCNet implements Env {
   protected Ref<? extends EdgeData> dist;
   protected Ref<? extends EdgeData> req;
   protected Ref<? extends EdgeData> overlay;
-  protected Ref<EdgeData> overlayDist = new RefEdgeData();
+  protected Ref<EdgeData> overlayDist = new RefObject<EdgeData>();
   protected double overlayDistDiameter;
 
   protected WeightedEventModel nodeModel = new WeightedEventModelBase(Optional.of("nodes"));

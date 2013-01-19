@@ -22,15 +22,12 @@ import com.google.common.base.Optional;
 import org.akraievoy.base.Die;
 import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.ref.RefRO;
-import org.akraievoy.base.runner.api.Context;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.WeightedEventModel;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelBase;
 import org.akraievoy.cnet.metrics.api.MetricVData;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
-import org.akraievoy.cnet.net.ref.RefVertexData;
 import org.akraievoy.cnet.net.vo.EdgeData;
-import org.akraievoy.cnet.net.vo.RefKeys;
 import org.akraievoy.cnet.net.vo.VertexData;
 
 import java.util.HashMap;
@@ -38,9 +35,8 @@ import java.util.Map;
 
 public class OverlayNetFactory extends MetricVData {
   protected final EntropySource eSource;
-  protected Context ctx;
 
-  protected RefRO<EdgeData> source = RefEdgeData.forPath(RefKeys.LAYER_STRUCTURE);
+  protected RefRO<EdgeData> source = new RefObject<EdgeData>();
   protected Map<RefRO<EdgeData>, Ref<EdgeData>> edgeDataMap = new HashMap<RefRO<EdgeData>, Ref<EdgeData>>();
   protected Map<RefRO<VertexData>, Ref<VertexData>> vertexDataMap = new HashMap<RefRO<VertexData>, Ref<VertexData>>();
 
@@ -49,9 +45,6 @@ public class OverlayNetFactory extends MetricVData {
 
   public OverlayNetFactory(EntropySource eSource) {
     this.eSource = eSource;
-    if (target instanceof RefVertexData) {
-      ((RefVertexData) target).setPath(RefKeys.LAYER_INDEX);
-    }
   }
 
   @Override
@@ -139,9 +132,5 @@ public class OverlayNetFactory extends MetricVData {
       final Ref<EdgeData> targetRef = edgeDataMap.get(sourceRef);
       targetRef.setValue(vNodeEData);
     }
-  }
-
-  public void setCtx(Context ctx) {
-    this.ctx = ctx;
   }
 }

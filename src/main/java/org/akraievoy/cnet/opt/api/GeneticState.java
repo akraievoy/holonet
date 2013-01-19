@@ -153,14 +153,18 @@ public class GeneticState {
         }
     );
 
-    final StoreLens<Double> reportLens =
-        generationLens.forTypeName(
-            Double.class,
-            generationLens.paramName()+"-report"
-        );
-    reportLens.forName(keyPrefix + ".fitnessDev").set(getFitnessDeviation());
-    reportLens.forName(keyPrefix + ".completeness").set(getCompleteness());
-    reportLens.forName(keyPrefix + ".similarityMean").set(getSimilarityMean());
+    final StoreLens<Double> reportLens;
+    if (generationLens != null) {
+      reportLens = generationLens.forTypeName(
+          Double.class,
+          generationLens.paramName()+"-report"
+      );
+      reportLens.forName(keyPrefix + ".fitnessDev").set(getFitnessDeviation());
+      reportLens.forName(keyPrefix + ".completeness").set(getCompleteness());
+      reportLens.forName(keyPrefix + ".similarityMean").set(getSimilarityMean());
+    } else {
+      reportLens = null;
+    }
 
     minElemFitness = (1 - completeness) * similarityMean * minElemFitnessNorm;
     elemFitPow = 1 + Math.ceil(2 * fitnessDev * (maxElemFitPow - 1)) / 2;
@@ -177,9 +181,11 @@ public class GeneticState {
         }
     );
 
-    reportLens.forName(keyPrefix + ".minElemFitness").set(getMinElemFitness());
-    reportLens.forName(keyPrefix + ".elemFitPow").set(getElemFitPow());
-    reportLens.forName(keyPrefix + ".crossover").set(getCrossoverRatio());
-    reportLens.forName(keyPrefix + ".mutate").set(getMutateRatio());
+    if (reportLens != null) {
+      reportLens.forName(keyPrefix + ".minElemFitness").set(getMinElemFitness());
+      reportLens.forName(keyPrefix + ".elemFitPow").set(getElemFitPow());
+      reportLens.forName(keyPrefix + ".crossover").set(getCrossoverRatio());
+      reportLens.forName(keyPrefix + ".mutate").set(getMutateRatio());
+    }
   }
 }

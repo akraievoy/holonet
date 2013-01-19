@@ -19,20 +19,19 @@
 package org.akraievoy.cnet.metrics.domain;
 
 import org.akraievoy.base.ref.Ref;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.LocationGenerator;
 import org.akraievoy.cnet.gen.vo.Point;
 import org.akraievoy.cnet.metrics.api.MetricVData;
-import org.akraievoy.cnet.net.ref.RefVertexData;
-import org.akraievoy.cnet.net.vo.RefKeys;
 import org.akraievoy.cnet.net.vo.VertexData;
 
 public class MetricVDataLocation extends MetricVData {
   protected final EntropySource eSource;
   protected final LocationGenerator locationGenerator;
 
-  protected Ref<VertexData> targetX = RefVertexData.forPath(RefKeys.LAYER_LOCATION + ".x");
-  protected Ref<VertexData> targetY = RefVertexData.forPath(RefKeys.LAYER_LOCATION + ".y");
+  protected Ref<VertexData> targetX = new RefObject<VertexData>();
+  protected Ref<VertexData> targetY = new RefObject<VertexData>();
 
   protected int nodes = 120;
 

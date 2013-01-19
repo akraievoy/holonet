@@ -19,7 +19,7 @@
 package org.akraievoy.cnet.net.vo;
 
 import com.google.common.io.Closeables;
-import org.akraievoy.db.Streamable;
+import org.akraievoy.holonet.exp.store.Streamable;
 
 import java.io.IOException;
 import java.io.InputStream;

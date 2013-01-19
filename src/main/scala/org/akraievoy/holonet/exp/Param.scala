@@ -18,14 +18,14 @@
 
 package org.akraievoy.holonet.exp
 
-import org.akraievoy.base.runner.vo.Parameter
+import org.akraievoy.holonet.exp
 
 case class Param(
   name: String,
   mt: Manifest[_ <: Any],
   valueSpec: Seq[String],
-  strategy: Parameter.Strategy,
-  chainStrategy: Parameter.Strategy,
+  strategy: Strategy.Value,
+  chainStrategy: Strategy.Value,
   desc: String,
   index: Int
 ) extends Named {
@@ -40,11 +40,11 @@ case class Param(
   ): Seq[ParamPos] = {
     val fullSeq = fullPosSeq(chained, expIndex)
     actualStrategy(chained) match {
-      case Parameter.Strategy.USE_FIRST =>
+      case exp.Strategy.USE_FIRST =>
         Seq(fullSeq.head)
-      case Parameter.Strategy.USE_LAST =>
+      case exp.Strategy.USE_LAST =>
         Seq(fullSeq.last)
-      case anyFull if Parameter.Strategy.full(anyFull) =>
+      case anyFull if exp.Strategy.full(anyFull) =>
         fullSeq
       case other =>
         throw new IllegalArgumentException(
@@ -70,9 +70,9 @@ case class Param(
   }
 
   def isParallel(chained: Boolean = false) =
-    actualStrategy(chained) != Parameter.Strategy.ITERATE
+    actualStrategy(chained) != exp.Strategy.ITERATE
 
-  def actualStrategy(chained: Boolean = false): Parameter.Strategy =
+  def actualStrategy(chained: Boolean = false): Strategy.Value =
     if (chained) {
       chainStrategy
     } else {
@@ -84,8 +84,8 @@ object Param{
   def apply[T](
     paramName: ParamName[T],
     singleValueSpec: String,
-    strategy: Parameter.Strategy = Parameter.Strategy.SPAWN,
-    chainStrategy: Parameter.Strategy = Parameter.Strategy.SPAWN,
+    strategy: Strategy.Value = exp.Strategy.SPAWN,
+    chainStrategy: Strategy.Value = exp.Strategy.SPAWN,
     desc: String = ""
   ) = {
     val valueSpec =

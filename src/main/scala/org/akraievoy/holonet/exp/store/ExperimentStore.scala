@@ -18,7 +18,6 @@
 
 package org.akraievoy.holonet.exp.store
 
-import org.akraievoy.db.Streamable
 import java.io._
 import scalaz.Lens
 import org.akraievoy.cnet.net.vo._

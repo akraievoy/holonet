@@ -23,18 +23,14 @@ import org.akraievoy.cnet.gen.vo.{ConnPreferenceYookJeongBarabasi, MetricEuclide
 import org.akraievoy.cnet.gen.domain.{OverlayNetFactory, MetricEDataGenStructural, LocationGeneratorRecursive}
 import org.akraievoy.cnet.net.vo.{EdgeDataDense, EdgeDataSparse, VertexData, EdgeData}
 import org.akraievoy.cnet.metrics.domain._
-import org.akraievoy.base.runner.domain.RunnableComposite
 import scala.collection.JavaConversions._
 import org.akraievoy.base.ref.{RefRO, Ref}
 import org.akraievoy.holonet.exp.store.StoreLens
-import org.akraievoy.base.runner.vo.Parameter.Strategy
 import org.akraievoy.cnet.opt.api._
 import org.akraievoy.cnet.soo.domain._
 import org.akraievoy.cnet.opt.domain.ExperimentGeneticOpt
 import org.akraievoy.holonet.exp.store.StoreLens
 import org.akraievoy.holonet.exp.store.StoreLens
-import org.akraievoy.base.runner.api.ExperimentTiming
-import scala.Some
 import store.StoreLens
 
 object OverlayGO {

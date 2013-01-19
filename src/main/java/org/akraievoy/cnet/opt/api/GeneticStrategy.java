@@ -18,7 +18,6 @@
 
 package org.akraievoy.cnet.opt.api;
 
-import org.akraievoy.base.runner.api.Context;
 import org.akraievoy.cnet.opt.domain.FitnessKey;
 import org.akraievoy.holonet.exp.store.StoreLens;
 

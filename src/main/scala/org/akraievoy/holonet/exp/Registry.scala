@@ -173,6 +173,7 @@ object Registry extends RegistryData with Exports with ParamSpaceNav {
         runChain :+ expStore
     }
 
+    //  LATER port smoke testing
     //  FIXME PROCEED on-completion triggers
     log.info("chain complete")
   }

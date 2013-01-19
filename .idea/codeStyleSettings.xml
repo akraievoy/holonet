@@ -19,11 +19,6 @@
         </option>
         <option name="RIGHT_MARGIN" value="80" />
         <option name="KEEP_SIMPLE_METHODS_IN_ONE_LINE" value="true" />
-        <ScalaCodeStyleSettings>
-          <option name="METHOD_BRACE_FORCE" value="1" />
-          <option name="NOT_CONTINUATION_INDENT_FOR_PARAMS" value="true" />
-          <option name="SPACE_BEFORE_BRACE_METHOD_CALL" value="false" />
-        </ScalaCodeStyleSettings>
         <XML>
           <option name="XML_LEGACY_SETTINGS_IMPORTED" value="true" />
         </XML>

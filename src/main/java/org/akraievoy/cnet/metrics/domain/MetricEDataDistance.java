@@ -19,12 +19,11 @@
 package org.akraievoy.cnet.metrics.domain;
 
 import org.akraievoy.base.ref.RefRO;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.vo.Point;
 import org.akraievoy.cnet.metrics.api.MetricEData;
-import org.akraievoy.cnet.net.ref.RefVertexData;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataFactory;
-import org.akraievoy.cnet.net.vo.RefKeys;
 import org.akraievoy.cnet.net.vo.VertexData;
 
 public class MetricEDataDistance extends MetricEData {
@@ -32,8 +31,8 @@ public class MetricEDataDistance extends MetricEData {
 
   protected boolean symmetric = false;
 
-  protected RefRO<VertexData> sourceX = RefVertexData.forPath(RefKeys.LAYER_LOCATION + ".x");
-  protected RefRO<VertexData> sourceY = RefVertexData.forPath(RefKeys.LAYER_LOCATION + ".y");
+  protected RefRO<VertexData> sourceX = new RefObject<VertexData>();
+  protected RefRO<VertexData> sourceY = new RefObject<VertexData>();
 
   public MetricEDataDistance(final org.akraievoy.cnet.gen.vo.Metric metric) {
     this.metric = metric;

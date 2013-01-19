@@ -18,8 +18,6 @@
 
 package org.akraievoy.cnet.net.vo;
 
-import org.akraievoy.db.Streamable;
-
 import java.io.IOException;
 import java.io.InputStream;
 

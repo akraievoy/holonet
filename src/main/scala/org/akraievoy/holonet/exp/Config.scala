@@ -59,11 +59,11 @@ case class Config(
   def withDefault(dflt: Config) = {
     copy(
       params = dflt.params.foldLeft(params){
-        case (params, (paramName, param)) =>
-          if (params.contains(paramName)) {
-            params
+        case (params0, (paramName, param)) =>
+          if (params0.contains(paramName)) {
+            params0
           } else {
-            params.updated(paramName, param)
+            params0.updated(paramName, param)
           }
       }
     )

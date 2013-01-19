@@ -20,21 +20,20 @@ package org.akraievoy.cnet.metrics.domain;
 
 import com.google.common.base.Optional;
 import org.akraievoy.base.ref.RefRO;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.vo.ConnPreference;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.WeightedEventModel;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelBase;
 import org.akraievoy.cnet.metrics.api.MetricEData;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
-import org.akraievoy.cnet.net.vo.RefKeys;
 
 public class MetricEDataStructure extends MetricEData {
   protected final ConnPreference preference;
   protected final EntropySource eSource;
 
-  protected RefRO<EdgeData> distSource = RefEdgeData.forPath(RefKeys.LAYER_DISTANCE);
-  protected RefRO<EdgeData> structureSource = RefEdgeData.forPath(RefKeys.LAYER_STRUCTURE);
+  protected RefRO<EdgeData> distSource = new RefObject<EdgeData>();
+  protected RefRO<EdgeData> structureSource = new RefObject<EdgeData>();
   protected int baseDegree = 3;
 
   public MetricEDataStructure(final ConnPreference preference, EntropySource eSource) {

@@ -19,12 +19,12 @@
 package org.akraievoy.cnet.metrics.api;
 
 import org.akraievoy.base.ref.Ref;
-import org.akraievoy.base.runner.api.RefObject;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.metrics.vo.Stat;
 
 public abstract class MetricStat extends Metric<Stat> {
   @SuppressWarnings({"unchecked"})
-  protected Ref<Stat> target = (Ref) new RefObject();
+  protected Ref<Stat> target = new RefObject<Stat>();
 
   public void setTarget(Ref<Stat> target) {
     this.target = target;

@@ -19,10 +19,10 @@
 package org.akraievoy.cnet.metrics.api;
 
 import org.akraievoy.base.ref.Ref;
-import org.akraievoy.base.runner.api.RefDouble;
+import org.akraievoy.holonet.exp.store.RefObject;
 
 public abstract class MetricScalar extends Metric<Double> {
-  protected Ref<Double> target = new RefDouble(0.0);
+  protected Ref<Double> target = new RefObject<Double>(0.0);
 
   public void setTarget(Ref<Double> target) {
     this.target = target;

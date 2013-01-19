@@ -19,11 +19,11 @@
 package org.akraievoy.cnet.metrics.api;
 
 import org.akraievoy.base.ref.Ref;
-import org.akraievoy.cnet.net.ref.RefVertexData;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.net.vo.VertexData;
 
 public abstract class MetricVData extends Metric<VertexData> {
-  protected Ref<VertexData> target = new RefVertexData();
+  protected Ref<VertexData> target = new RefObject<VertexData>();
 
   public void setTarget(Ref<VertexData> target) {
     this.target = target;

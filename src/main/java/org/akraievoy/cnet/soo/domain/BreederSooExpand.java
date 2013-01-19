@@ -18,10 +18,10 @@
 
 package org.akraievoy.cnet.soo.domain;
 
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.metrics.domain.MetricEDataVertexDiff;
 import org.akraievoy.cnet.metrics.domain.MetricVDataEigenGap;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.stat.domain.MedianClustering;
 
@@ -43,7 +43,7 @@ public class BreederSooExpand extends BreederSoo {
   protected EdgeData buildLinkFitness(GeneticStrategySoo strategySoo, GenomeSoo child) {
     final EdgeData linkFitness;
 
-    metricVDataEigenGap.setSource(new RefEdgeData(child.getSolution()));
+    metricVDataEigenGap.setSource(new RefObject<EdgeData>(child.getSolution()));
     linkFitness = (EdgeData) MetricResultFetcher.fetch(metricEDataVertexDiff);
 
     return linkFitness;

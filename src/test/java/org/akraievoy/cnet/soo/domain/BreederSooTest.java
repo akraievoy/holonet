@@ -19,9 +19,9 @@
 package org.akraievoy.cnet.soo.domain;
 
 import junit.framework.TestCase;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.vo.EntropySourceRandom;
 import org.akraievoy.cnet.metrics.domain.MetricRoutesFloydWarshall;
-import org.akraievoy.cnet.net.ref.RefEdgeData;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataDense;
 import org.akraievoy.cnet.opt.api.GeneticState;
@@ -57,8 +57,8 @@ public class BreederSooTest extends TestCase {
     }
 
     strategy = new GeneticStrategySoo(new MetricRoutesFloydWarshall());
-    strategy.setDistSource(new RefEdgeData(dist));
-    strategy.setRequestSource(new RefEdgeData(req));
+    strategy.setDistSource(new RefObject<EdgeData>(dist));
+    strategy.setRequestSource(new RefObject<EdgeData>(req));
     strategy.setTheta(1);
 
     state = new GeneticState();

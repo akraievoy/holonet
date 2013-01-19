@@ -19,7 +19,7 @@
 package algores.holonet.core.events;
 
 import org.akraievoy.base.ref.Ref;
-import org.akraievoy.base.runner.api.RefLong;
+import org.akraievoy.holonet.exp.store.RefObject;
 
 /**
  * Composite event consisting of repetitions of nested event.
@@ -27,7 +27,7 @@ import org.akraievoy.base.runner.api.RefLong;
 public class EventCompositeLoop extends EventComposite<EventCompositeLoop> {
   private final Event nestedEvent;
   int currentLoop;
-  Ref<Long> count = new RefLong(1);
+  Ref<Long> count = new RefObject<Long>(1L);
 
   public EventCompositeLoop(final Event<?> newNestedEvent) {
     nestedEvent = newNestedEvent;

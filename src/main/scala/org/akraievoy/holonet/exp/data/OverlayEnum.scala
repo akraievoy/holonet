@@ -21,7 +21,6 @@ package org.akraievoy.holonet.exp.data
 import org.akraievoy.holonet.exp._
 import org.akraievoy.cnet.gen.vo.EntropySourceRandom
 import org.akraievoy.cnet.soo.domain.EnumExperiment
-import org.akraievoy.base.runner.vo.Parameter.Strategy
 
 object OverlayEnum {
   import java.lang.{

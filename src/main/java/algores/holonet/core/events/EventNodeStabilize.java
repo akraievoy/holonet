@@ -21,14 +21,14 @@ package algores.holonet.core.events;
 import algores.holonet.core.CommunicationException;
 import algores.holonet.core.Network;
 import org.akraievoy.base.ref.Ref;
-import org.akraievoy.base.runner.api.RefLong;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 /**
  * Node stabilize event.
  */
 public class EventNodeStabilize extends Event<EventNodeStabilize> {
-  protected Ref<Long> count = new RefLong(1);
+  protected Ref<Long> count = new RefObject<Long>(1L);
 
   public void setCountRef(Ref<Long> nodeCount) {
     this.count = nodeCount;
