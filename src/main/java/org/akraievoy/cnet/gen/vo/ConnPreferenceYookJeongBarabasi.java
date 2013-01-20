@@ -38,11 +38,24 @@ public class ConnPreferenceYookJeongBarabasi implements ConnPreference {
     this.beta = beta;
   }
 
-  public double getPreference(double degree, double dist) {
-    if (dist <= 0) {
-      return 0;
-    }
+/*
+  int sampler = 0;
+*/
 
-    return Math.pow(degree, alpha) / Math.pow(dist, beta);
+  public double getPreference(double degree, double dist) {
+    if (dist < 0) {
+      throw new IllegalArgumentException("dist < 0");
+    }
+    if (dist == 0) {
+      return Math.pow(degree, alpha);
+    }
+    final double pref = Math.pow(degree, alpha) / Math.pow(dist, beta);
+/*
+    if (sampler == 0) {
+      System.out.println("dist = " + dist + " => " + pref);
+    }
+    sampler = (sampler + 1) % 16384;
+*/
+    return pref;
   }
 }

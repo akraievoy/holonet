@@ -107,7 +107,7 @@ public class WeightedEventModelRenorm extends WeightedEventModel {
     }
   }
 
-  protected void extendSums(double weight) {
+  protected void extendSums(int evtIndex, double weight) {
     Die.ifNotNull("sums", sums);
   }
 }

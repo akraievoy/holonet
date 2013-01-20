@@ -40,14 +40,14 @@ public class WeightedEventModelBase extends WeightedEventModel {
 
       prevSum = prevSum + w;
 
-      weights.set(i, w);
       sums.add(prevSum);
     }
   }
 
-  protected void extendSums(double weight) {
+  protected void extendSums(int evtIndex, double weight) {
     if (sums != null) {
-      sums.add(sums.get(sums.size() - 1) + weight);
+      sums.insert(evtIndex, 0);
+      increment(evtIndex, weight);
     }
   }
 }

@@ -6,8 +6,10 @@ import org.akraievoy.cnet.net.vo.{EdgeData, VertexData}
 import java.io._
 import com.google.common.io.ByteStreams
 import scala.Some
+import org.slf4j.LoggerFactory
 
 trait Exports extends ParamSpaceNav {
+  private val log = LoggerFactory.getLogger(classOf[RegistryData])
 
   def exportPrimitives(
     expStore: ExperimentStore,
@@ -306,7 +308,7 @@ trait Exports extends ParamSpaceNav {
                   if (graphvisExecutable) {
                     val dotProcess = new ProcessBuilder(
                       fullPathToDot,
-                      "-Knop", "-n2", "-Tpng", "-O", fileName
+                      "-Knop", "-n2", /*"-Tpng", */"-Tsvg", "-O", fileName
                     ).directory(file.getParentFile).redirectErrorStream(true).start()
 
                     //  LATER it's of course lame to keep logs
@@ -323,7 +325,8 @@ trait Exports extends ParamSpaceNav {
                   }
               }
         }, false
-        )
+      )
+      log.info("GraphVis export {} completed", export.desc)
     }
   }
 

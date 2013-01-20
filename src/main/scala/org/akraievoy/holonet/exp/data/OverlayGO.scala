@@ -25,12 +25,9 @@ import org.akraievoy.cnet.net.vo.{EdgeDataDense, EdgeDataSparse, VertexData, Edg
 import org.akraievoy.cnet.metrics.domain._
 import scala.collection.JavaConversions._
 import org.akraievoy.base.ref.{RefRO, Ref}
-import org.akraievoy.holonet.exp.store.StoreLens
 import org.akraievoy.cnet.opt.api._
 import org.akraievoy.cnet.soo.domain._
 import org.akraievoy.cnet.opt.domain.ExperimentGeneticOpt
-import org.akraievoy.holonet.exp.store.StoreLens
-import org.akraievoy.holonet.exp.store.StoreLens
 import store.StoreLens
 
 object OverlayGO {

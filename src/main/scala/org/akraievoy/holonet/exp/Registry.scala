@@ -26,7 +26,7 @@ import org.akraievoy.cnet.net.vo.{EdgeData, VertexData}
 import java.text.{NumberFormat, DecimalFormat}
 
 object Registry extends RegistryData with Exports with ParamSpaceNav {
-  val log = LoggerFactory.getLogger(classOf[RegistryData])
+  private val log = LoggerFactory.getLogger(classOf[RegistryData])
 
   lazy val expByName = experiments.groupBy(_.name).mapValues {
     expSeq =>

@@ -94,13 +94,15 @@ public abstract class WeightedEventModel {
   }
 
   public void add(int e, double weight) {
-    extendSums(weight);
+    final int insPoint = weights.binarySearch(weight);
+    final int evtIndex = insPoint < 0 ? -(insPoint + 1) : insPoint;
 
-    events.add(e);
-    weights.add(weight);
+    events.insert(evtIndex, e);
+    weights.insert(evtIndex, weight);
+    extendSums(evtIndex, weight);
   }
 
-  protected abstract void extendSums(double weight);
+  protected abstract void extendSums(int evtIndex, double weight);
 
   public void remove(int val) {
     final int searchIndex = sums.binarySearch(val);
@@ -129,7 +131,7 @@ public abstract class WeightedEventModel {
 
     weights.set(index, newWeight);
     for (int i = index; i < sums.size(); i++) {
-      sums.set(index, sums.get(index) + diff);
+      sums.set(i, sums.get(i) + diff);
     }
   }
 
