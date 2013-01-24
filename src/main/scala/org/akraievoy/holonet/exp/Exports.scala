@@ -2,7 +2,7 @@ package org.akraievoy.holonet.exp
 
 import store.{FileSystem, ExperimentStore}
 import java.text.{DecimalFormat, NumberFormat}
-import org.akraievoy.cnet.net.vo.{EdgeData, VertexData}
+import org.akraievoy.cnet.net.vo.{StoreUtils, EdgeData, VertexData}
 import java.io._
 import com.google.common.io.ByteStreams
 import scala.Some
@@ -17,6 +17,7 @@ trait Exports extends ParamSpaceNav {
     requiredIndexes: Set[Int],
     fs: FileSystem
   ) {
+    //  LATER looks like a type-name I've added for param names
     val primitives = expStore.primitives
     val axis = spaceAxis(subchain, requiredIndexes)
     val primitiveExport =
@@ -330,4 +331,68 @@ trait Exports extends ParamSpaceNav {
     }
   }
 
+  def exportStore(
+    expStore: ExperimentStore,
+    subchain: Seq[Registry.ExpConfPair],
+    requiredIndexes: Set[Int],
+    fs: FileSystem
+  ) = {
+    expStore.experiment.storeExports.foreach{
+      case (exportName, export) =>
+        val stores = export.paramNames
+        val axis = spaceAxis(subchain, requiredIndexes)
+        val storeExport =
+          Stream(
+            Seq("spacePos") ++ axis.map(_.name) ++ stores.map(_.name)
+          ) ++ spacePosMap(
+            subchain, requiredIndexes, expStore, {
+              runStore =>
+                val storeValues = stores.map(
+                  p =>
+                    expStore.get(p.name, runStore.spacePos)(p.mt).map {
+                      store =>
+                        for (pos <- 0 until store.size()) yield {
+                          StoreUtils.get(store, pos)
+                        }
+                    }
+                )
+
+                val maxLen = storeValues.foldLeft(0){
+                  (l,optSeq) => optSeq.map(_.length max l).getOrElse(l)
+                }
+                val storeValuesRect = storeValues.map{
+                  _.map{
+                    valueSeq =>
+                      valueSeq.map(String.valueOf) ++ (valueSeq.length until maxLen).map {idx => ""}
+                  }.getOrElse{
+                    (0 until maxLen).map{idx => ""}
+                  }
+                }
+
+                val posInt = ParamPos.pos(runStore.spacePos, requiredIndexes)
+                val rowHeader =
+                  Seq[String](String.valueOf(posInt)) ++
+                    axis.map(
+                      p =>
+                        expStore.get(p.name, runStore.spacePos)(p.mt).map(
+                          String.valueOf
+                        ).getOrElse("")
+                    )
+
+                storeValuesRect.transpose.map {
+                  row =>
+                    rowHeader ++ row
+                }
+            }, false
+          ).flatten
+
+        fs.dumpCSV(
+          expStore.uid,
+          "export/store_%s.csv".format(export.name),
+          Map.empty
+        )(storeExport)
+
+        log.info("Store export {} completed", export.desc)
+    }
+  }
 }

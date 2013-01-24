@@ -280,6 +280,16 @@ object OverlayGO {
       vertexCoordY = {rs => Some(rs.lens(physLocationY))},
       vertexRadius = {rs => Some(rs.lens(physDensity))}
     )
+  ).withStoreExport(
+    StoreExport(
+      "powers", desc = "physical network, power distribution",
+      Seq(physPowers)
+    )
+  ).withStoreExport(
+    StoreExport(
+      "distances", desc = "physical network, distance distribution",
+      Seq(physDistances)
+    )
   )
 
   val experiment2overlayDataset = Experiment(

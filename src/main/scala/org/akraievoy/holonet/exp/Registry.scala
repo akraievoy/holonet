@@ -169,12 +169,12 @@ object Registry extends RegistryData with Exports with ParamSpaceNav {
 
         exportPrimitives(expStore, subchain, requiredIndexes, fs)
         exportGraphvis(expStore, subchain, requiredIndexes, fs)
+        exportStore(expStore, subchain, requiredIndexes, fs)
 
         runChain :+ expStore
     }
 
     //  LATER port smoke testing
-    //  FIXME PROCEED on-completion triggers
     log.info("chain complete")
   }
 

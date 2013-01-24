@@ -24,5 +24,5 @@ import store.StoreLens
 case class StoreExport (
   name: String,
   desc: String,
-  stores: Seq[StoreLens[Store]]
+  paramNames: Seq[ParamName[_ <: Store]]
 ) extends Named

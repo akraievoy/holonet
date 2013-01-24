@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 @SuppressWarnings("UnusedDeclaration")
-class StoreUtils {
+public class StoreUtils {
   protected static void validateInsert(
       final int storeSize,
       final int fromIncl,
@@ -141,4 +141,25 @@ class StoreUtils {
   }
 
   enum StreamState {SIZE, DATA, COMPLETE }
+
+  public static Object get(Store store, int pos) {
+    switch (store.width()) {
+      case BIT:
+        return store.get(pos, false);
+      case BYTE:
+        return store.get(pos, (byte) 0);
+      case INT:
+        return store.get(pos, 0);
+      case LONG:
+        return store.get(pos, 0L);
+      case FLOAT:
+        return store.get(pos, .0f);
+      case DOUBLE:
+        return store.get(pos, .0);
+      default:
+        throw new IllegalAccessError(
+            "please add support for width: " + store.width()
+        );
+    }
+  }
 }
