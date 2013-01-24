@@ -22,14 +22,16 @@ import org.akraievoy.base.ref.Ref;
 import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.net.vo.VertexData;
 
+//  TODO: migrate to interface, add constructors for respective subclasses
 public abstract class MetricVData extends Metric<VertexData> {
   protected Ref<VertexData> target = new RefObject<VertexData>();
 
-  public void setTarget(Ref<VertexData> target) {
-    this.target = target;
+  @SuppressWarnings("unchecked")
+  public void setTarget(Ref<? extends VertexData> target) {
+    this.target = (Ref<VertexData>) target;
   }
 
-  public Ref<VertexData> getTarget() {
+  public Ref<? extends VertexData> getTarget() {
     return target;
   }
 }

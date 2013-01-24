@@ -27,25 +27,31 @@ import java.io.InputStream;
 public interface Store extends Streamable {
   enum Width {
     BIT{
-      @Override StoreBit create() { return new StoreBit(); }
+      @Override
+      public StoreBit create() { return new StoreBit(); }
     },
     BYTE {
-      @Override StoreByte create() { return new StoreByte(); }
+      @Override
+      public StoreByte create() { return new StoreByte(); }
     },
     INT {
-      @Override StoreInt create() { return new StoreInt(); }
+      @Override
+      public StoreInt create() { return new StoreInt(); }
     },
     LONG {
-      @Override StoreLong create() { return new StoreLong(); }
+      @Override
+      public StoreLong create() { return new StoreLong(); }
     },
     FLOAT {
-      @Override StoreFloat create() { return new StoreFloat(); }
+      @Override
+      public StoreFloat create() { return new StoreFloat(); }
     },
     DOUBLE  {
-      @Override StoreDouble create() { return new StoreDouble(); }
+      @Override
+      public StoreDouble create() { return new StoreDouble(); }
     };
 
-    abstract Store create();
+    public abstract Store create();
   }
 
   Width width();

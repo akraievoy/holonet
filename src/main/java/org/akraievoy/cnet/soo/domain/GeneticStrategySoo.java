@@ -77,8 +77,8 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
   public double getFitnessCap() { return fitnessCap; }
   public void setFitnessCap(double fitnessCap) { this.fitnessCap = fitnessCap; }
 
-  protected RefRO<EdgeData> distSource = new RefObject<EdgeData>();
-  protected RefRO<EdgeData> requestSource = new RefObject<EdgeData>();
+  protected RefRO<? extends EdgeData> distSource = new RefObject<EdgeData>();
+  protected RefRO<? extends EdgeData> requestSource = new RefObject<EdgeData>();
 
   protected int steps = 1;
 
@@ -88,19 +88,19 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
     this.metricEff = new MetricScalarEffectiveness();
   }
 
-  public void setDistSource(RefRO<EdgeData> distSource) {
+  public void setDistSource(RefRO<? extends EdgeData> distSource) {
     this.distSource = distSource;
   }
 
-  public RefRO<EdgeData> getDistSource() {
+  public RefRO<? extends EdgeData> getDistSource() {
     return distSource;
   }
 
-  public void setRequestSource(RefRO<EdgeData> requestSource) {
+  public void setRequestSource(RefRO<? extends EdgeData> requestSource) {
     this.requestSource = requestSource;
   }
 
-  public RefRO<EdgeData> getRequestSource() {
+  public RefRO<? extends EdgeData> getRequestSource() {
     return requestSource;
   }
 

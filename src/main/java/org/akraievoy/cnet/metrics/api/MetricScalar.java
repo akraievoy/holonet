@@ -24,11 +24,12 @@ import org.akraievoy.holonet.exp.store.RefObject;
 public abstract class MetricScalar extends Metric<Double> {
   protected Ref<Double> target = new RefObject<Double>(0.0);
 
-  public void setTarget(Ref<Double> target) {
-    this.target = target;
+  @SuppressWarnings("unchecked")
+  public void setTarget(Ref<? extends Double> target) {
+    this.target = (Ref<Double>) target;
   }
 
-  public Ref<Double> getTarget() {
+  public Ref<? extends Double> getTarget() {
     return target;
   }
 }

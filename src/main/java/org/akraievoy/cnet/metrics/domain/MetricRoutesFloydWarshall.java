@@ -27,18 +27,18 @@ import org.akraievoy.cnet.net.vo.Routes;
 import java.util.Arrays;
 
 public class MetricRoutesFloydWarshall extends MetricRoutes {
-  protected RefRO<EdgeData> distSource = new RefObject<EdgeData>();
-  protected RefRO<EdgeData> source = new RefObject<EdgeData>();
+  protected RefRO<? extends EdgeData> distSource = new RefObject<EdgeData>();
+  protected RefRO<? extends EdgeData> source = new RefObject<EdgeData>();
 
   public String getName() {
     return "Floyd-Warshall Routes";
   }
 
-  public void setDistSource(RefRO<EdgeData> distSource) {
+  public void setDistSource(RefRO<? extends EdgeData> distSource) {
     this.distSource = distSource;
   }
 
-  public void setSource(RefRO<EdgeData> source) {
+  public void setSource(RefRO<? extends EdgeData> source) {
     this.source = source;
   }
 

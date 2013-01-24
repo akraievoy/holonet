@@ -26,13 +26,14 @@ case class Experiment(
   depends: Seq[String] = Nil,
   configs: Map[String, Config],
   executeFun: RunStore => Unit,
-  graphvisExports: Map[String, GraphvizExport] = Map.empty
+  graphvisExports: Map[String, GraphvizExport] = Map.empty,
+  storeExports: Map[String, StoreExport] = Map.empty
 ) extends Named {
   def withGraphvizExport(ge: GraphvizExport) = {
     val newExports = graphvisExports.get(ge.name).map{
       prevExport =>
         throw new IllegalArgumentException(
-          "export with name %s is already defined for experiment %s: %s".format(
+          "graphviz export %s is already defined for experiment %s: %s".format(
             ge.name, name, prevExport
           )
         )
@@ -41,6 +42,21 @@ case class Experiment(
     }
 
     copy(graphvisExports = newExports)
+  }
+
+  def withStoreExport(se: StoreExport) = {
+    val newExports = storeExports.get(se.name).map{
+      prevExport =>
+        throw new IllegalArgumentException(
+          "store export %s is already defined for experiment %s: %s".format(
+            se.name, name, prevExport
+          )
+        )
+    }.getOrElse {
+      storeExports.updated(se.name, se)
+    }
+
+    copy(storeExports = newExports)
   }
 }
 

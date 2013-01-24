@@ -29,8 +29,8 @@ public class MetricScalarEffectiveness extends MetricScalar {
 
   protected double pow = -1;
 
-  protected RefRO<EdgeData> weightSource = new RefObject<EdgeData>();
-  protected RefRO<EdgeData> source = new RefObject<EdgeData>();
+  protected RefRO<? extends EdgeData> weightSource = new RefObject<EdgeData>();
+  protected RefRO<? extends EdgeData> source = new RefObject<EdgeData>();
 
   public String getName() {
     return "Effectiveness";
@@ -48,11 +48,11 @@ public class MetricScalarEffectiveness extends MetricScalar {
     this.pow = pow;
   }
 
-  public void setWeightSource(RefRO<EdgeData> weightSource) {
+  public void setWeightSource(RefRO<? extends EdgeData> weightSource) {
     this.weightSource = weightSource;
   }
 
-  public void setSource(RefRO<EdgeData> source) {
+  public void setSource(RefRO<? extends EdgeData> source) {
     this.source = source;
   }
 

@@ -32,8 +32,8 @@ public class MetricEDataStructure extends MetricEData {
   protected final ConnPreference preference;
   protected final EntropySource eSource;
 
-  protected RefRO<EdgeData> distSource = new RefObject<EdgeData>();
-  protected RefRO<EdgeData> structureSource = new RefObject<EdgeData>();
+  protected RefRO<? extends EdgeData> distSource = new RefObject<EdgeData>();
+  protected RefRO<? extends EdgeData> structureSource = new RefObject<EdgeData>();
   protected int baseDegree = 3;
 
   public MetricEDataStructure(final ConnPreference preference, EntropySource eSource) {
@@ -45,11 +45,11 @@ public class MetricEDataStructure extends MetricEData {
     this.baseDegree = baseDegree;
   }
 
-  public void setDistSource(RefRO<EdgeData> distSource) {
+  public void setDistSource(RefRO<? extends EdgeData> distSource) {
     this.distSource = distSource;
   }
 
-  public void setStructureSource(RefRO<EdgeData> structureSource) {
+  public void setStructureSource(RefRO<? extends EdgeData> structureSource) {
     this.structureSource = structureSource;
   }
 

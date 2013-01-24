@@ -18,6 +18,7 @@
 
 package org.akraievoy.cnet.metrics.domain;
 
+import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.ref.RefRO;
 import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.metrics.api.MetricVData;

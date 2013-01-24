@@ -24,7 +24,7 @@ import org.akraievoy.cnet.metrics.api.MetricScalar;
 import org.akraievoy.cnet.net.vo.EdgeData;
 
 public class MetricScalarEigenGap extends MetricScalar {
-  protected RefRO<EdgeData> source = new RefObject<EdgeData>();
+  protected RefRO<? extends EdgeData> source = new RefObject<EdgeData>();
 
   private final EigenMetric eigenMetric = new EigenMetric();
 
@@ -36,7 +36,7 @@ public class MetricScalarEigenGap extends MetricScalar {
     return "Eigenvalue Gap";
   }
 
-  public void setSource(RefRO<EdgeData> source) {
+  public void setSource(RefRO<? extends EdgeData> source) {
     this.source = source;
   }
 

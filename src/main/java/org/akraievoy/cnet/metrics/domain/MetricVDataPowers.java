@@ -18,6 +18,7 @@
 
 package org.akraievoy.cnet.metrics.domain;
 
+import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.ref.RefRO;
 import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.metrics.api.MetricVData;
@@ -25,13 +26,31 @@ import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.VertexData;
 
 public class MetricVDataPowers extends MetricVData {
-  protected RefRO<EdgeData> source = new RefObject<EdgeData>();
+  protected RefRO<? extends EdgeData> source = new RefObject<EdgeData>();
+
+  public MetricVDataPowers() {
+    //
+  }
+
+  public MetricVDataPowers(
+      RefRO<? extends EdgeData> source
+  ) {
+    this.source = source;
+  }
+
+  public MetricVDataPowers(
+      RefRO<? extends EdgeData> source,
+      Ref<VertexData> target
+  ) {
+    this.source = source;
+    this.target = target;
+  }
 
   public String getName() {
     return "Degrees";
   }
 
-  public void setSource(RefRO<EdgeData> source) {
+  public void setSource(RefRO<? extends EdgeData> source) {
     this.source = source;
   }
 

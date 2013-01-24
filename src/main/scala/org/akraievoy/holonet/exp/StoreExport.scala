@@ -1,5 +1,5 @@
 /*
- Copyright 2011 Anton Kraievoy akraievoy@gmail.com
+ Copyright 2013 Anton Kraievoy akraievoy@gmail.com
  This file is part of Holonet.
 
  Holonet is free software: you can redistribute it and/or modify
@@ -16,21 +16,13 @@
  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.akraievoy.cnet.metrics.api;
+package org.akraievoy.holonet.exp
 
-import org.akraievoy.base.ref.Ref;
-import org.akraievoy.holonet.exp.store.RefObject;
-import org.akraievoy.cnet.metrics.vo.Stat;
+import org.akraievoy.cnet.net.vo.Store
+import store.StoreLens
 
-public abstract class MetricStat extends Metric<Stat> {
-  @SuppressWarnings({"unchecked"})
-  protected Ref<Stat> target = new RefObject<Stat>();
-
-  public void setTarget(Ref<Stat> target) {
-    this.target = target;
-  }
-
-  public Ref<Stat> getTarget() {
-    return target;
-  }
-}
+case class StoreExport (
+  name: String,
+  desc: String,
+  stores: Seq[StoreLens[Store]]
+) extends Named

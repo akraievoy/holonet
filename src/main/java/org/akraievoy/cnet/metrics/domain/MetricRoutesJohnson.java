@@ -31,8 +31,8 @@ import java.util.Arrays;
 import java.util.BitSet;
 
 public class MetricRoutesJohnson extends MetricRoutes {
-  protected RefRO<EdgeData> distSource = new RefObject<EdgeData>();
-  protected RefRO<EdgeData> source = new RefObject<EdgeData>();
+  protected RefRO<? extends EdgeData> distSource = new RefObject<EdgeData>();
+  protected RefRO<? extends EdgeData> source = new RefObject<EdgeData>();
 
   protected final BitSet was = new BitSet();
 
@@ -42,11 +42,11 @@ public class MetricRoutesJohnson extends MetricRoutes {
     return "Johnson Routes";
   }
 
-  public void setDistSource(RefRO<EdgeData> distSource) {
+  public void setDistSource(RefRO<? extends EdgeData> distSource) {
     this.distSource = distSource;
   }
 
-  public void setSource(RefRO<EdgeData> source) {
+  public void setSource(RefRO<? extends EdgeData> source) {
     this.source = source;
   }
 

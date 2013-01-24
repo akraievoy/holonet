@@ -36,8 +36,8 @@ import java.util.Map;
 public class OverlayNetFactory extends MetricVData {
   protected final EntropySource eSource;
 
-  protected RefRO<EdgeData> source = new RefObject<EdgeData>();
-  protected Map<RefRO<EdgeData>, Ref<EdgeData>> edgeDataMap = new HashMap<RefRO<EdgeData>, Ref<EdgeData>>();
+  protected RefRO<? extends EdgeData> source = new RefObject<EdgeData>();
+  protected Map<RefRO<? extends EdgeData>, Ref<EdgeData>> edgeDataMap = new HashMap<RefRO<? extends EdgeData>, Ref<EdgeData>>();
   protected Map<RefRO<VertexData>, Ref<VertexData>> vertexDataMap = new HashMap<RefRO<VertexData>, Ref<VertexData>>();
 
   protected double omega = 0.5;
@@ -52,11 +52,11 @@ public class OverlayNetFactory extends MetricVData {
     return "Overlay Node Selection";
   }
 
-  public void setEdgeDataMap(Map<RefRO<EdgeData>, Ref<EdgeData>> edgeDataMap) {
+  public void setEdgeDataMap(Map<RefRO<? extends EdgeData>, Ref<EdgeData>> edgeDataMap) {
     this.edgeDataMap = edgeDataMap;
   }
 
-  public void setSource(RefRO<EdgeData> source) {
+  public void setSource(RefRO<? extends EdgeData> source) {
     this.source = source;
   }
 
@@ -114,7 +114,7 @@ public class OverlayNetFactory extends MetricVData {
       targetRef.setValue(vNodeVData);
     }
 
-    for (RefRO<EdgeData> sourceRef : edgeDataMap.keySet()) {
+    for (RefRO<? extends EdgeData> sourceRef : edgeDataMap.keySet()) {
       final EdgeData eData = sourceRef.getValue();
       final EdgeData vNodeEData = eData.proto(vNodeNum);
 

@@ -204,7 +204,7 @@ trait Exports extends ParamSpaceNav {
                             coordX.get(nodeIdx),
                             coordY.get(nodeIdx)
                           )
-                          "pos=\"%s,%s!\"".format(
+                          "pos=\"%s,%s\"".format(
                             nf.format(pagePosX),
                             nf.format(pagePosY)
                           )
@@ -308,7 +308,7 @@ trait Exports extends ParamSpaceNav {
                   if (graphvisExecutable) {
                     val dotProcess = new ProcessBuilder(
                       fullPathToDot,
-                      "-Knop", "-n2", /*"-Tpng", */"-Tsvg", "-O", fileName
+                      "-Kneato", "-n", /*"-Tpng", */"-Tsvg", "-O", fileName
                     ).directory(file.getParentFile).redirectErrorStream(true).start()
 
                     //  LATER it's of course lame to keep logs
@@ -326,7 +326,7 @@ trait Exports extends ParamSpaceNav {
               }
         }, false
       )
-      log.info("GraphVis export {} completed", export.desc)
+      log.info("GraphViz export {} completed", export.desc)
     }
   }
 

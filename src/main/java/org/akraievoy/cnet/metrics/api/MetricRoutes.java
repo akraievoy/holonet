@@ -27,15 +27,16 @@ import org.akraievoy.cnet.net.vo.Routes;
 public abstract class MetricRoutes extends Metric<Routes> {
   public Ref<Routes> target = new RefObject<Routes>();
 
-  public void setTarget(Ref<Routes> target) {
-    this.target = target;
+  @SuppressWarnings("unchecked")
+  public void setTarget(Ref<? extends Routes> target) {
+    this.target = (Ref<Routes>) target;
   }
 
-  public Ref<Routes> getTarget() {
+  public Ref<? extends Routes> getTarget() {
     return target;
   }
 
-  public abstract void setDistSource(RefRO<EdgeData> distSource);
+  public abstract void setDistSource(RefRO<? extends EdgeData> distSource);
 
-  public abstract void setSource(RefRO<EdgeData> source);
+  public abstract void setSource(RefRO<? extends EdgeData> source);
 }

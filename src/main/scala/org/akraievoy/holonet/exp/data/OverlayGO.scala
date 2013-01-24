@@ -21,14 +21,15 @@ package org.akraievoy.holonet.exp.data
 import org.akraievoy.holonet.exp._
 import org.akraievoy.cnet.gen.vo.{ConnPreferenceYookJeongBarabasi, MetricEuclidean, EntropySourceRandom}
 import org.akraievoy.cnet.gen.domain.{OverlayNetFactory, MetricEDataGenStructural, LocationGeneratorRecursive}
-import org.akraievoy.cnet.net.vo.{EdgeDataDense, EdgeDataSparse, VertexData, EdgeData}
+import org.akraievoy.cnet.net.vo._
 import org.akraievoy.cnet.metrics.domain._
 import scala.collection.JavaConversions._
 import org.akraievoy.base.ref.{RefRO, Ref}
 import org.akraievoy.cnet.opt.api._
 import org.akraievoy.cnet.soo.domain._
 import org.akraievoy.cnet.opt.domain.ExperimentGeneticOpt
-import store.StoreLens
+import scala.Some
+import org.akraievoy.cnet.net.vo.Store.Width
 
 object OverlayGO {
   import java.lang.{
@@ -54,6 +55,8 @@ object OverlayGO {
     val physLocationY = ParamName[VertexData]("default.location.y")
     val physDensity = ParamName[VertexData]("default.density")
     val physEigenGap = ParamName[JDouble]("eigengap.physical")
+    val physPowers = ParamName[StoreInt]("default.powers")
+    val physDistances = ParamName[StoreDouble]("default.distances")
     //  stage 2 inputs
     val entropySourceOvlSeed = ParamName[JLong]("esOvl.seed")
     val entropySourceReqSeed = ParamName[JLong]("esReq.seed")
@@ -117,7 +120,7 @@ object OverlayGO {
         val netFactory = new MetricEDataGenStructural()
         netFactory.setNetNodeNum(3)
         netFactory.setType("path")
-        netFactory.setTarget(rs.lens(physStructureInit).asInstanceOf[Ref[EdgeData]])
+        netFactory.setTarget(rs.lens(physStructureInit))
 
         val entropySourceLocation = new EntropySourceRandom()
         entropySourceLocation.setSeed(
@@ -137,7 +140,7 @@ object OverlayGO {
         )
         distMetric.setSourceX(rs.lens(physLocationX))
         distMetric.setSourceY(rs.lens(physLocationY))
-        distMetric.setTarget(rs.lens(physDistance).asInstanceOf[Ref[EdgeData]])
+        distMetric.setTarget(rs.lens(physDistance))
 
         val entropySource = new EntropySourceRandom()
         entropySource.setSeed(
@@ -152,9 +155,9 @@ object OverlayGO {
           connPreference,
           entropySource
         )
-        structure.setDistSource(rs.lens(physDistance).asInstanceOf[Ref[EdgeData]])
-        structure.setStructureSource(rs.lens(physStructureInit).asInstanceOf[Ref[EdgeData]])
-        structure.setTarget(rs.lens(physStructure).asInstanceOf[Ref[EdgeData]])
+        structure.setDistSource(rs.lens(physDistance))
+        structure.setStructureSource(rs.lens(physStructureInit))
+        structure.setTarget(rs.lens(physStructure))
         structure.setBaseDegree(rs.lens(structureBaseDegree).get.get)
 
         val densityMetric = new MetricVDataDensity(
@@ -165,17 +168,31 @@ object OverlayGO {
         densityMetric.setTarget(rs.lens(physDensity))
 
         val metricRoutesJohnson = new MetricRoutesJohnson()
-        metricRoutesJohnson.setSource(rs.lens(physStructure).asInstanceOf[Ref[EdgeData]])
-        metricRoutesJohnson.setDistSource(rs.lens(physDistance).asInstanceOf[Ref[EdgeData]])
+        metricRoutesJohnson.setSource(rs.lens(physStructure))
+        metricRoutesJohnson.setDistSource(rs.lens(physDistance))
 
         val routeLenMetric = new MetricEDataRouteLen(
           metricRoutesJohnson
         )
-        routeLenMetric.setTarget(rs.lens(physRouteLen).asInstanceOf[Ref[EdgeData]])
+        routeLenMetric.setTarget(rs.lens(physRouteLen))
 
         val eigenGapMetric = new MetricScalarEigenGap()
-        eigenGapMetric.setSource(rs.lens(physStructure).asInstanceOf[Ref[EdgeData]])
+        eigenGapMetric.setSource(rs.lens(physStructure))
         eigenGapMetric.setTarget(rs.lens(physEigenGap))
+
+        val powersMetric = new MetricVDataPowers(
+          rs.lens(physStructure)
+        )
+        val powersStoreMetric = new MetricStoreVData(
+          powersMetric, rs.lens(physPowers), Width.INT
+        )
+
+        val distancesStoreMetric = new MetricStoreEData(
+          rs.lens(physStructure),
+          rs.lens(physDistance),
+          rs.lens(physDistances),
+          Width.DOUBLE
+        )
 
         val main = new RunnableComposite()
         main.setGroup(
@@ -187,7 +204,9 @@ object OverlayGO {
             structure,
             densityMetric,
             routeLenMetric,
-            eigenGapMetric
+            eigenGapMetric,
+            powersStoreMetric,
+            distancesStoreMetric
           )
         )
 
@@ -237,8 +256,8 @@ object OverlayGO {
       "big-1k",
       "Big (1k nodes, 1 seed)",
       Param(locationMetricNodes, "1024"),
-      Param(structureBaseDegree, "2"),
-      Param(connPreferenceBeta, "2.75")
+      Param(structureBaseDegree, "3"),
+      Param(connPreferenceBeta, "5")
     ),
     Config(
       "big-2k",
@@ -287,12 +306,12 @@ object OverlayGO {
           rs.lens(ovlNetFactoryNu).get.get
         )
         ovlNetFactory.setSource(
-          rs.lens(physStructure).asInstanceOf[StoreLens[EdgeData]]
+          rs.lens(physStructure)
         )
         ovlNetFactory.setTarget(rs.lens(overlayIndex))
         ovlNetFactory.setEdgeDataMap(
-          Map(
-            rs.lens(physRouteLen).asInstanceOf[RefRO[EdgeData]] ->
+          Map[RefRO[_ <: EdgeData], Ref[EdgeData]](
+            rs.lens(physRouteLen) ->
               rs.lens(overlayDistance).asInstanceOf[Ref[EdgeData]]
           )
         )
@@ -311,7 +330,7 @@ object OverlayGO {
         ovlRequests.setSigma(rs.lens(ovlReqFactorySigma).get.get)
 
         val reqThreshold = new MetricEDataThreshold(ovlRequests)
-        reqThreshold.setTarget(rs.lens(overlayRequest).asInstanceOf[StoreLens[EdgeData]])
+        reqThreshold.setTarget(rs.lens(overlayRequest))
         reqThreshold.setMinAbsValue(rs.lens(ovlReqFactoryThreshMinAbsValue).get.get)
         reqThreshold.setMinToMaxRatio(rs.lens(ovlReqFactoryThreshMinToMaxRatio).get.get)
 
@@ -362,7 +381,7 @@ object OverlayGO {
       vertexRadius = {
         rs =>
           val powers = new MetricVDataPowers()
-          powers.setSource(rs.lens(overlayRequest).asInstanceOf[Ref[EdgeData]])
+          powers.setSource(rs.lens(overlayRequest))
           Some(powers)
       },
       vertexLabel = {rs => Some(rs.lens(overlayIndex))}
@@ -397,8 +416,8 @@ object OverlayGO {
         gaStrategy.setThetaTilde(rs.lens(gaStrategyThetaTilde).get.get)
         gaStrategy.setModes(rs.lens(gaStrategyModes).get.get)
         gaStrategy.setSteps(rs.lens(gaStrategySteps).get.get)
-        gaStrategy.setDistSource(rs.lens(overlayDistance).asInstanceOf[StoreLens[EdgeData]])
-        gaStrategy.setRequestSource(rs.lens(overlayRequest).asInstanceOf[StoreLens[EdgeData]])
+        gaStrategy.setDistSource(rs.lens(overlayDistance))
+        gaStrategy.setRequestSource(rs.lens(overlayRequest))
         gaStrategy.setFitnessCap(rs.lens(gaStrategyFitnessCap).get.get)
 
         val ga = new ExperimentGeneticOpt(

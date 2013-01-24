@@ -16,12 +16,26 @@
  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.akraievoy.cnet.metrics.vo;
+package org.akraievoy.cnet.metrics.api;
 
-public interface Stat {
-  double[] getData();
+import org.akraievoy.base.ref.Ref;
+import org.akraievoy.cnet.net.vo.Store;
+import org.akraievoy.holonet.exp.store.RefObject;
 
-  void put(double value);
+public abstract class MetricStore extends Metric<Store> {
+  protected Ref<Store> target = new RefObject<Store>();
+  protected Store.Width width = Store.Width.DOUBLE;
 
-  Histogram createHistogram(int stripes, double maxStripeWidth);
+  @SuppressWarnings("unchecked")
+  public void setTarget(Ref<? extends Store> target) {
+    this.target = (Ref<Store>) target;
+  }
+
+  public Ref<? extends Store> getTarget() {
+    return target;
+  }
+
+  public void setWidth(Store.Width width) {
+    this.width = width;
+  }
 }

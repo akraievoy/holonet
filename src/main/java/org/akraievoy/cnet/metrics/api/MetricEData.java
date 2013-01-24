@@ -25,11 +25,12 @@ import org.akraievoy.cnet.net.vo.EdgeData;
 public abstract class MetricEData extends Metric<EdgeData> {
   protected Ref<EdgeData> target = new RefObject<EdgeData>();
 
-  public void setTarget(Ref<EdgeData> target) {
-    this.target = target;
+  @SuppressWarnings("unchecked")
+  public void setTarget(Ref<? extends EdgeData> target) {
+    this.target = (Ref<EdgeData>) target;
   }
 
-  public Ref<EdgeData> getTarget() {
+  public Ref<? extends EdgeData> getTarget() {
     return target;
   }
 }

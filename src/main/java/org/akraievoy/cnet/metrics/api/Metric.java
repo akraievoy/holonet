@@ -24,9 +24,9 @@ import org.akraievoy.base.ref.RefRO;
 public abstract class Metric<T> implements Runnable, RefRO<T> {
   public abstract String getName();
 
-  public abstract Ref<T> getTarget();
+  public abstract Ref<? extends T> getTarget();
 
-  public abstract void setTarget(Ref<T> newTarget);
+  public abstract void setTarget(Ref<? extends T> newTarget);
 
   public T getValue() {
     run();
