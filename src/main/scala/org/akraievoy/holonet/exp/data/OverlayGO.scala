@@ -68,6 +68,10 @@ object OverlayGO {
     val ovlReqFactorySigma = ParamName[JDouble]("ovlReq.sigma")
     val ovlReqFactoryThreshMinAbsValue = ParamName[JDouble]("ovlReqThresh.minAbsValue")
     val ovlReqFactoryThreshMinToMaxRatio = ParamName[JDouble]("ovlReqThresh.minToMaxRatio")
+    val ovlReqStoreVol = ParamName[StoreDouble]("ovlReq.volume")
+    val ovlReqStoreDist = ParamName[StoreDouble]("ovlReq.distance")
+    val ovlReqStoreFromDensity = ParamName[StoreDouble]("ovlReq.fromDensity")
+    val ovlReqStoreIntoDensity = ParamName[StoreDouble]("ovlReq.intoDensity")
     //  stage 2 outputs
     val overlayIndex = ParamName[VertexData]("overlay.index")
     val overlayDistance = ParamName[EdgeDataDense]("overlay.distance")
@@ -358,8 +362,30 @@ object OverlayGO {
         reqThreshold.setMinAbsValue(rs.lens(ovlReqFactoryThreshMinAbsValue).get.get)
         reqThreshold.setMinToMaxRatio(rs.lens(ovlReqFactoryThreshMinToMaxRatio).get.get)
 
+        val volumesStoreMetric = new MetricStoreEData(
+          rs.lens(overlayRequest),
+          rs.lens(overlayRequest),
+          rs.lens(ovlReqStoreVol),
+          Width.DOUBLE
+        ).withFromData(
+          rs.lens(overlayDensity),
+          rs.lens(ovlReqStoreFromDensity)
+        ).withIntoData(
+          rs.lens(overlayDensity),
+          rs.lens(ovlReqStoreIntoDensity)
+        )
+
+        val distancesStoreMetric = new MetricStoreEData(
+          rs.lens(overlayRequest),
+          rs.lens(overlayDistance),
+          rs.lens(ovlReqStoreDist),
+          Width.DOUBLE
+        )
+
         ovlNetFactory.run()
         reqThreshold.run()
+        volumesStoreMetric.run()
+        distancesStoreMetric.run()
     },
     Config(
       Param(entropySourceOvlSeed, "31013"),
@@ -409,6 +435,11 @@ object OverlayGO {
           Some(powers)
       },
       vertexLabel = {rs => Some(rs.lens(overlayIndex))}
+    )
+  ).withStoreExport(
+    StoreExport(
+      "requests", desc = "overlay network, request distribution",
+      Seq(ovlReqStoreVol, ovlReqStoreDist, ovlReqStoreFromDensity, ovlReqStoreIntoDensity)
     )
   )
 

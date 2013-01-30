@@ -22,10 +22,11 @@ import com.google.common.base.Optional;
 import org.akraievoy.base.ref.Ref;
 import org.akraievoy.base.ref.RefRO;
 import org.akraievoy.cnet.metrics.api.MetricStore;
-import org.akraievoy.cnet.net.vo.EdgeData;
-import org.akraievoy.cnet.net.vo.Store;
-import org.akraievoy.cnet.net.vo.StoreInt;
+import org.akraievoy.cnet.net.vo.*;
 import org.akraievoy.holonet.exp.store.RefObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MetricStoreEData extends MetricStore {
   protected Optional<RefRO<? extends EdgeData>> optStructSource = Optional.absent();
@@ -33,6 +34,10 @@ public class MetricStoreEData extends MetricStore {
 
   protected Optional<Ref<StoreInt>> optFromIndexesTarget = Optional.absent();
   protected Optional<Ref<StoreInt>> optIntoIndexesTarget = Optional.absent();
+  protected final Map<RefRO<VertexData>,Ref<StoreDouble>> fromTargets =
+      new HashMap<RefRO<VertexData>,Ref<StoreDouble>>();
+  protected final Map<RefRO<VertexData>,Ref<StoreDouble>> intoTargets =
+      new HashMap<RefRO<VertexData>,Ref<StoreDouble>>();
 
   public MetricStoreEData() {
   }
@@ -84,6 +89,22 @@ public class MetricStoreEData extends MetricStore {
     this.optIntoIndexesTarget = Optional.of(intoIndexesTarget);
   }
 
+  public MetricStoreEData withFromData(
+      final RefRO<VertexData> fromSource,
+      final Ref<StoreDouble> fromTarget
+  ) {
+    fromTargets.put(fromSource, fromTarget);
+    return this;
+  }
+
+  public MetricStoreEData withIntoData(
+      final RefRO<VertexData> intoSource,
+      final Ref<StoreDouble> intoTarget
+  ) {
+    intoTargets.put(intoSource, intoTarget);
+    return this;
+  }
+
   public String getName() {
     return "Edge Data";
   }
@@ -124,6 +145,17 @@ public class MetricStoreEData extends MetricStore {
       intoIndexesTarget = null;
     }
 
+    final Map<RefRO<VertexData>,StoreDouble> fromStores =
+      new HashMap<RefRO<VertexData>,StoreDouble>();
+    for (RefRO<VertexData> refRO : fromTargets.keySet()) {
+      fromStores.put(refRO, new StoreDouble());
+    }
+    final Map<RefRO<VertexData>,StoreDouble> intoStores =
+      new HashMap<RefRO<VertexData>,StoreDouble>();
+    for (RefRO<VertexData> refRO : intoTargets.keySet()) {
+      intoStores.put(refRO, new StoreDouble());
+    }
+
     final Store targetValue = width.create();
     final EdgeData iteratee = structData != null ? structData : valueData;
     iteratee.visitNonDef(
@@ -149,6 +181,22 @@ public class MetricStoreEData extends MetricStore {
                   intoIndexesTarget.size(), intoIndexesTarget.size() + 1, into
               );
             }
+
+            for (RefRO<VertexData> refRO : fromTargets.keySet()) {
+              final double fromVal = refRO.getValue().get(from);
+              final StoreDouble fromStore = fromStores.get(refRO);
+              fromStore.ins(
+                  fromStore.size(), fromStore.size() + 1, fromVal
+              );
+            }
+
+            for (RefRO<VertexData> refRO : intoTargets.keySet()) {
+              final double intoVal = refRO.getValue().get(into);
+              final StoreDouble intoStore = intoStores.get(refRO);
+              intoStore.ins(
+                  intoStore.size(), intoStore.size() + 1, intoVal
+              );
+            }
           }
         }
     );
@@ -157,6 +205,12 @@ public class MetricStoreEData extends MetricStore {
     if (optFromIndexesTarget.isPresent() && optIntoIndexesTarget.isPresent()) {
       optFromIndexesTarget.get().setValue(fromIndexesTarget);
       optIntoIndexesTarget.get().setValue(intoIndexesTarget);
+    }
+    for (RefRO<VertexData> refRO : fromTargets.keySet()) {
+      fromTargets.get(refRO).setValue(fromStores.get(refRO));
+    }
+    for (RefRO<VertexData> refRO : intoTargets.keySet()) {
+      intoTargets.get(refRO).setValue(intoStores.get(refRO));
     }
   }
 }
