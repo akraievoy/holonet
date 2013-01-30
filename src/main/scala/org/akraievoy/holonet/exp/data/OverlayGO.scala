@@ -56,6 +56,7 @@ object OverlayGO {
     val physDensity = ParamName[VertexData]("default.density")
     val physEigenGap = ParamName[JDouble]("eigengap.physical")
     val physPowers = ParamName[StoreInt]("default.powers")
+    val physDensities = ParamName[StoreDouble]("default.densities")
     val physDistances = ParamName[StoreDouble]("default.distances")
     //  stage 2 inputs
     val entropySourceOvlSeed = ParamName[JLong]("esOvl.seed")
@@ -187,6 +188,10 @@ object OverlayGO {
           powersMetric, rs.lens(physPowers), Width.INT
         )
 
+        val densitiesStoreMetric = new MetricStoreVData(
+          rs.lens(physDensity), rs.lens(physDensities), Width.DOUBLE
+        )
+
         val distancesStoreMetric = new MetricStoreEData(
           rs.lens(physStructure),
           rs.lens(physDistance),
@@ -206,6 +211,7 @@ object OverlayGO {
             routeLenMetric,
             eigenGapMetric,
             powersStoreMetric,
+            densitiesStoreMetric,
             distancesStoreMetric
           )
         )
@@ -255,6 +261,9 @@ object OverlayGO {
     Config(
       "big-1k",
       "Big (1k nodes, 1 seed)",
+      Param(entropySourceLocGenSeed, "123098"),
+      Param(entropySourceLocationSeed, "579384"),
+      Param(entropySourceSeed, "780293"),
       Param(locationMetricNodes, "1024"),
       Param(structureBaseDegree, "3"),
       Param(connPreferenceBeta, "5")
@@ -289,6 +298,11 @@ object OverlayGO {
     StoreExport(
       "distances", desc = "physical network, distance distribution",
       Seq(physDistances)
+    )
+  ).withStoreExport(
+    StoreExport(
+      "densities", desc = "physical network, density distribution",
+      Seq(physDensities)
     )
   )
 
@@ -353,10 +367,10 @@ object OverlayGO {
       Param(ovlNetFactoryOmega, "-1"),
       Param(ovlNetFactoryNu, "0.25"),
       Param(ovlReqFactoryPhi, "0.25"),
-      Param(ovlReqFactoryPsi, "0.75"),
-      Param(ovlReqFactorySigma, "0.03"),
-      Param(ovlReqFactoryThreshMinAbsValue, "0.003"),
-      Param(ovlReqFactoryThreshMinToMaxRatio, "0.001")
+      Param(ovlReqFactoryPsi, "1.25"),
+      Param(ovlReqFactorySigma, "2"),
+      Param(ovlReqFactoryThreshMinAbsValue, "0.2"),
+      Param(ovlReqFactoryThreshMinToMaxRatio, "0.02")
     ),
     Config(
       "nu20",
@@ -505,7 +519,7 @@ object OverlayGO {
       Param(gaStrategyModes, "R"),
       Param(
         gaStrategyFitnessCap,
-        "0.3;0.35;0.4;0.45;0.5;0.55;0.6;0.65;0.7;0.75;0.8;0.85"
+        "0.3;0.4;0.5;0.55;0.6;0.65;0.7;0.75;0.85"
       ),
       Param(gaStrategyThetaTilde, "0.75"),
       Param(gaGeneration, "0--63", Strategy.ITERATE, Strategy.USE_LAST),

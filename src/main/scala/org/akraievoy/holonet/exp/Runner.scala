@@ -43,16 +43,29 @@ object Runner extends App {
       )
     )
   } else {
-    Registry.execute(
-      "p2p-stage3-attack-chained",
-      Map(
-        "overlayGO-1-physDataset" -> "big-1k",
-        "overlayGO-2-ovlDataset" -> "nu20",
-        "overlayGO-3-genetics" -> "minEff13-smoke",
-        "p2p-stage1-seed" -> "3x2",
-        "p2p-stage2-paramSpace" -> "corrStudy-large-192",
-        "p2p-stage3-attack-chained" -> "default"
+/*
+      Registry.execute(
+        "p2p-stage3-attack-chained",
+        Map(
+          "overlayGO-1-physDataset" -> "big-1k",
+          "overlayGO-2-ovlDataset" -> "nu20",
+          "overlayGO-3-genetics" -> "minEff13-smoke",
+          "p2p-stage1-seed" -> "3x2",
+          "p2p-stage2-paramSpace" -> "corrStudy-large-192",
+          "p2p-stage3-attack-chained" -> "default"
+        )
       )
-    )
+*/
+      Registry.execute(
+        "p2p-stage3-attack-chained",
+        Map(
+          "overlayGO-1-physDataset" -> "big-1k",
+          "overlayGO-2-ovlDataset" -> "nu20",
+          "overlayGO-3-genetics" -> "minEff13x4x64",
+          "p2p-stage1-seed" -> "7x3",
+          "p2p-stage2-paramSpace" -> "corrStudy-large-192",
+          "p2p-stage3-attack-chained" -> "default"
+        )
+      )
   }
 }
