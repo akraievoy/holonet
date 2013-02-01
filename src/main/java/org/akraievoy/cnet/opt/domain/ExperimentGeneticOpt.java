@@ -46,6 +46,8 @@ public class ExperimentGeneticOpt implements Runnable {
 
   protected final CompositeMutator mutators = new CompositeMutator();
   protected final CompositeBreeder breeders = new CompositeBreeder();
+  protected final List<Mutator<Genome>> preValidateMutators =
+      new ArrayList<Mutator<Genome>>();
   protected final CompositeCondition conditions = new CompositeCondition();
   protected final WeightedEventModelRenorm events =
       new WeightedEventModelRenorm(Optional.of("parents"));
@@ -104,6 +106,11 @@ public class ExperimentGeneticOpt implements Runnable {
     this.mutators.setElems(mutators);
   }
 
+  public void setPreValidateMutators(List<Mutator<Genome>> preValidateMutators) {
+    this.preValidateMutators.clear();
+    this.preValidateMutators.addAll(preValidateMutators);
+  }
+
   public void setSeedSource(final SeedSource<Genome> seedSource) {
     this.seedSource = seedSource;
   }
@@ -129,7 +136,7 @@ public class ExperimentGeneticOpt implements Runnable {
   }
 
   public void setGenerateLimitRatio(double glr) {
-    final SortedMap<Double, Double> glrMap = generateLimitRatios;
+    final SortedMap<Double, Double> glrMap = generateLimitRatios; //  TODO replace mystical limit map with interpolate
 
     final double scale =
         glr / glrMap.get(glrMap.firstKey());
@@ -215,51 +222,53 @@ public class ExperimentGeneticOpt implements Runnable {
     eliteLimit = Math.min(parents.size(), eliteLimit);
     int elitePointer = 0;
     int generateCount = 0;
-    boolean generateValid;
-    boolean eliteValid = false;
-    while (
-        children.size() < specimenLimit && (
-            (generateValid = generateCount < generateLimit((long) children.size())) ||
-            (eliteValid = elitePointer < eliteLimit && elitePointer < parents.size())
-        )
-    ) {
-      report(lastReport);
+    boolean moarChildren;
+    do {
+      boolean generateValid =
+          generateCount < generateLimit((long) children.size());
+      boolean eliteValid =
+          elitePointer < eliteLimit && elitePointer < parents.size();
+      moarChildren =
+          children.size() < specimenLimit && (generateValid || eliteValid);
 
-      final Ref<Breeder<Genome>> breeder = new RefSimple<Breeder<Genome>>(null);
-      final Ref<Mutator<Genome>> mutator = new RefSimple<Mutator<Genome>>(null);
+      if (moarChildren) {
+        report(lastReport);
+        final Ref<Breeder<Genome>> breeder = new RefSimple<Breeder<Genome>>(null);
+        final Ref<Mutator<Genome>> mutator = new RefSimple<Mutator<Genome>>(null);
 
-      boolean valid = false;
-      Genome child = null;
-      try {
-        if (eliteValid && (!generateValid || children.size() + eliteLimit >= specimenLimit) ) {
-          child = parents.get(fKeys[elitePointer++]);
-        } else {
-          child = generateChild(
-              state, fKeys, breeder, mutator
-          );
-          generateCount++;
+        boolean valid = false;
+        Genome child = null;
+        try {
+          if (eliteValid && (!generateValid || children.size() + eliteLimit >= specimenLimit) ) {
+            child = parents.get(fKeys[elitePointer++]); //  TODO: NOT ALL ELITE PARENTS MAY SURVIVE
+          } else {
+            child = generateChild(
+                state, fKeys, breeder, mutator
+            );
+            generateCount++;
+          }
+
+          valid = validate(child);
+        } catch (EigenMetric.EigenSolverException e) {
+          log.warn("IGNORING eigensolver failure: marking child as invalid", e);
         }
 
-        valid = validate(child);
-      } catch (EigenMetric.EigenSolverException e) {
-        log.warn("IGNORING eigensolver failure: marking child as invalid", e);
-      }
+        if (valid && child != null) {
+          final Optional<FitnessKey> fkOpt = storeToPopulation(children, child);
+          if (fkOpt.isPresent()) {
+            //  fraction of children which are not better than this one
+            double rank = children.tailMap(fkOpt.get()).size() / (double) children.size();
 
-      if (valid && child != null) {
-        final Optional<FitnessKey> fkOpt = storeToPopulation(children, child);
-        if (fkOpt.isPresent()) {
-          //  fraction of children which are not better than this one
-          double rank = children.tailMap(fkOpt.get()).size() / (double) children.size();
-
-          mutators.rankFeedback(mutator.getValue(), rank);
-          breeders.rankFeedback(breeder.getValue(), rank);
-          continue;
+            mutators.rankFeedback(mutator.getValue(), rank);
+            breeders.rankFeedback(breeder.getValue(), rank);
+            continue;
+          }
         }
-      }
 
-      mutators.onFailure(mutator.getValue());
-      breeders.onFailure(breeder.getValue());
-    }
+        mutators.onFailure(mutator.getValue());
+        breeders.onFailure(breeder.getValue());
+      }
+    } while(moarChildren);
 
     report(null);
 
@@ -330,7 +339,8 @@ public class ExperimentGeneticOpt implements Runnable {
 
   protected Genome generateChild(
       GeneticState state, FitnessKey[] fKeys, 
-      Ref<Breeder<Genome>> breeder, Ref<Mutator<Genome>> mutator
+      Ref<Breeder<Genome>> breeder,
+      Ref<Mutator<Genome>> mutator
   ) {
     final FitnessKey fKeyA = fKeys[events.generate(eSource, false, null)];
     final FitnessKey fKeyB = fKeys[events.generate(eSource, false, null)];
@@ -349,6 +359,10 @@ public class ExperimentGeneticOpt implements Runnable {
 
     mutator.setValue(mutators.select(eSource));
     mutator.getValue().mutate(strategy, child, state, eSource);
+
+    for (Mutator<Genome> pvm : preValidateMutators) {
+      pvm.mutate(strategy, child, state, eSource);
+    }
 
     return child;
   }

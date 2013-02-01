@@ -21,6 +21,7 @@ package org.akraievoy.cnet.soo.domain;
 import com.google.common.base.Optional;
 import org.akraievoy.cnet.opt.api.Condition;
 import org.akraievoy.cnet.opt.api.GeneticStrategy;
+import org.akraievoy.util.Interpolate;
 
 import java.util.Collection;
 
@@ -36,12 +37,17 @@ public class ConditionSooFitnessCapping implements Condition<GenomeSoo> {
     final GeneticStrategySoo strategySoo = (GeneticStrategySoo) strategy;
 
     if (!fitnessCap.isPresent()) {
-      fitnessCap = Optional.of(
-        strategySoo.getFitnessCap() * Math.pow(
-          1.022,
-          Math.max(strategySoo.generationNum / 4 * 3 - generationIndex, 0)
-        )
-      );
+      if (Double.isInfinite(strategySoo.getFitnessCap())) {
+        fitnessCap = Optional.of(strategySoo.getFitnessCap());
+      } else {
+        fitnessCap = Optional.of(
+            Interpolate.norm(
+                0, strategySoo.generationNum * 0.85,
+                1, strategySoo.getFitnessCap(),
+                Interpolate.SQRT
+            ).apply(generationIndex)
+        );
+      }
     }
 
     return child.getOrComputeFitness(strategy) <= fitnessCap.get();

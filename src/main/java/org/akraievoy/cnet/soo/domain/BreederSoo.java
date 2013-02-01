@@ -103,7 +103,7 @@ public abstract class BreederSoo implements Breeder {
         strategy.getSteps() == 1 &&
         child.getSolution().total() != child.getSolution().getNonDefCount()
     ) {
-   log.warn(
+      log.warn(
           "EdgeData total({}) != nonDefCount({})",
           child.getSolution().total(),
           child.getSolution().getNonDefCount()
