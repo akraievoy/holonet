@@ -37,9 +37,6 @@
         <module name="holonet-root" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="holonet-root" target="1.6" />
-    </bytecodeTargetLevel>
   </component>
 </project>
 
