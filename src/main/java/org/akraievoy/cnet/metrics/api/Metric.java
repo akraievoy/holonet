@@ -33,4 +33,10 @@ public abstract class Metric<T> implements Runnable, RefRO<T> {
 
     return getTarget().getValue();
   }
+
+  public static <T> T fetch(Metric<T> m) {
+    m.run();
+
+    return m.getTarget().getValue();
+  }
 }

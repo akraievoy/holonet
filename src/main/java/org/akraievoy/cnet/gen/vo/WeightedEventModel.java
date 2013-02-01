@@ -43,7 +43,7 @@ public abstract class WeightedEventModel {
   }
 
   protected WeightedEventModel() {
-    this(null);
+    this(Optional.<String>absent());
   }
 
   public int generate(EntropySource eSource, final boolean remove, int[] indexRef) {

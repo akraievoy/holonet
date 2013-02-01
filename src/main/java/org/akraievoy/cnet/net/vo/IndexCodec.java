@@ -24,8 +24,8 @@ public class IndexCodec {
 
   protected boolean intoLeads;
 
-  @Deprecated
   public IndexCodec() {
+    this(false);
   }
 
   public IndexCodec(final boolean intoLeads) {
@@ -58,17 +58,5 @@ public class IndexCodec {
 
   public int id2leading(final int id) {
     return id >> POW;
-  }
-
-  @SuppressWarnings({"UnusedDeclaration"})
-  @Deprecated
-  public boolean isIntoLeads() {
-    return intoLeads;
-  }
-
-  @SuppressWarnings({"UnusedDeclaration"})
-  @Deprecated
-  public void setIntoLeads(boolean intoLeads) {
-    this.intoLeads = intoLeads;
   }
 }
