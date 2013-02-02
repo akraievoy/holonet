@@ -309,9 +309,6 @@ public class ExperimentGeneticOpt implements Runnable {
     generation = generationLens.getValue();
     specimenLimit = specimenLens.fullCount();
     eliteLimit = (int) Math.ceil(specimenLimit * eliteRatio);
-    for (double cr = 0; cr <= 1; cr+=0.05) {
-      System.out.println(generateLimitRatioFun.apply(cr));
-    }
   }
 
   protected Genome generateChild(
