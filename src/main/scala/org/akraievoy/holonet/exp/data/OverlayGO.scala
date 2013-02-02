@@ -554,7 +554,7 @@ object OverlayGO {
       "minEff13x4x64",
       "MinEff: 1.3 * 4 seeds * 64 gens (fast sim corr study)",
       Param(gaStrategyMinEff, "0.8"),
-      Param(entropySourceGASeed, "42600-42603"),
+      Param(entropySourceGASeed, "42600--42603"),
       Param(gaStrategyModes, "R"),
       Param(gaSpecimen, "0--4", Strategy.USE_FIRST, Strategy.USE_FIRST),
       Param(
