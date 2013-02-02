@@ -1,5 +1,6 @@
 target
-/data
+/data/*--*
+/data/batch
 .svn
 *.ipr
 *.iws
