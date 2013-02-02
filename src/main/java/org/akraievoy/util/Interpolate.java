@@ -18,7 +18,15 @@ public class Interpolate {
     }
   };
 
+  /*
+   * Interpolates from 0 to 1 as x**pow.
+   * Has more delta at 1 for pows > 1 and more delta at 0 for 0 < pows < 1
+   */
   public static Fun pow(final double pow) {
+    if (0 >= pow) {
+      throw new IllegalArgumentException("pow " + pow + " <= 0");
+    }
+
     return new Fun() {
       @Override
       public double apply(double at) {

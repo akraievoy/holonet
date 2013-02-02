@@ -30,6 +30,7 @@ import org.akraievoy.cnet.metrics.domain.EigenMetric;
 import org.akraievoy.cnet.opt.api.*;
 import org.akraievoy.gear.G4Stat;
 import org.akraievoy.holonet.exp.store.StoreLens;
+import org.akraievoy.util.Interpolate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,23 +59,10 @@ public class ExperimentGeneticOpt implements Runnable {
   protected double eliteRatio = 0.05;
   protected double mutationRatio = 0.05;
   protected double crossoverRatio = 0.25;
-  protected SortedMap<Double, Double> generateLimitRatios =
-      new TreeMap<Double, Double>();
-  {
-    generateLimitRatios.put(1.0, 1.0);
-    generateLimitRatios.put(0.9, 1.24);
-    generateLimitRatios.put(0.8, 2.0);
-    generateLimitRatios.put(0.7, 3.0);
-    generateLimitRatios.put(0.6, 5.0);
-    generateLimitRatios.put(0.5, 8.0);
-    generateLimitRatios.put(0.4, 13.0);
-    generateLimitRatios.put(0.3, 21.0);
-    generateLimitRatios.put(0.2, 34.0);
-    generateLimitRatios.put(0.1, 55.0);
-    generateLimitRatios.put(0.05, 89.0);
-    generateLimitRatios.put(0.01, 144.0);
-    generateLimitRatios.put(0.00, 233.0);
-  }
+
+  protected double generateLimitRatioMax = 233;
+  protected double generateLimitRatioPow = 2;
+  protected Interpolate.Fun generateLimitRatioFun;
 
   protected int generation = 0;
 
@@ -83,8 +71,6 @@ public class ExperimentGeneticOpt implements Runnable {
   protected StoreLens<Double> genomeLens;
 
   protected long specimenLimit;
-  protected SortedMap<Long, Long> generateLimits =
-      new TreeMap<Long, Long>();
   protected int eliteLimit;
 
   protected long reportPeriod = 30000;
@@ -92,6 +78,15 @@ public class ExperimentGeneticOpt implements Runnable {
   public ExperimentGeneticOpt(GeneticStrategy<Genome> strategy, final EntropySourceRandom eSource) {
     this.strategy = strategy;
     this.eSource = eSource;
+    this.generateLimitRatioFun = generateLimitRatioFunFun();
+  }
+
+  protected Interpolate.Fun generateLimitRatioFunFun() {
+    return Interpolate.norm(
+        1, 0,
+        1, generateLimitRatioMax,
+        Interpolate.pow(generateLimitRatioPow)
+    );
   }
 
   public void setBreeders(List<Breeder<Genome>> breeders) {
@@ -135,21 +130,14 @@ public class ExperimentGeneticOpt implements Runnable {
     this.eliteRatio = eliteRatio;
   }
 
-  public void setGenerateLimitRatio(double glr) {
-    final SortedMap<Double, Double> glrMap = generateLimitRatios; //  TODO replace mystical limit map with interpolate
-
-    final double scale =
-        glr / glrMap.get(glrMap.firstKey());
-
-    for (Map.Entry<Double, Double> glrE : glrMap.entrySet()) {
-      glrMap.put(glrE.getKey(), scale * glrE.getValue());
-    }
+  public void setGenerateLimitRatioMax(double glrMax) {
+    this.generateLimitRatioMax = glrMax;
+    this.generateLimitRatioFun = generateLimitRatioFunFun();
   }
 
-  public void setGenerateLimitRatios(
-      SortedMap<Double, Double> generateLimitRatios
-  ) {
-    this.generateLimitRatios = generateLimitRatios;
+  public void setGenerateLimitRatioPow(double glrPow) {
+    this.generateLimitRatioPow = glrPow;
+    this.generateLimitRatioFun = generateLimitRatioFunFun();
   }
 
   public void setMutationRatio(double mutationRatio) {
@@ -165,16 +153,9 @@ public class ExperimentGeneticOpt implements Runnable {
   }
 
   protected long generateLimit(final long childrenSize) {
-    final SortedMap<Long, Long> glMap = generateLimits;
-    final SortedMap<Long, Long> tailMap = glMap.tailMap(childrenSize);
-    if (tailMap.isEmpty()) {
-      throw new IllegalStateException(
-          "no limit for childrenSize = " + childrenSize + "\n" +
-          "generateLimits = " + glMap
-      );
-    }
-
-    final Long genLimit = glMap.get(tailMap.firstKey());
+    final double populationCompletion = (double) childrenSize / specimenLimit;
+    final double glrNorm = generateLimitRatioFun.apply(populationCompletion);
+    final long genLimit = (long) Math.ceil(glrNorm * specimenLimit);
 
     return genLimit;
   }
@@ -328,12 +309,8 @@ public class ExperimentGeneticOpt implements Runnable {
     generation = generationLens.getValue();
     specimenLimit = specimenLens.fullCount();
     eliteLimit = (int) Math.ceil(specimenLimit * eliteRatio);
-    generateLimits.clear();
-    for (Map.Entry<Double, Double> glre : generateLimitRatios.entrySet()) {
-      generateLimits.put(
-          (long) Math.ceil(specimenLimit * glre.getKey()),
-          (long) Math.ceil(specimenLimit * glre.getValue())
-      );
+    for (double cr = 0; cr <= 1; cr+=0.05) {
+      System.out.println(generateLimitRatioFun.apply(cr));
     }
   }
 

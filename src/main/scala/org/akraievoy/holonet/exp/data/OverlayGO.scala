@@ -83,7 +83,8 @@ object OverlayGO {
     val entropySourceGASeed = ParamName[JLong]("entropySourceGenetics.seed")
     val gaGeneration = ParamName[JInt]("ovlGenOpt.generation")
     val gaSpecimen = ParamName[JInt]("ovlGenOpt.specimenIndex")
-    val gaGenLimitRatio = ParamName[JDouble]("ovlGenOpt.generateLimitRatio")
+    val gaGenLimitRatioMax = ParamName[JDouble]("ovlGenOpt.generateLimitRatioMax")
+    val gaGenLimitRatioPow = ParamName[JDouble]("ovlGenOpt.generateLimitRatioPow")
     val gaEliteRatio = ParamName[JDouble]("ovlGenOpt.eliteRatio")
     val gaCrossoverRatio = ParamName[JDouble]("ovlGenOpt.crossOverRatio")
     val gaMutationRatio = ParamName[JDouble]("ovlGenOpt.mutationRatio")
@@ -510,7 +511,8 @@ object OverlayGO {
         ga.setEliteRatio(rs.lens(gaEliteRatio).get.get)
         ga.setCrossoverRatio(rs.lens(gaCrossoverRatio).get.get)
         ga.setMutationRatio(rs.lens(gaMutationRatio).get.get)
-        ga.setGenerateLimitRatio(rs.lens(gaGenLimitRatio).get.get)
+        ga.setGenerateLimitRatioMax(rs.lens(gaGenLimitRatioMax).get.get)
+        ga.setGenerateLimitRatioPow(rs.lens(gaGenLimitRatioPow).get.get)
         ga.setSpecimenLens(rs.lens(gaSpecimen))
         ga.setGenerationLens(rs.lens(gaGeneration))
         ga.setGenomeLens(rs.lens(gaGenome))
@@ -525,7 +527,8 @@ object OverlayGO {
       Param(entropySourceGASeed, "42600--42602"),
       Param(gaGeneration, "0--100", Strategy.ITERATE, Strategy.USE_LAST),
       Param(gaSpecimen, "0--90", Strategy.USE_FIRST, Strategy.USE_FIRST),
-      Param(gaGenLimitRatio, "233"),
+      Param(gaGenLimitRatioMax, "233"),
+      Param(gaGenLimitRatioPow, "2"),
       Param(gaEliteRatio, "0.1"),
       Param(gaStateMaxCrossover, "0.25"),
       Param(gaCrossoverRatio, "0.15"),
@@ -555,8 +558,10 @@ object OverlayGO {
       Param(gaStrategyModes, "R"),
       Param(
         gaStrategyFitnessCap,
-        "0.025;0.05;0.1;0.3;0.5;0.8"
+//        "0.025;0.05;0.1;0.3;0.5;0.8"
+        "0.025"
       ),
+      Param(gaGenLimitRatioPow, "8"),
       Param(gaStrategyThetaTilde, "0.75"),
       Param(gaGeneration, "0--63", Strategy.ITERATE, Strategy.USE_LAST),
       Param(gaEliteRatio, "0.2")
