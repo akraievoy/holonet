@@ -19,9 +19,9 @@
 package org.akraievoy.cnet.soo.domain;
 
 import org.akraievoy.base.Format;
+import org.akraievoy.cnet.metrics.api.Metric;
 import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.domain.MetricEDataGenStructural;
-import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.metrics.domain.MetricScalarEigenGap;
 import org.akraievoy.cnet.metrics.domain.MetricVDataEigenGap;
 import org.akraievoy.cnet.net.vo.EdgeData;
@@ -88,13 +88,13 @@ public class SeedSourceSooSpectral implements SeedSource<GenomeSoo> {
   protected GenomeSoo generateSeed(int limit, int size) {
     gen.setNetNodeNum(size);
 
-    EdgeData solution = (EdgeData) MetricResultFetcher.fetch(gen);
+    EdgeData solution = Metric.fetch(gen);
 
     final MetricVDataEigenGap eigenVData = new MetricVDataEigenGap();
     eigenVData.setSource(new RefObject<EdgeData>(solution));
 
     for (int addedEdges = solution.getNonDefCount() / 2; addedEdges < limit; addedEdges++) {
-      final VertexData eigenVector = (VertexData) MetricResultFetcher.fetch(eigenVData);
+      final VertexData eigenVector = Metric.fetch(eigenVData);
 
       double median = this.median.computeMedian(eigenVector.getData());
       double maxDiff = Double.NaN;
@@ -143,7 +143,7 @@ public class SeedSourceSooSpectral implements SeedSource<GenomeSoo> {
 
     final MetricScalarEigenGap eigenGapScalar = new MetricScalarEigenGap();
     eigenGapScalar.setSource(new RefObject<EdgeData>(solution));
-    final double eigenGap = (Double) MetricResultFetcher.fetch(eigenGapScalar);
+    final double eigenGap = Metric.fetch(eigenGapScalar);
     log.info("seed eigengap = {}", eigenGap);
 
     return new GenomeSoo(solution);

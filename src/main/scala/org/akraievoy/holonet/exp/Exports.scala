@@ -19,17 +19,21 @@ trait Exports extends ParamSpaceNav {
   ) {
     //  LATER looks like a type-name I've added for param names
     val primitives = expStore.primitives
-    val axis = spaceAxis(subchain, requiredIndexes)
+    val axisSorted = spaceAxis(subchain, requiredIndexes).sortBy(_.name)
+    val primitiveNamesSorted = primitives.keys.toSeq.sorted
     val primitiveExport =
       Stream(
-        Seq("spacePos") ++ axis.map(_.name) ++ primitives.map(_._1)
+        Seq("spacePos") ++ axisSorted.map(_.name) ++ primitiveNamesSorted
       ) ++ spacePosMap(
         subchain, requiredIndexes, expStore, {
           runStore =>
             val posInt = ParamPos.pos(runStore.spacePos, requiredIndexes)
             val rowSeq = Seq[Option[Any]](Some(posInt)) ++
-                axis.map(p => expStore.get(p.name, runStore.spacePos)(p.mt)) ++
-                primitives.map(p => expStore.get(p._1, runStore.spacePos)(p._2))
+                axisSorted.map(p => expStore.get(p.name, runStore.spacePos)(p.mt)) ++
+                primitiveNamesSorted.map{
+                  pn =>
+                    expStore.get(pn, runStore.spacePos)(primitives(pn))
+                }
             rowSeq.map(elem => elem.map(String.valueOf).getOrElse(""))
         }, false
       )

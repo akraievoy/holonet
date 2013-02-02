@@ -24,12 +24,11 @@ import algores.holonet.core.api.Key;
 import algores.holonet.core.api.Range;
 import com.google.common.base.Optional;
 import org.akraievoy.base.ref.Ref;
-import org.akraievoy.base.ref.RefRO;
+import org.akraievoy.cnet.metrics.api.Metric;
 import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.WeightedEventModel;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelBase;
-import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.metrics.domain.MetricEDataRouteLen;
 import org.akraievoy.cnet.metrics.domain.MetricRoutesFloydWarshall;
 import org.akraievoy.cnet.net.vo.EdgeData;
@@ -106,12 +105,10 @@ public class EnvCNet implements Env {
 
     final MetricEDataRouteLen metricEDataRouteLen =
         new MetricEDataRouteLen(new MetricRoutesFloydWarshall());
-    metricEDataRouteLen.getRoutes().setDistSource((RefRO<EdgeData>) dist);
-    metricEDataRouteLen.getRoutes().setSource((RefRO<EdgeData>) overlay);
+    metricEDataRouteLen.getRoutes().setDistSource(dist);
+    metricEDataRouteLen.getRoutes().setSource(overlay);
 
-    overlayDist.setValue(
-        (EdgeData) MetricResultFetcher.fetch(metricEDataRouteLen)
-    );
+    overlayDist.setValue(Metric.fetch(metricEDataRouteLen));
     final double[] overlayDistDiam = { 0.0 };
     overlayDist.getValue().visitNonDef(new EdgeData.EdgeVisitor() {
       @Override

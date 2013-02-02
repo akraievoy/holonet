@@ -20,11 +20,10 @@ package org.akraievoy.holonet.exp.data
 
 import org.akraievoy.holonet.exp._
 import scala.collection.JavaConversions._
-import store.RunStore
+import store.{RefObject, RunStore}
 import algores.holonet.core.{Network, EnvCNet}
 import algores.holonet.testbench.Testbench
 import algores.holonet.core.events._
-import store.RunStore
 
 object DhtSim {
   import java.lang.{
@@ -142,7 +141,7 @@ object DhtSim {
       Param(tbNodes, "192"),
       Param(tbFailProb, "0.64"),
       Param(tbElems, "256"),
-      Param(tbLoops, "4")
+      Param(tbLoops, "80")
     ),
     Config(
       "attackProf",
@@ -163,8 +162,12 @@ object DhtSim {
         val runtimeEvent = new EventCompositeSequence(
           Seq(
             new EventCompositeLoop(
-              new EventNodeFail().withProbabilityRef(rs.lens(tbFailProb))
-            ).withCountRef(rs.lens(tbNodes)),
+              new EventNodeFail()
+            ).withCountRef(
+              new RefObject[JLong](
+                math.ceil(rs.lens(tbNodes).get.get * rs.lens(tbFailProb).get.get).asInstanceOf[Long]
+              )
+            ),
             new EventNetStabilize(),
             new EventCompositeLoop(
               new EventCompositeLoop(

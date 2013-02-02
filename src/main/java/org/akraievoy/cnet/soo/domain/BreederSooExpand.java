@@ -18,8 +18,8 @@
 
 package org.akraievoy.cnet.soo.domain;
 
+import org.akraievoy.cnet.metrics.api.Metric;
 import org.akraievoy.holonet.exp.store.RefObject;
-import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.metrics.domain.MetricEDataVertexDiff;
 import org.akraievoy.cnet.metrics.domain.MetricVDataEigenGap;
 import org.akraievoy.cnet.net.vo.EdgeData;
@@ -44,7 +44,7 @@ public class BreederSooExpand extends BreederSoo {
     final EdgeData linkFitness;
 
     metricVDataEigenGap.setSource(new RefObject<EdgeData>(child.getSolution()));
-    linkFitness = (EdgeData) MetricResultFetcher.fetch(metricEDataVertexDiff);
+    linkFitness = Metric.fetch(metricEDataVertexDiff);
 
     return linkFitness;
   }

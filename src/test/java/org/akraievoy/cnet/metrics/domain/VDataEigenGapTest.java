@@ -19,8 +19,8 @@
 package org.akraievoy.cnet.metrics.domain;
 
 import junit.framework.TestCase;
+import org.akraievoy.cnet.metrics.api.Metric;
 import org.akraievoy.holonet.exp.store.RefObject;
-import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataFactory;
 import org.akraievoy.cnet.net.vo.VertexData;
@@ -36,7 +36,7 @@ public class VDataEigenGapTest extends TestCase {
 
     final MetricVDataEigenGap metric = new MetricVDataEigenGap();
     metric.setSource(new RefObject<EdgeData>(netEData));
-    final VertexData v = (VertexData) MetricResultFetcher.fetch(metric);
+    final VertexData v = Metric.fetch(metric);
 
     assertEquals(0.0, v.get(2), 1e-16);
   }

@@ -164,14 +164,19 @@ public class ExperimentGeneticOpt implements Runnable {
     initOnContext();
 
     if (generation == 0) {
-      //  LATER we don't have constraint validation on the seeds here
       final List<Genome> genomes = seedSource.getSeeds(strategy);
       for (Genome genome : genomes) {
-        storeToPopulation(children, genome);
+        if (validate(genome)) {
+          storeToPopulation(children, genome);
+        }
       }
       strategy.initOnSeeds(generationLens, children);
       storeToContext(children);
-      log.info("Initialization complete; fitness = {}", fitnessReport(children));
+      log.info(
+          "Initialized: fitness {}, seed conditions:\n{}",
+          fitnessReport(children),
+          conditions.buildReport()
+      );
       return;
     }
 
@@ -407,8 +412,18 @@ public class ExperimentGeneticOpt implements Runnable {
     }
 
     final StoreLens<Integer>[] specimenAxis = specimenLens.axisArr();
+    if (specimenAxis.length < children.size()) {
+      log.warn(String.format(
+          "population limit of %d genomes cutting off weakest of %d genomes",
+          specimenAxis.length,
+          children.size()
+      ));
+    }
     int specimenIndex = 0;
     for (FitnessKey fKey : children.keySet()) {
+      if (specimenIndex == specimenAxis.length - 1) {
+        break;
+      }
       final StoreLens<Double> currGenomeLens =
           specimenAxis[specimenIndex].forTypeName(Double.class, genomeLens.paramName());
       final Genome genome = genomes.get(fKey);

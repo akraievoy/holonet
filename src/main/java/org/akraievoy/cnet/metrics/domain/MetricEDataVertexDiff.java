@@ -18,8 +18,8 @@
 
 package org.akraievoy.cnet.metrics.domain;
 
+import org.akraievoy.cnet.metrics.api.Metric;
 import org.akraievoy.cnet.metrics.api.MetricEData;
-import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.metrics.api.MetricVData;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataFactory;
@@ -46,7 +46,7 @@ public class MetricEDataVertexDiff extends MetricEData {
   }
 
   public void run() {
-    final VertexData vertexData = (VertexData) MetricResultFetcher.fetch(vertexMetric);
+    final VertexData vertexData = Metric.fetch(vertexMetric);
 
     final int size = vertexData.getSize();
     final EdgeData data = EdgeDataFactory.dense(symmetric, 0.0, size);

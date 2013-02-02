@@ -18,8 +18,8 @@
 
 package org.akraievoy.cnet.metrics.domain;
 
+import org.akraievoy.cnet.metrics.api.Metric;
 import org.akraievoy.cnet.metrics.api.MetricEData;
-import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.metrics.api.MetricRoutes;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataFactory;
@@ -42,7 +42,7 @@ public class MetricEDataRouteLen extends MetricEData {
   }
 
   public void run() {
-    final Routes routesObj = (Routes) MetricResultFetcher.fetch(routes);
+    final Routes routesObj = Metric.fetch(routes);
 
     final int size = routesObj.getSize();
     //	LATER actually we should check whether all routes lengths are symmetric

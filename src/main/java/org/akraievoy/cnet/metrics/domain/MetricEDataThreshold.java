@@ -18,8 +18,8 @@
 
 package org.akraievoy.cnet.metrics.domain;
 
+import org.akraievoy.cnet.metrics.api.Metric;
 import org.akraievoy.cnet.metrics.api.MetricEData;
-import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataFactory;
 
@@ -42,7 +42,7 @@ public class MetricEDataThreshold extends MetricEData {
   }
 
   public void run() {
-    final EdgeData data = (EdgeData) MetricResultFetcher.fetch(metric);
+    final EdgeData data = Metric.fetch(metric);
 
     final EdgeMaxVisitor max = new EdgeMaxVisitor();
     data.visitNonDef(max);

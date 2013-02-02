@@ -20,6 +20,7 @@ package org.akraievoy.cnet.metrics.domain;
 
 import junit.framework.TestCase;
 import org.akraievoy.base.ref.Ref;
+import org.akraievoy.cnet.metrics.api.Metric;
 import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.domain.LocationGeneratorRecursive;
 import org.akraievoy.cnet.gen.domain.MetricEDataGenStructural;
@@ -27,7 +28,6 @@ import org.akraievoy.cnet.gen.vo.ConnPreferenceYookJeongBarabasi;
 import org.akraievoy.cnet.gen.vo.EntropySourceRandom;
 import org.akraievoy.cnet.gen.vo.MetricEuclidean;
 import org.akraievoy.cnet.gen.vo.Point;
-import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.metrics.api.MetricRoutes;
 import org.akraievoy.cnet.net.vo.*;
 
@@ -59,7 +59,7 @@ public class MetricRoutesJohnsonTest extends TestCase {
     final MetricRoutes metric = new MetricRoutesJohnson();
     metric.setSource(new RefObject<EdgeData>(eData));
 
-    final Routes routeData = (Routes) MetricResultFetcher.fetch(metric);
+    final Routes routeData = Metric.fetch(metric);
 
     final Route route = routeData.get(1, 4);
 
@@ -92,7 +92,7 @@ public class MetricRoutesJohnsonTest extends TestCase {
     final MetricRoutes metric = new MetricRoutesJohnson();
     metric.setSource(new RefObject<EdgeData>(eData));
 
-    final Routes routeData = (Routes) MetricResultFetcher.fetch(metric);
+    final Routes routeData = Metric.fetch(metric);
     final Route route = routeData.get(1, 4);
 
     assertEquals(3.0, route.doubleValue());
@@ -113,7 +113,7 @@ public class MetricRoutesJohnsonTest extends TestCase {
     eData.set(6, 7, 2.0);
     final MetricRoutes metric = new MetricRoutesJohnson();
     metric.setSource(new RefObject<EdgeData>(eData));
-    final Routes routeData = (Routes) MetricResultFetcher.fetch(metric);
+    final Routes routeData = Metric.fetch(metric);
 
     Route route = routeData.get(1, 4);
     assertEquals(2.0, route.doubleValue());
@@ -144,7 +144,7 @@ public class MetricRoutesJohnsonTest extends TestCase {
 
     metric.setSource(new RefObject<EdgeData>(eData));
 
-    final Routes routeData = (Routes) MetricResultFetcher.fetch(metric);
+    final Routes routeData = Metric.fetch(metric);
 
     final Route route = routeData.get(2, 5);
 
@@ -166,7 +166,7 @@ public class MetricRoutesJohnsonTest extends TestCase {
 
     metric.setSource(new RefObject<EdgeData>(eData));
 
-    final Routes routeData = (Routes) MetricResultFetcher.fetch(metric);
+    final Routes routeData = Metric.fetch(metric);
 
     final Route route = routeData.get(1, 3);
 
@@ -189,7 +189,7 @@ public class MetricRoutesJohnsonTest extends TestCase {
 
     metric.setSource(new RefObject<EdgeData>(eData));
 
-    final Routes routeData = (Routes) MetricResultFetcher.fetch(metric);
+    final Routes routeData = Metric.fetch(metric);
 
     final Route route = routeData.get(2, 4);
 

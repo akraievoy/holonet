@@ -553,17 +553,18 @@ object OverlayGO {
     Config(
       "minEff13x4x64",
       "MinEff: 1.3 * 4 seeds * 64 gens (fast sim corr study)",
-      Param(gaStrategyMinEff, "1.3"),
-      Param(entropySourceGASeed, "42600--42602"),
+      Param(gaStrategyMinEff, "0.8"),
+      Param(entropySourceGASeed, "42600-42603"),
       Param(gaStrategyModes, "R"),
+      Param(gaSpecimen, "0--4", Strategy.USE_FIRST, Strategy.USE_FIRST),
       Param(
         gaStrategyFitnessCap,
 //        "0.025;0.05;0.1;0.3;0.5;0.8"
-        "0.025"
+        "0.05;0.1;0.3;0.5;0.8"
       ),
-      Param(gaGenLimitRatioPow, "8"),
+      Param(gaGenLimitRatioPow, "10"),
       Param(gaStrategyThetaTilde, "0.75"),
-      Param(gaGeneration, "0--63", Strategy.ITERATE, Strategy.USE_LAST),
+      Param(gaGeneration, "0--64", Strategy.ITERATE, Strategy.USE_LAST),
       Param(gaEliteRatio, "0.2")
     ),
     Config("minEff14", "MinEff: 1.4", Param(gaStrategyMinEff, "1.4")),

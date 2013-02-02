@@ -19,8 +19,8 @@
 package org.akraievoy.cnet.soo.domain;
 
 import org.akraievoy.base.ref.RefRO;
+import org.akraievoy.cnet.metrics.api.Metric;
 import org.akraievoy.holonet.exp.store.RefObject;
-import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.metrics.api.MetricRoutes;
 import org.akraievoy.cnet.metrics.domain.EigenMetric;
 import org.akraievoy.cnet.metrics.domain.MetricEDataRouteLen;
@@ -182,7 +182,7 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
   public double computeFitness(GenomeSoo genome) {
     metricScalarEigenGap.setSource(new RefObject<EdgeData>(genome.getSolution()));
     try {
-      return (Double) MetricResultFetcher.fetch(metricScalarEigenGap);
+      return Metric.fetch(metricScalarEigenGap);
     } catch (EigenMetric.EigenSolverException e) {
       log.warn("IGNORING eigensolver failure: marking child as invalid", e);
       return Double.NaN;
@@ -193,12 +193,12 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
     metricEDataRouteLen.getRoutes().setDistSource(distSource);
     metricEDataRouteLen.getRoutes().setSource(new RefObject<EdgeData>(child.getSolution()));
 
-    final EdgeData lenEData = (EdgeData) MetricResultFetcher.fetch(metricEDataRouteLen);
+    final EdgeData lenEData = Metric.fetch(metricEDataRouteLen);
 
     metricEff.setSource(new RefObject<EdgeData>(lenEData));
     metricEff.setWeightSource(requestSource);
 
-    final Double eff = (Double) MetricResultFetcher.fetch(metricEff);
+    final Double eff = Metric.fetch(metricEff);
     return eff;
   }
 }

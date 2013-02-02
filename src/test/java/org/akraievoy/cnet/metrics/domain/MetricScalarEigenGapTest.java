@@ -19,11 +19,10 @@
 package org.akraievoy.cnet.metrics.domain;
 
 import junit.framework.TestCase;
+import org.akraievoy.cnet.metrics.api.Metric;
 import org.akraievoy.holonet.exp.store.RefObject;
-import org.akraievoy.cnet.metrics.api.MetricResultFetcher;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.EdgeDataFactory;
-import org.akraievoy.cnet.net.vo.VertexData;
 
 import java.util.Arrays;
 
@@ -68,31 +67,31 @@ public class MetricScalarEigenGapTest extends TestCase {
     final MetricVDataEigenGap vdata = new MetricVDataEigenGap();
     vdata.setSource(new RefObject<EdgeData>(path));
 
-    final Double pathGap = (Double) MetricResultFetcher.fetch(metric);
-		System.out.println("path = " + pathGap);
-		System.out.println("path = " + Arrays.toString(((VertexData) MetricResultFetcher.fetch(vdata)).getData()));
+    final Double pathGap = Metric.fetch(metric);
+    System.out.println("path = " + pathGap);
+    System.out.println("path = " + Arrays.toString((Metric.fetch(vdata)).getData()));
 
     metric.setSource(new RefObject<EdgeData>(star));
     vdata.setSource(new RefObject<EdgeData>(star));
 
-    final Double starGap = (Double) MetricResultFetcher.fetch(metric);
-		System.out.println("star = " + starGap);
-		System.out.println("star = " + Arrays.toString(((VertexData) MetricResultFetcher.fetch(vdata)).getData()));
+    final Double starGap = Metric.fetch(metric);
+    System.out.println("star = " + starGap);
+    System.out.println("star = " + Arrays.toString((Metric.fetch(vdata)).getData()));
     assertTrue(starGap > pathGap);
 
     metric.setSource(new RefObject<EdgeData>(cycle));
     vdata.setSource(new RefObject<EdgeData>(cycle));
 
-    final Double cycleGap = (Double) MetricResultFetcher.fetch(metric);
-		System.out.println("cycle = " + cycleGap);
-		System.out.println("cycle = " + Arrays.toString(((VertexData) MetricResultFetcher.fetch(vdata)).getData()));
+    final Double cycleGap = Metric.fetch(metric);
+    System.out.println("cycle = " + cycleGap);
+    System.out.println("cycle = " + Arrays.toString((Metric.fetch(vdata)).getData()));
 
     metric.setSource(new RefObject<EdgeData>(star2));
     vdata.setSource(new RefObject<EdgeData>(star2));
 
-    final Double star2Gap = (Double) MetricResultFetcher.fetch(metric);
-		System.out.println("star2 = " + star2Gap);
-		System.out.println("star2 = " + Arrays.toString(((VertexData) MetricResultFetcher.fetch(vdata)).getData()));
+    final Double star2Gap = Metric.fetch(metric);
+    System.out.println("star2 = " + star2Gap);
+    System.out.println("star2 = " + Arrays.toString((Metric.fetch(vdata)).getData()));
     assertTrue(star2Gap > cycleGap);
   }
 }
