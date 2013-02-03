@@ -18,10 +18,14 @@
 
 package org.akraievoy.holonet.exp
 
-import org.apache.log4j.BasicConfigurator
+import org.apache.log4j.{PatternLayout, ConsoleAppender, BasicConfigurator}
 
 object Runner extends App {
-  BasicConfigurator.configure()
+  BasicConfigurator.configure(
+    new ConsoleAppender(
+      new PatternLayout("%5.5p %-8.8t %-24.24c{1} %m%n")
+    )
+  )
 
   if (false) {
     Registry.execute(
