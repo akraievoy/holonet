@@ -46,6 +46,7 @@ public class ExperimentGeneticOpt implements Runnable {
   protected final EntropySource eSource;
 
   protected final CompositeMutator mutators = new CompositeMutator();
+  protected final CompositeMutator adaptMutators = new CompositeMutator("adaptMutators");
   protected final CompositeBreeder breeders = new CompositeBreeder();
   protected final List<Mutator<Genome>> preValidateMutators =
       new ArrayList<Mutator<Genome>>();
@@ -101,9 +102,8 @@ public class ExperimentGeneticOpt implements Runnable {
     this.mutators.setElems(mutators);
   }
 
-  public void setPreValidateMutators(List<Mutator<Genome>> preValidateMutators) {
-    this.preValidateMutators.clear();
-    this.preValidateMutators.addAll(preValidateMutators);
+  public void setAdaptMutators(List<Mutator<Genome>> adaptMutators) {
+    this.adaptMutators.setElems(adaptMutators);
   }
 
   public void setSeedSource(final SeedSource<Genome> seedSource) {
@@ -156,7 +156,9 @@ public class ExperimentGeneticOpt implements Runnable {
     final double populationCompletion = (double) childrenSize / specimenLimit;
     final double glrNorm = generateLimitRatioFun.apply(populationCompletion);
     final long genLimit = (long) Math.ceil(glrNorm * specimenLimit);
-
+/*
+    System.out.printf("populationCompletion = %g genLimit = %d%n", populationCompletion, genLimit);
+*/
     return genLimit;
   }
 
@@ -195,6 +197,7 @@ public class ExperimentGeneticOpt implements Runnable {
 
     breeders.calibrate(generationLens);
     mutators.calibrate(generationLens);
+    adaptMutators.calibrate(generationLens);
 
     events.setMinWeight(state.getMinElemFitness());
     events.setAmp(state.getElemFitPow());
@@ -207,13 +210,20 @@ public class ExperimentGeneticOpt implements Runnable {
     Ref<Long> lastReport = new RefSimple<Long>(System.currentTimeMillis());
     eliteLimit = Math.min(parents.size(), eliteLimit);
     int elitePointer = 0;
+    int eliteSurvived = 0;
     int generateCount = 0;
     boolean moarChildren;
     do {
-      boolean generateValid =
-          generateCount < generateLimit((long) children.size());
-      boolean eliteValid =
-          elitePointer < eliteLimit && elitePointer < parents.size();
+      final boolean generateValid =
+          generateCount < generateLimit(children.size());
+/*
+      System.out.println("generateValid = " + generateValid);
+*/
+      final boolean eliteValid =
+          eliteSurvived < eliteLimit && elitePointer < parents.size();
+/*
+      System.out.println("eliteValid = " + eliteValid);
+*/
       moarChildren =
           children.size() < specimenLimit && (generateValid || eliteValid);
 
@@ -221,15 +231,18 @@ public class ExperimentGeneticOpt implements Runnable {
         report(lastReport);
         final Ref<Breeder<Genome>> breeder = new RefSimple<Breeder<Genome>>(null);
         final Ref<Mutator<Genome>> mutator = new RefSimple<Mutator<Genome>>(null);
+        final Ref<Mutator<Genome>> adaptMutator = new RefSimple<Mutator<Genome>>(null);
 
+        boolean eliteActive = false;
         boolean valid = false;
         Genome child = null;
         try {
-          if (eliteValid && (!generateValid || children.size() + eliteLimit >= specimenLimit) ) {
-            child = parents.get(fKeys[elitePointer++]); //  TODO: NOT ALL ELITE PARENTS MAY SURVIVE
+          if (eliteValid) {
+            eliteActive = true;
+            child = parents.get(fKeys[elitePointer++]);
           } else {
             child = generateChild(
-                state, fKeys, breeder, mutator
+                state, fKeys, breeder, mutator, adaptMutator
             );
             generateCount++;
           }
@@ -242,16 +255,21 @@ public class ExperimentGeneticOpt implements Runnable {
         if (valid && child != null) {
           final Optional<FitnessKey> fkOpt = storeToPopulation(children, child);
           if (fkOpt.isPresent()) {
+            if (eliteActive) {
+              eliteSurvived++;
+            }
             //  fraction of children which are not better than this one
             double rank = children.tailMap(fkOpt.get()).size() / (double) children.size();
 
             mutators.rankFeedback(mutator.getValue(), rank);
+            adaptMutators.rankFeedback(adaptMutator.getValue(), rank);
             breeders.rankFeedback(breeder.getValue(), rank);
             continue;
           }
         }
 
         mutators.onFailure(mutator.getValue());
+        adaptMutators.onFailure(adaptMutator.getValue());
         breeders.onFailure(breeder.getValue());
       }
     } while(moarChildren);
@@ -259,6 +277,7 @@ public class ExperimentGeneticOpt implements Runnable {
     report(null);
 
     storeToContext(children);
+    adaptMutators.storeRatios(generationLens);
     mutators.storeRatios(generationLens);
     breeders.storeRatios(generationLens);
     log.info(
@@ -285,14 +304,24 @@ public class ExperimentGeneticOpt implements Runnable {
 
   protected void report(Ref<Long> lastReport) {
     if (lastReport == null) {
-      log.info(breeders.buildReport() + mutators.buildReport() + conditions.buildReport());
+      log.info(
+          breeders.buildReport() +
+          mutators.buildReport() +
+          adaptMutators.buildReport() +
+          conditions.buildReport()
+      );
       return;
     }
 
     if (System.currentTimeMillis() - lastReport.getValue() > reportPeriod) {
       lastReport.setValue(System.currentTimeMillis());
 
-      log.debug(breeders.buildReport() + mutators.buildReport() + conditions.buildReport());
+      log.debug(
+          breeders.buildReport() +
+          mutators.buildReport() +
+          adaptMutators.buildReport() +
+          conditions.buildReport()
+      );
     }
   }
 
@@ -317,9 +346,10 @@ public class ExperimentGeneticOpt implements Runnable {
   }
 
   protected Genome generateChild(
-      GeneticState state, FitnessKey[] fKeys, 
+      GeneticState state, FitnessKey[] fKeys,
       Ref<Breeder<Genome>> breeder,
-      Ref<Mutator<Genome>> mutator
+      Ref<Mutator<Genome>> mutator,
+      Ref<Mutator<Genome>> adaptMutator
   ) {
     final FitnessKey fKeyA = fKeys[events.generate(eSource, false, null)];
     final FitnessKey fKeyB = fKeys[events.generate(eSource, false, null)];
@@ -339,9 +369,8 @@ public class ExperimentGeneticOpt implements Runnable {
     mutator.setValue(mutators.select(eSource));
     mutator.getValue().mutate(strategy, child, state, eSource);
 
-    for (Mutator<Genome> pvm : preValidateMutators) {
-      pvm.mutate(strategy, child, state, eSource);
-    }
+    adaptMutator.setValue(adaptMutators.select(eSource));
+    adaptMutator.getValue().mutate(strategy, child, state, eSource);
 
     return child;
   }

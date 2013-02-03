@@ -494,9 +494,11 @@ object OverlayGO {
             new MutatorSooRewireLocalize()
           ).map(_.asInstanceOf[Mutator[Genome]])
         )
-        ga.setPreValidateMutators(
+        ga.setAdaptMutators(
           Seq(
-            new MutatorSooRegularize()
+            new MutatorSooRegularize(),
+            new MutatorSooClusterize(),
+            new MutatorSooNoop()
           ).map(_.asInstanceOf[Mutator[Genome]])
         )
         ga.setConditions(
@@ -556,16 +558,16 @@ object OverlayGO {
       Param(gaStrategyMinEff, "0.8"),
       Param(entropySourceGASeed, "42600--42603"),
       Param(gaStrategyModes, "R"),
-      Param(gaSpecimen, "0--4", Strategy.USE_FIRST, Strategy.USE_FIRST),
+      Param(gaSpecimen, "0--21", Strategy.USE_FIRST, Strategy.USE_FIRST),
       Param(
         gaStrategyFitnessCap,
-//        "0.025;0.05;0.1;0.3;0.5;0.8"
-        "0.05;0.1;0.3;0.5;0.8"
+        "0.025;0.05;0.1;0.3;0.5;0.8"
       ),
+      Param(gaGenLimitRatioMax, "2"),
       Param(gaGenLimitRatioPow, "10"),
       Param(gaStrategyThetaTilde, "0.75"),
       Param(gaGeneration, "0--64", Strategy.ITERATE, Strategy.USE_LAST),
-      Param(gaEliteRatio, "0.2")
+      Param(gaEliteRatio, "0.9")
     ),
     Config("minEff14", "MinEff: 1.4", Param(gaStrategyMinEff, "1.4")),
     Config("minEff15", "MinEff: 1.5", Param(gaStrategyMinEff, "1.5")),

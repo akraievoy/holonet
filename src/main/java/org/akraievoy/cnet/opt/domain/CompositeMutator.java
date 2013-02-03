@@ -25,12 +25,22 @@ import org.akraievoy.cnet.opt.api.Genome;
 import org.akraievoy.cnet.opt.api.Mutator;
 
 public class CompositeMutator extends Composite<Mutator<Genome>> {
+  protected String title;
+
+  public CompositeMutator() {
+    this("mutators");
+  }
+
+  public CompositeMutator(final String title) {
+    this.title = title;
+  }
+
   protected Mutator<Genome> createReportingWrapper(int breederI, Mutator<Genome> wrapped) {
     return new ReportingMutator(breederI, wrapped);
   }
 
   public String getTitle() {
-    return "mutators";
+    return title;
   }
 
   class ReportingMutator implements Mutator<Genome>, Indexed {
