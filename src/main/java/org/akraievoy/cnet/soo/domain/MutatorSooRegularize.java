@@ -78,7 +78,6 @@ public class MutatorSooRegularize implements Mutator<GenomeSoo> {
 
       moarRewires = minPow < limit && limit < maxPow && maxPow - minPow >= step;
       if (moarRewires) {
-        System.out.printf("regularize active: %.0g < %d < %.0g %n", minPow, limit, maxPow);
         rewireChoices.clear();
         for (int node = 0; node < size; node++) {
           if (
