@@ -61,13 +61,13 @@ object DhtSim {
     Config(
       "7x3",
       "7 inits * 3 runs",
-      Param(tbInitSeed, "7654321;91032843;8574829;1029389;9193782;74754832;68492834"),
-      Param(tbRunSeed, "1234567;1928483;9348492")
+      Param(tbInitSeed, "91032843--91032849"),
+      Param(tbRunSeed, "9348492--9348492")
     ),
     Config(
       "7x42",
       "7 inits * 42 runs",
-      Param(tbInitSeed, "7654321;91032843;8574829;1029389;9193782;74754832;68492834"),
+      Param(tbInitSeed, "91032843--91032849"),
       Param(tbRunSeed, "9348492--9348533")
     ),
     Config(

@@ -28,49 +28,52 @@ object Runner extends App {
     )
   )
 
-  if (false) {
-    Registry.execute(
-      "dlaGenImages",
-      Map("dlaGenImages" -> "dimensions")
-    )
-
-    Registry.execute(
-      "overlayEnum",
-      Map("overlayEnum" -> "default")
-    )
-    Registry.execute(
-      "overlayGO-3-genetics",
-      Map(
-        "overlayGO-1-physDataset" -> "big-1k",
-        "overlayGO-2-ovlDataset" -> "nu20",
-        //  "overlayGO-2-ovlDataset" -> "minEff13x4x64"
-        "overlayGO-3-genetics" -> "minEff13-smoke"
-      )
-    )
-  } else {
-/*
+  args match {
+    case Array("curr-smoke") =>
       Registry.execute(
         "p2p-stage3-attack-chained",
         Map(
           "overlayGO-1-physDataset" -> "big-1k",
           "overlayGO-2-ovlDataset" -> "nu20",
-          "overlayGO-3-genetics" -> "minEff13-smoke",
-          "p2p-stage1-seed" -> "3x2",
-          "p2p-stage2-paramSpace" -> "corrStudy-large-192",
-          "p2p-stage3-attack-chained" -> "default"
-        )
-      )
-*/
-      Registry.execute(
-        "p2p-stage3-attack-chained",
-        Map(
-          "overlayGO-1-physDataset" -> "big-1k",
-          "overlayGO-2-ovlDataset" -> "nu20",
-          "overlayGO-3-genetics" -> "minEff13x4x64",
+          "overlayGO-3-genetics" -> "corrStudy-smoke",
           "p2p-stage1-seed" -> "7x3",
           "p2p-stage2-paramSpace" -> "corrStudy-large-192",
           "p2p-stage3-attack-chained" -> "default"
         )
+      )
+    case Array("curr-full") =>
+      Registry.execute(
+        "p2p-stage3-attack-chained",
+        Map(
+          "overlayGO-1-physDataset" -> "big-1k",
+          "overlayGO-2-ovlDataset" -> "nu20",
+          "overlayGO-3-genetics" -> "corrStudy-full",
+          "p2p-stage1-seed" -> "7x42",
+          "p2p-stage2-paramSpace" -> "corrStudy-large-192",
+          "p2p-stage3-attack-chained" -> "default"
+        )
+      )
+    case Array("dla") =>
+      Registry.execute(
+        "dlaGenImages",
+        Map("dlaGenImages" -> "dimensions")
+      )
+    case Array("ovlenum") =>
+      Registry.execute(
+        "overlayEnum",
+        Map("overlayEnum" -> "default")
+      )
+    case other =>
+      println(
+        """Usage:
+          |  sbt 'run batchName'
+          |
+          |Available experiment batchNames:
+          | dla        - dla model with varying dimensions
+          | ovlenum    - overlay enumeration
+          | curr-smoke - current experiment; smoke testing version
+          | curr-full  - current experiment; full version (takes time)
+        """.stripMargin
       )
   }
 }

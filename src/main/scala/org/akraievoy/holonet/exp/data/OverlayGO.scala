@@ -545,16 +545,25 @@ object OverlayGO {
       Param(gaStrategyFitnessCap, "1")
     ),
     Config(
-      "minEff12x2x3",
-      "MinEff: 1.2 * 2 seeds * 3 gens (debug)",
-      Param(gaStrategyMinEff, "1.2"),
-      Param(entropySourceGASeed, "42600--42601"),
-      Param(gaGeneration, "0--2", Strategy.ITERATE, Strategy.USE_LAST)
+      "corrStudy-smoke",
+      "Correlation study --- smoke",
+      Param(gaStrategyMinEff, "0.8"),
+      Param(entropySourceGASeed, "42600"),
+      Param(gaStrategyModes, "R"),
+      Param(gaSpecimen, "0--21", Strategy.USE_FIRST, Strategy.USE_FIRST),
+      Param(
+        gaStrategyFitnessCap,
+        "0.025;0.8"
+      ),
+      Param(gaGenLimitRatioMax, "2"),
+      Param(gaGenLimitRatioPow, "10"),
+      Param(gaStrategyThetaTilde, "0.75"),
+      Param(gaGeneration, "0--10", Strategy.ITERATE, Strategy.USE_LAST),
+      Param(gaEliteRatio, "1")
     ),
-    Config("minEff13", "MinEff: 1.3", Param(gaStrategyMinEff, "1.3")),
     Config(
-      "minEff13x4x64",
-      "MinEff: 1.3 * 4 seeds * 64 gens (fast sim corr study)",
+      "corrStudy-full",
+      "Correlation study --- full",
       Param(gaStrategyMinEff, "0.8"),
       Param(entropySourceGASeed, "42600--42603"),
       Param(gaStrategyModes, "R"),
@@ -566,9 +575,17 @@ object OverlayGO {
       Param(gaGenLimitRatioMax, "2"),
       Param(gaGenLimitRatioPow, "10"),
       Param(gaStrategyThetaTilde, "0.75"),
-      Param(gaGeneration, "0--64", Strategy.ITERATE, Strategy.USE_LAST),
+      Param(gaGeneration, "0--22", Strategy.ITERATE, Strategy.USE_LAST),
       Param(gaEliteRatio, "0.9")
     ),
+    Config(
+      "minEff12x2x3",
+      "MinEff: 1.2 * 2 seeds * 3 gens (debug)",
+      Param(gaStrategyMinEff, "1.2"),
+      Param(entropySourceGASeed, "42600--42601"),
+      Param(gaGeneration, "0--2", Strategy.ITERATE, Strategy.USE_LAST)
+    ),
+    Config("minEff13", "MinEff: 1.3", Param(gaStrategyMinEff, "1.3")),
     Config("minEff14", "MinEff: 1.4", Param(gaStrategyMinEff, "1.4")),
     Config("minEff15", "MinEff: 1.5", Param(gaStrategyMinEff, "1.5")),
     Config("minEff16", "MinEff: 1.6", Param(gaStrategyMinEff, "1.6")),
