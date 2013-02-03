@@ -323,10 +323,14 @@ trait Exports extends ParamSpaceNav {
                       dotProcess.getInputStream,
                       dotProcessOutput
                     )
-                    fs.appendBinary(expStore.uid, filePath+".log", Map.empty)(
-                      new ByteArrayInputStream(dotProcessOutput.toByteArray)
-                    )
                     dotProcess.waitFor()
+                    if (dotProcess.exitValue() != 0) {
+                      fs.appendBinary(expStore.uid, filePath+".log", Map.empty)(
+                        new ByteArrayInputStream(dotProcessOutput.toByteArray)
+                      )
+                    } else {
+                      fs.fileForUid(expStore.uid, filePath).delete()
+                    }
                   }
               }
         }, false
