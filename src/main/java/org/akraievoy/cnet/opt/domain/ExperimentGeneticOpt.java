@@ -461,7 +461,7 @@ public class ExperimentGeneticOpt implements Runnable {
 
       if (specimenIndex == 0) {
         genome.write(
-            currGenomeLens.forName(currGenomeLens.paramName() + ".best"),
+            currGenomeLens.forName(currGenomeLens.paramName() + "Best"),
             fKey.getFitness()
         );
       }

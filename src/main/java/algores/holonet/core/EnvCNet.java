@@ -87,18 +87,25 @@ public class EnvCNet implements Env {
     this.overlay = overlay;
   }
 
-  protected boolean refSet(final Ref<?>[] refs) {
-    for (Ref<?> ref : refs) {
+  protected int refSet(final Ref<?>[] refs) {
+    for (int i = 0; i < refs.length; i++) {
+      Ref<?> ref = refs[i];
       if (ref == null || ref.getValue() == null) {
-        return false;
+        return i;
       }
     }
-    return true;
+    return -1;
   }
 
   public void init() {
-    if (!refSet(new Ref<?>[]{locX, locY, density, dist, req, overlay})) {
-      log.warn("activating fallback to EnvSimple: not all refs set");
+    int unsetRefIndex = refSet(
+        new Ref<?>[]{locX, locY, density, dist, req, overlay}
+    );
+    if (unsetRefIndex >= 0) {
+      log.warn(
+          "activating fallback to EnvSimple: ref {} not set",
+          new String[]{"locX", "locY", "density", "dist", "req", "overlay"}[unsetRefIndex]
+      );
       fallback = new EnvSimple();
       return;
     }

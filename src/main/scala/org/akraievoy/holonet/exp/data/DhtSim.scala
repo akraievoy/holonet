@@ -33,18 +33,18 @@ object DhtSim {
 
   object ParamNames {
     //  stage 1 inputs
-    val tbInitSeed = ParamName[JLong]("tbInitSeed.value")
-    val tbRunSeed = ParamName[JLong]("tbRunSeed.value")
+    val p4initSeed = ParamName[JLong]("p4initSeed")
+    val p4runSeed = ParamName[JLong]("p4runSeed")
     //  stage 2 inputs
-    val tbNodes = ParamName[JLong]("tbNodes.value")
-    val tbElems = ParamName[JLong]("tbElems.value")
-    val tbLoops = ParamName[JLong]("tbLoops.value")
-    val tbFailProb = ParamName[JDouble]("tbFailProb.value")
-    val tbJoinProb = ParamName[JDouble]("tbJoinProb.value")
-    val tbStabProb = ParamName[JDouble]("tbStabProb.value")
-    val tbAttackProb = ParamName[JDouble]("tbAttackProb.value")
+    val p5nodes = ParamName[JLong]("p5nodes")
+    val p5Elems = ParamName[JLong]("p5Elems")
+    val p5loops = ParamName[JLong]("p5loops")
+    val p5failProb = ParamName[JDouble]("p5failProb")
+    val p5joinProb = ParamName[JDouble]("p5joinProb")
+    val p5stabilizeProb = ParamName[JDouble]("p5stabilizeProb")
+    val p5attackProb = ParamName[JDouble]("p5attackProb")
     //  stage 3 outputs
-    val tbReport= ParamName[JDouble]("tb.report")
+    val p6report= ParamName[JDouble]("p6report")
   }
 
   import ParamNames._
@@ -55,26 +55,26 @@ object DhtSim {
     Nil,
     { rs => },
     Config(
-      Param(tbInitSeed, "1234567"),
-      Param(tbRunSeed, "7654321")
+      Param(p4initSeed, "1234567"),
+      Param(p4runSeed, "7654321")
     ),
     Config(
       "7x3",
       "7 inits * 3 runs",
-      Param(tbInitSeed, "91032843--91032849"),
-      Param(tbRunSeed, "9348492--9348492")
+      Param(p4initSeed, "91032843--91032849"),
+      Param(p4runSeed, "9348492--9348492")
     ),
     Config(
       "7x42",
       "7 inits * 42 runs",
-      Param(tbInitSeed, "91032843--91032849"),
-      Param(tbRunSeed, "9348492--9348533")
+      Param(p4initSeed, "91032843--91032849"),
+      Param(p4runSeed, "9348492--9348533")
     ),
     Config(
       "3x2",
       "3 inits * 2 runs",
-      Param(tbInitSeed, "7654321;91032843;8574829"),
-      Param(tbRunSeed, "1234567;1928483")
+      Param(p4initSeed, "7654321;91032843;8574829"),
+      Param(p4runSeed, "1234567;1928483")
     )
   )
 
@@ -84,69 +84,69 @@ object DhtSim {
     Seq("p2p-stage1-seed"),
     { rs => },
     Config(
-      Param(tbNodes, "60"),
-      Param(tbElems, "32"),
-      Param(tbLoops, "64"),
-      Param(tbFailProb, "0.003"),
-      Param(tbJoinProb, "0.01"),
-      Param(tbStabProb, "0.01"),
-      Param(tbAttackProb, "0.01")
+      Param(p5nodes, "60"),
+      Param(p5Elems, "32"),
+      Param(p5loops, "64"),
+      Param(p5failProb, "0.003"),
+      Param(p5joinProb, "0.01"),
+      Param(p5stabilizeProb, "0.01"),
+      Param(p5attackProb, "0.01")
     ),
     Config(
       "extraLoops",
       "extra loops",
-      Param(tbLoops, "256")
+      Param(p5loops, "256")
     ),
     Config(
       "def24",
       "default - 24 nodes",
-      Param(tbNodes, "24")
+      Param(p5nodes, "24")
     ),
     Config(
       "stabProf",
       "stabilize profiling",
-      Param(tbStabProb, "0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64")
+      Param(p5stabilizeProb, "0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64")
     ),
     Config(
       "nodesProf",
       "nodes profiling",
-      Param(tbNodes, "002;004;008;016;032;064;128;256;512")
+      Param(p5nodes, "002;004;008;016;032;064;128;256;512")
     ),
     Config(
       "elemsProf",
       "elements profiling",
-      Param(tbElems, "002;004;008;016;032;064;128;256")
+      Param(p5Elems, "002;004;008;016;032;064;128;256")
     ),
     Config(
       "loopProf",
       "loop profiling",
-      Param(tbLoops, "8;16;32;64;128")
+      Param(p5loops, "8;16;32;64;128")
     ),
     Config(
       "joinProf",
       "joins profiling",
-      Param(tbJoinProb, "0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64")
+      Param(p5joinProb, "0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64")
     ),
     Config(
       "failProf-large-192",
       "failure profiling, more loops and data for 192 nodes",
-      Param(tbNodes, "192"),
-      Param(tbFailProb, "0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64"),
-      Param(tbElems, "256"),
-      Param(tbLoops, "256")
+      Param(p5nodes, "192"),
+      Param(p5failProb, "0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64"),
+      Param(p5Elems, "256"),
+      Param(p5loops, "256")
     ),
     Config(
       "corrStudy-large-192",
       "correlation study, more loops for 192 nodes",
-      Param(tbNodes, "192"),
-      Param(tbFailProb, "0.64"),
-      Param(tbElems, "256"),
-      Param(tbLoops, "80")
+      Param(p5nodes, "192"),
+      Param(p5failProb, "0.64"),
+      Param(p5Elems, "256"),
+      Param(p5loops, "80")
     ),
     Config(
       "attackProf",
       "attacks profiling",
-      Param(tbAttackProb, "0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64")
+      Param(p5attackProb, "0.0;0.01;0.02;0.04;0.08;0.16;0.32;0.64")
     )
   )
 
@@ -165,15 +165,15 @@ object DhtSim {
               new EventNodeFail()
             ).withCountRef(
               new RefObject[JLong](
-                math.ceil(rs.lens(tbNodes).get.get * rs.lens(tbFailProb).get.get).asInstanceOf[Long]
+                math.ceil(rs.lens(p5nodes).get.get * rs.lens(p5failProb).get.get).asInstanceOf[Long]
               )
             ),
             new EventNetStabilize(),
             new EventCompositeLoop(
               new EventCompositeLoop(
                 new EventNetLookup()
-              ).withCountRef(rs.lens(tbNodes))
-            ).withCountRef(rs.lens(tbLoops))
+              ).withCountRef(rs.lens(p5nodes))
+            ).withCountRef(rs.lens(p5loops))
           )
         )
 
@@ -193,8 +193,8 @@ object DhtSim {
         val runtimeEvent = new EventCompositeLoop(
           new EventCompositeLoop(
             new EventNetLookup()
-          ).withCountRef(rs.lens(tbNodes))
-        ).withCountRef(rs.lens(tbLoops))
+          ).withCountRef(rs.lens(p5nodes))
+        ).withCountRef(rs.lens(p5loops))
 
         createTestBench(rs, initEvent, runtimeEvent).run()
     },
@@ -217,20 +217,20 @@ object DhtSim {
                   new EventNodeJoin().withFailOnError(true),
                   new EventNodeFail()
                 )
-              ).withProbabilityRef(rs.lens(tbFailProb)),
+              ).withProbabilityRef(rs.lens(p5failProb)),
               new EventCompositeSequence(
                 Seq(
                   new EventNodeJoin().withFailOnError(true),
                   new EventNodeLeave()
                 )
-              ).withProbabilityRef(rs.lens(tbJoinProb)),
-              new EventNetStabilize().withProbabilityRef(rs.lens(tbStabProb)),
+              ).withProbabilityRef(rs.lens(p5joinProb)),
+              new EventNetStabilize().withProbabilityRef(rs.lens(p5stabilizeProb)),
               new EventCompositeLoop(
                 new EventNetLookup()
-              ).withCountRef(rs.lens(tbNodes))
+              ).withCountRef(rs.lens(p5nodes))
             )
           )
-        ).withCountRef(rs.lens(tbLoops))
+        ).withCountRef(rs.lens(p5loops))
 
         createTestBench(rs, initEvent, runtimeEvent).run()
     },
@@ -245,14 +245,14 @@ object DhtSim {
       rs =>
         val initEvent = new EventCompositeSequence(
           Seq(
-            new EventNodeJoin().withCountRef(rs.lens(tbNodes)),
+            new EventNodeJoin().withCountRef(rs.lens(p5nodes)),
             new EventCompositeLoop(
-              new EventNetPutEntry().withCountRef(rs.lens(tbElems))
-            ).withCountRef(rs.lens(tbNodes)),
+              new EventNetPutEntry().withCountRef(rs.lens(p5Elems))
+            ).withCountRef(rs.lens(p5nodes)),
             new EventNetStabilize(),
             new EventCompositeLoop(
-              new EventNodeFail().withProbabilityRef(rs.lens(tbAttackProb))
-            ).withCountRef(rs.lens(tbNodes))
+              new EventNodeFail().withProbabilityRef(rs.lens(p5attackProb))
+            ).withCountRef(rs.lens(p5nodes))
           )
         )
 
@@ -264,20 +264,20 @@ object DhtSim {
                   new EventNodeJoin().withFailOnError(true),
                   new EventNodeFail()
                 )
-              ).withProbabilityRef(rs.lens(tbFailProb)),
+              ).withProbabilityRef(rs.lens(p5failProb)),
               new EventCompositeSequence(
                 Seq(
                   new EventNodeJoin().withFailOnError(true),
                   new EventNodeLeave()
                 )
-              ).withProbabilityRef(rs.lens(tbJoinProb)),
-              new EventNetStabilize().withProbabilityRef(rs.lens(tbStabProb)),
+              ).withProbabilityRef(rs.lens(p5joinProb)),
+              new EventNetStabilize().withProbabilityRef(rs.lens(p5stabilizeProb)),
               new EventCompositeLoop(
                 new EventNetLookup().withRetries(3)
-              ).withCountRef(rs.lens(tbNodes))
+              ).withCountRef(rs.lens(p5nodes))
             )
           )
-        ).withCountRef(rs.lens(tbLoops))
+        ).withCountRef(rs.lens(p5loops))
 
         createTestBench(rs, initEvent, runtimeEvent).run()
     },
@@ -299,10 +299,10 @@ object DhtSim {
   private def commonInitEvent(rs: RunStore): EventCompositeSequence = {
     new EventCompositeSequence(
       Seq(
-        new EventNodeJoin().withCountRef(rs.lens(tbNodes)),
+        new EventNodeJoin().withCountRef(rs.lens(p5nodes)),
         new EventCompositeLoop(
-          new EventNetPutEntry().withCountRef(rs.lens(tbElems))
-        ).withCountRef(rs.lens(tbNodes)),
+          new EventNetPutEntry().withCountRef(rs.lens(p5Elems))
+        ).withCountRef(rs.lens(p5nodes)),
         new EventNetStabilize()
       )
     )
@@ -314,24 +314,24 @@ object DhtSim {
     runtimeEvent: Event[_]
   ): Testbench = {
     val env = new EnvCNet()
-    env.setDensity(rs.lens(overlayDensity))
-    env.setLocX(rs.lens(overlayLocationX))
-    env.setLocY(rs.lens(overlayLocationY))
-    env.setDist(rs.lens(overlayDistance))
-    env.setReq(rs.lens(overlayRequest))
-    env.setOverlay(rs.lens(gaGenomeBest))
+    env.setDensity(rs.lens(p2density))
+    env.setLocX(rs.lens(p2locX))
+    env.setLocY(rs.lens(p2locY))
+    env.setDist(rs.lens(p2nodeDist))
+    env.setReq(rs.lens(p2req))
+    env.setOverlay(rs.lens(p3genomeBest))
 
     val network = new Network()
     network.setEnv(env)
 
     val testBench = new Testbench()
     testBench.setNetwork(network)
-    testBench.setReportLens(rs.lens(tbReport))
+    testBench.setReportLens(rs.lens(p6report))
 
-    testBench.setInitSeedRef(rs.lens(tbInitSeed))
+    testBench.setInitSeedRef(rs.lens(p4initSeed))
     testBench.setInitialEvent(initEvent)
 
-    testBench.setRunSeedRef(rs.lens(tbRunSeed))
+    testBench.setRunSeedRef(rs.lens(p4runSeed))
     testBench.setRuntimeEvent(runtimeEvent)
 
     testBench
