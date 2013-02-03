@@ -21,6 +21,7 @@ package org.akraievoy.holonet.exp
 import org.apache.log4j.{PatternLayout, ConsoleAppender, BasicConfigurator}
 
 object Runner extends App {
+  //  see http://logging.apache.org/log4j/1.2//apidocs/org/apache/log4j/PatternLayout.html
   BasicConfigurator.configure(
     new ConsoleAppender(
       new PatternLayout("%5.5p %-8.8t %-24.24c{1} %m%n")
