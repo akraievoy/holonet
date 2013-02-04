@@ -67,8 +67,8 @@ object DhtSim {
     ),
     Config(
       "42x7",
-      "42 inits * 7 runs",
-      Param(p4initSeed, "9348492--9348533"),
+      "20 inits * 7 runs",
+      Param(p4initSeed, "9348492--9348511"),
       Param(p4runSeed, "91032843--91032849")
     )
   )
