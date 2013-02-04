@@ -140,7 +140,7 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
   }
 
   public static int getTotalLinkUpperLimit(int size, double thetaVal) {
-    return (int) Math.ceil(thetaVal * size * Math.log(size) / Math.log(2)) / 2;
+    return (int) Math.ceil(thetaVal * size * Math.log(size) / Math.log(2) / 2);
   }
 
   protected int getNodeLinkLowerLimit() {

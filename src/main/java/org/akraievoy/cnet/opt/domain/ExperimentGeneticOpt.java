@@ -170,6 +170,13 @@ public class ExperimentGeneticOpt implements Runnable {
       for (Genome genome : genomes) {
         if (validate(genome)) {
           storeToPopulation(children, genome);
+        } else {
+          for (int i = 0; i < adaptMutators.elems.size(); i++) {
+            adaptMutators.elems.get(i).mutate(strategy, genome, state, eSource);
+          }
+          if (validate(genome)) {
+            storeToPopulation(children, genome);
+          }
         }
       }
       strategy.initOnSeeds(generationLens, children);

@@ -557,7 +557,7 @@ object OverlayGO {  //  LATER maybe GA, not GO ?
       ),
       Param(p3generateMax, "2"),
       Param(p3generatePow, "10"),
-      Param(p3densityMin, "0.75"),
+      Param(p3densityMin, "1.5"),
       Param(p3generation, "0--10", Strategy.ITERATE, Strategy.USE_LAST),
       Param(p3elite, "1")
     ),
@@ -574,7 +574,7 @@ object OverlayGO {  //  LATER maybe GA, not GO ?
       ),
       Param(p3generateMax, "2"),
       Param(p3generatePow, "10"),
-      Param(p3densityMin, "0.75"),
+      Param(p3densityMin, "1.5"),
       Param(p3generation, "0--22", Strategy.ITERATE, Strategy.USE_LAST),
       Param(p3elite, "0.9")
     ),

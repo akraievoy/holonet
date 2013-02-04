@@ -111,18 +111,22 @@ public class SeedSourceHeuristic implements SeedSource<GenomeSoo> {
     if (seedRange.containsKey(rangePos)) {
       return false;
     } else {
-      final EdgeData solutionClone = solution.proto(solution.getSize());
-      solution.visitNonDef(
-          new EdgeData.EdgeVisitor() {
-            @Override
-            public void visit(int from, int into, double e) {
-              solutionClone.set(from, into, e);
-            }
-          }
-      );
-      seedRange.put(rangePos, new GenomeSoo(solutionClone));
+      seedRange.put(rangePos, new GenomeSoo(cloneSolution(solution)));
       return true;
     }
+  }
+
+  protected static EdgeData cloneSolution(EdgeData solution) {
+    final EdgeData solutionClone = solution.proto(solution.getSize());
+    solution.visitNonDef(
+        new EdgeData.EdgeVisitor() {
+          @Override
+          public void visit(int from, int into, double e) {
+            solutionClone.set(from, into, e);
+          }
+        }
+    );
+    return solutionClone;
   }
 
   protected static void addStar(EdgeData solution, EdgeData dist, EdgeData minDist, int size, AtomicInteger linksToAdd, int starRoot) {
