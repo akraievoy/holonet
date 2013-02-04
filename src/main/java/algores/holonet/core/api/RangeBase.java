@@ -34,6 +34,7 @@ public class RangeBase implements Range {
   protected Key lKey;
   protected Key rKey;
   protected byte rank;
+  private BigInteger width;
 
   public RangeBase(Key lKey, Key rKey) {
     this(lKey, rKey, (byte) 0);
@@ -47,12 +48,14 @@ public class RangeBase implements Range {
     this.lKey = lKey;
     this.rKey = rKey;
     this.rank = rank;
+    this.width = lKey.distance(rKey).abs();
   }
 
   public RangeBase(Key lKey, int prefixBits) {
     final BigInteger mask = BigInteger.ONE.shiftLeft(KeySpace.prefix2regular(prefixBits) + 1).subtract(BigInteger.ONE);
     this.lKey = new KeyBase(lKey.toNumber().andNot(mask));
     this.rKey = this.lKey.next(Key.BITNESS - prefixBits);
+    this.width = lKey.distance(rKey).abs();
   }
 
   /**
@@ -218,5 +221,10 @@ public class RangeBase implements Range {
 
   public int getCommonPrefixLen(Range path) {
     return getCommonPrefixLen(path, Math.min(getBits(), path.getBits()));
+  }
+
+  @Override
+  public BigInteger width() {
+    return width;
   }
 }

@@ -28,9 +28,8 @@ import algores.holonet.core.api.tier1.delivery.LookupService;
 import com.google.common.base.Optional;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.math.BigInteger;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Network {
@@ -212,6 +211,28 @@ public class Network {
   public void removeNodes(int count, final boolean forceFailure, final EntropySource eSource) throws CommunicationException {
     for (int i = 0; i < count; i++) {
       removeNode(getRandomNode(eSource), forceFailure);
+    }
+  }
+
+  public void attackNodes(
+      int count
+  ) throws CommunicationException {
+    final List<Node> nodes = new ArrayList<Node>(getAllNodes());
+    Collections.sort(nodes, new Comparator<Node>() {
+      @Override
+      public int compare(Node o1, Node o2) {
+        final BigInteger o1width =
+            o1.getServices().getRouting().getOwnRoute().getRange().width();
+        final BigInteger o2width =
+            o2.getServices().getRouting().getOwnRoute().getRange().width();
+
+        return o1width.compareTo(o2width);
+      }
+    });
+    //  okay, but attacker would like to crash the widest masters first, so
+    Collections.reverse(nodes);
+    for (int i = 0; i < count; i++) {
+      removeNode(nodes.get(i), true);
     }
   }
 

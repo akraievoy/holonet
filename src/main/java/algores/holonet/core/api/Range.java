@@ -18,6 +18,7 @@
 
 package algores.holonet.core.api;
 
+import java.math.BigInteger;
 import java.util.Set;
 
 /**
@@ -73,4 +74,5 @@ public interface Range extends KeySource {
 
   int getCommonPrefixLen(Range path);
 
+  BigInteger width();
 }

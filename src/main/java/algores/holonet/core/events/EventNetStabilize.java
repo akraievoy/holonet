@@ -43,8 +43,8 @@ public class EventNetStabilize extends Event<EventNetStabilize> {
             String.format(
                 "stabilize failed: %s",
                 e.getMessage()
-            ),
-            e
+            )/*,
+            e*/
         );
       }
     }

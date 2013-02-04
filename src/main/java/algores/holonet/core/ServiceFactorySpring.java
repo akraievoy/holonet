@@ -41,7 +41,7 @@ public class ServiceFactorySpring implements ServiceFactory {
     //  nothing to do here
   }
 
-  public ServiceFactorySpring(final int routingRedundancy) {
+  public void setRoutingRedundancy(final double routingRedundancy) {
     routing.setRedundancy(routingRedundancy);
   }
 
