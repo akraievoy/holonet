@@ -43,6 +43,7 @@ object DhtSim {
     val p5joinProb = ParamName[JDouble]("p5joinProb")
     val p5stabilizeProb = ParamName[JDouble]("p5stabilizeProb")
     val p5attackProb = ParamName[JDouble]("p5attackProb")
+    val p5routingRedundancy= ParamName[JDouble]("p5routingRedundancy")
     //  stage 3 outputs
     val p6report= ParamName[JDouble]("p6report")
   }
@@ -59,22 +60,16 @@ object DhtSim {
       Param(p4runSeed, "7654321")
     ),
     Config(
-      "7x3",
-      "7 inits * 3 runs",
+      "7x5",
+      "7 inits * 5 runs",
       Param(p4initSeed, "91032843--91032849"),
-      Param(p4runSeed, "9348492--9348492")
+      Param(p4runSeed, "9348492--9348496")
     ),
     Config(
-      "7x42",
-      "7 inits * 42 runs",
-      Param(p4initSeed, "91032843--91032849"),
-      Param(p4runSeed, "9348492--9348533")
-    ),
-    Config(
-      "3x2",
-      "3 inits * 2 runs",
-      Param(p4initSeed, "7654321;91032843;8574829"),
-      Param(p4runSeed, "1234567;1928483")
+      "42x7",
+      "42 inits * 7 runs",
+      Param(p4initSeed, "9348492--9348533"),
+      Param(p4runSeed, "91032843--91032849")
     )
   )
 
@@ -139,9 +134,10 @@ object DhtSim {
       "corrStudy-large-192",
       "correlation study, more loops for 192 nodes",
       Param(p5nodes, "192"),
-      Param(p5failProb, "0.64"),
+      Param(p5attackProb, "0.48"),
       Param(p5Elems, "256"),
-      Param(p5loops, "80")
+      Param(p5loops, "80"),
+      Param(p5routingRedundancy, "1.05;1.1;1.15;1.2")
     ),
     Config(
       "attackProf",
@@ -162,13 +158,12 @@ object DhtSim {
         val runtimeEvent = new EventCompositeSequence(
           Seq(
             new EventCompositeLoop(
-              new EventNodeFail()
+              new EventNodeAttack()
             ).withCountRef(
               new RefObject[JLong](
-                math.ceil(rs.lens(p5nodes).get.get * rs.lens(p5failProb).get.get).asInstanceOf[Long]
+                math.ceil(rs.lens(p5nodes).get.get * rs.lens(p5attackProb).get.get).asInstanceOf[Long]
               )
             ),
-            new EventNetStabilize(),
             new EventCompositeLoop(
               new EventCompositeLoop(
                 new EventNetLookup()
@@ -179,7 +174,8 @@ object DhtSim {
 
         createTestBench(rs, initEvent, runtimeEvent).run()
     },
-    Config()
+    Config(
+    )
   )
 
   val experiment3static = Experiment(
@@ -198,7 +194,8 @@ object DhtSim {
 
         createTestBench(rs, initEvent, runtimeEvent).run()
     },
-    Config()
+    Config(
+    )
   )
 
   val experiment3destab = Experiment(
@@ -234,7 +231,8 @@ object DhtSim {
 
         createTestBench(rs, initEvent, runtimeEvent).run()
     },
-    Config()
+    Config(
+    )
   )
 
   val experiment3attackDestab = Experiment(
@@ -281,7 +279,8 @@ object DhtSim {
 
         createTestBench(rs, initEvent, runtimeEvent).run()
     },
-    Config()
+    Config(
+    )
   )
 
   val experiment3attackChained = chainWithGA(experiment3attack)
@@ -303,7 +302,8 @@ object DhtSim {
         new EventCompositeLoop(
           new EventNetPutEntry().withCountRef(rs.lens(p5Elems))
         ).withCountRef(rs.lens(p5nodes)),
-        new EventNetStabilize()
+        new EventNetStabilize(),
+        new EventNetDiscover()
       )
     )
   }
@@ -323,6 +323,9 @@ object DhtSim {
 
     val network = new Network()
     network.setEnv(env)
+    network.getFactory.setRoutingRedundancy(
+      rs.lens(p5routingRedundancy).get.get
+    )
 
     val testBench = new Testbench()
     testBench.setNetwork(network)

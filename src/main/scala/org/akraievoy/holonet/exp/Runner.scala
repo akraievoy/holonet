@@ -36,7 +36,7 @@ object Runner extends App {
           "overlayGO-1-physDataset" -> "big-1k",
           "overlayGO-2-ovlDataset" -> "nu20",
           "overlayGO-3-genetics" -> "corrStudy-smoke",
-          "p2p-stage1-seed" -> "7x3",
+          "p2p-stage1-seed" -> "7x5",
           "p2p-stage2-paramSpace" -> "corrStudy-large-192",
           "p2p-stage3-attack-chained" -> "default"
         )
@@ -48,7 +48,7 @@ object Runner extends App {
           "overlayGO-1-physDataset" -> "big-1k",
           "overlayGO-2-ovlDataset" -> "nu20",
           "overlayGO-3-genetics" -> "corrStudy-full",
-          "p2p-stage1-seed" -> "7x42",
+          "p2p-stage1-seed" -> "42x7",
           "p2p-stage2-paramSpace" -> "corrStudy-large-192",
           "p2p-stage3-attack-chained" -> "default"
         )
