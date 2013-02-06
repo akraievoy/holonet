@@ -66,10 +66,10 @@ object DhtSim {
       Param(p4runSeed, "9348492--9348496")
     ),
     Config(
-      "42x7",
-      "20 inits * 7 runs",
-      Param(p4initSeed, "9348492--9348511"),
-      Param(p4runSeed, "91032843--91032849")
+      "42x3",
+      "42 inits * 3 runs",
+      Param(p4initSeed, "9348492--9348533"),
+      Param(p4runSeed, "91032843--91032845")
     )
   )
 
@@ -133,11 +133,11 @@ object DhtSim {
     Config(
       "corrStudy-large-192",
       "correlation study, more loops for 192 nodes",
-      Param(p5nodes, "192"),
-      Param(p5attackProb, "0.48"),
+      Param(p5nodes, "205"),
+      Param(p5attackProb, "0.64"),
       Param(p5Elems, "256"),
       Param(p5loops, "80"),
-      Param(p5routingRedundancy, "1.05;1.1;1.15;1.2")
+      Param(p5routingRedundancy, "1.05")
     ),
     Config(
       "attackProf",

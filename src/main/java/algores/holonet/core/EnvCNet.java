@@ -23,6 +23,7 @@ import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.Range;
 import com.google.common.base.Optional;
+import gnu.trove.TIntArrayList;
 import org.akraievoy.base.ref.Ref;
 import org.akraievoy.cnet.metrics.api.Metric;
 import org.akraievoy.holonet.exp.store.RefObject;
@@ -165,7 +166,29 @@ public class EnvCNet implements Env {
         overlayEdges.get(local.getNodeIdx(), curr.getNodeIdx());
     final double overlayEdgeDist = overlayEdge / overlayDistDiameter;
 
-    return 1+overlayEdgeDist/8;
+    return 1 + overlayEdgeDist/8;
+  }
+
+  @Override
+  public List<Address> seedLinks(Address localAddress) {
+    if (fallback != null) {
+      return fallback.seedLinks(localAddress);
+    }
+
+    final AddressCNet local = (AddressCNet) localAddress;
+
+    final TIntArrayList connIndexes =
+        overlay.getValue().connVertexes(local.getNodeIdx());
+    final List<Address> res = new ArrayList<Address>();
+
+    for (int i = 0; i < connIndexes.size(); i++) {
+      final Node optAddress = addressIdxToNode.get(connIndexes.get(i));
+      if (optAddress != null) {
+        res.add(optAddress.getAddress());
+      }
+    }
+
+    return res;
   }
 
   public Address createNetworkAddress(EntropySource eSource) {

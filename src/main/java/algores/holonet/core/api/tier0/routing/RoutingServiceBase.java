@@ -82,6 +82,22 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       result.subList(num, result.size()).clear();
     }
 
+    //  seed addresses are not masked by num limit
+    final List<Address> seedAddresses =
+        owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
+    for (Address seedAddress : seedAddresses) {
+      boolean found = false;
+      for (RoutingEntry routingEntry : result) {
+        if (routingEntry.getAddress().equals(seedAddress)) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        result.add(new RoutingEntry(seedAddress.getKey(), seedAddress));
+      }
+    }
+
     return result;
   }
 
@@ -140,6 +156,27 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       }
     }
 
+    //  seed addresses are not masked by num limit
+    final List<Address> seedAddresses =
+        owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
+    for (Address seedAddress : seedAddresses) {
+      final RoutingEntry seedEntry =
+          new RoutingEntry(seedAddress.getKey(), seedAddress);
+      if (!isNeighbor(ownRoute, seedEntry)) {
+        continue;
+      }
+      boolean found = false;
+      for (RoutingEntry routingEntry : result) {
+        if (routingEntry.getAddress().equals(seedAddress)) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        result.add(seedEntry);
+      }
+    }
+
     return result;
   }
 
@@ -173,6 +210,27 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       }
     }
 
+        //  seed addresses are not masked by num limit
+    final List<Address> seedAddresses =
+        owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
+    for (Address seedAddress : seedAddresses) {
+      final RoutingEntry seedEntry =
+          new RoutingEntry(seedAddress.getKey(), seedAddress);
+      if (!seedEntry.isReplicaFor(key, maxRank)) {
+        continue;
+      }
+      boolean found = false;
+      for (RoutingEntry routingEntry : result) {
+        if (routingEntry.getAddress().equals(seedAddress)) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        result.add(seedEntry);
+      }
+    }
+
     Collections.sort(result, preferenceComparator(key));
 
     return result;
@@ -184,7 +242,12 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   @Deprecated
-  public boolean range(RoutingEntry handle, byte rank, AtomicReference<Key> lKey, AtomicReference<Key> rKey) {
+  public boolean range(
+      RoutingEntry handle,
+      byte rank,
+      AtomicReference<Key> lKey,
+      AtomicReference<Key> rKey
+  ) {
     Die.ifNull("ownRoute", ownRoute);
 
     final RoutingEntry re = getEntry(handle);
@@ -220,7 +283,6 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
   protected RoutingEntry getEntry(final Address address) {
     Die.ifNull("ownRoute", ownRoute);
-
 
     for (RoutingEntry re : routes) {
       if (re.getAddress().equals(address)) {

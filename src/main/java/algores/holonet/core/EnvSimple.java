@@ -49,6 +49,11 @@ public class EnvSimple implements Env {
     return keyToNode;
   }
 
+  @Override
+  public List<Address> seedLinks(Address localAddress) {
+    return Collections.emptyList();
+  }
+
   public Node getNode(Address address) {
     return addressToNode.get(address);
   }
