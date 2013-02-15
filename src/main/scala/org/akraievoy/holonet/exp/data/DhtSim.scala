@@ -137,7 +137,7 @@ object DhtSim {
       Param(p5attackProb, "0.64"),
       Param(p5Elems, "256"),
       Param(p5loops, "80"),
-      Param(p5routingRedundancy, "1.05")
+      Param(p5routingRedundancy, "1.0")
     ),
     Config(
       "attackProf",
