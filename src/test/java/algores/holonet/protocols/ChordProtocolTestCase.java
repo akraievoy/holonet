@@ -18,8 +18,6 @@
 
 package algores.holonet.protocols;
 
-import algores.holonet.core.Progress;
-import algores.holonet.core.ProgressMeta;
 import algores.holonet.protocols.chord.ChordRoutingServiceImpl;
 import algores.holonet.protocols.chord.ChordServiceBase;
 

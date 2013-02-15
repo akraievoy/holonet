@@ -96,7 +96,7 @@ public abstract class DhtProtocolTestCase extends TestCase {
         avgHopLimitActual < avgHopLimit
     );
     final double redundancyLimit =
-        RoutingServiceBase.MAINTENANCE_THRESHOLD * ctx.getNet().getFactory().createRouting().getRedundancy();
+        1.15 * RoutingServiceBase.MAINTENANCE_THRESHOLD * ctx.getNet().getFactory().createRouting().getRedundancy();
     assertTrue(
         String.format(
             "route redundancy for %d nodes should be less than %g, but is %g",

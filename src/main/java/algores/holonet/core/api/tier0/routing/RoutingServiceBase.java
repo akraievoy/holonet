@@ -426,8 +426,8 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
         final String flavor = entryToFlavorCache.get(re);
         final int count = flavorToCount.get(flavor);
         if (
-            count >= redundancyMax ||
-            count > redundancyMin && keptTotal > totalMax
+            count > redundancyMin &&
+            (count >= redundancyMax || keptTotal > totalMax)
         ) {
           routes.remove(curIndex);
           keptTotal--;

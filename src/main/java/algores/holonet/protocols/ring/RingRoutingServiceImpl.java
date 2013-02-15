@@ -108,11 +108,11 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
   }
 
   protected FlavorTuple flavorize(RoutingEntry owner, RoutingEntry entry) {
-    if (entry.equals(predecessor)) {
+    if (entry.getAddress().equals(predecessor.getAddress())) {
       return new FlavorTuple(FLAVOR_PREDECESSOR, true);
     }
 
-    if (entry.equals(successor)) {
+    if (entry.getAddress().equals(successor.getAddress())) {
       return new FlavorTuple(FLAVOR_SUCCESSOR, true);
     }
 
