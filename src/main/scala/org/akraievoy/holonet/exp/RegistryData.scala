@@ -18,15 +18,15 @@
 
 package org.akraievoy.holonet.exp
 
-import data.{DhtSim, OverlayGO, OverlayEnum, DlaGenImages}
+import data.{DhtSim, OverlayGA, OverlayEnum, DlaGenImages}
 
 trait RegistryData {
   lazy val experiments: Seq[Experiment] = Seq(
     DlaGenImages.experiment,
     OverlayEnum.experiment,
-    OverlayGO.experiment1physDataset,
-    OverlayGO.experiment2overlayDataset,
-    OverlayGO.experiment3genetics,
+    OverlayGA.experiment1physDataset,
+    OverlayGA.experiment2overlayDataset,
+    OverlayGA.experiment3genetics,
     DhtSim.experiment1seeds,
     DhtSim.experiment2paramSpace,
     DhtSim.experiment3attack,

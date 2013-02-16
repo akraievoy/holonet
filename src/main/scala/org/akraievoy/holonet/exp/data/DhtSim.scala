@@ -56,14 +56,14 @@ object DhtSim {
     Nil,
     { rs => },
     Config(
-      Param(p4initSeed, "1234567"),
-      Param(p4runSeed, "7654321")
+      Param(p4initSeed, "9348524"),
+      Param(p4runSeed, "91032845")
     ),
     Config(
-      "7x5",
-      "7 inits * 5 runs",
-      Param(p4initSeed, "91032843--91032849"),
-      Param(p4runSeed, "9348492--9348496")
+      "3x2",
+      "3 inits * 2 runs",
+      Param(p4initSeed, "9348523--9348525"),
+      Param(p4runSeed, "91032844--91032845")
     ),
     Config(
       "42x3",
@@ -146,7 +146,7 @@ object DhtSim {
     )
   )
 
-  import OverlayGO.ParamNames._
+  import OverlayGA.ParamNames._
 
   val experiment3attack = Experiment(
     "p2p-stage3-attack",

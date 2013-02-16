@@ -31,7 +31,7 @@ import org.akraievoy.cnet.opt.domain.ExperimentGeneticOpt
 import scala.Some
 import org.akraievoy.cnet.net.vo.Store.Width
 
-object OverlayGO {  //  LATER maybe GA, not GO ?
+object OverlayGA {
   import java.lang.{
     Byte => JByte, Integer => JInt, Long => JLong,
     Float => JFloat, Double => JDouble
@@ -548,12 +548,12 @@ object OverlayGO {  //  LATER maybe GA, not GO ?
       "corrStudy-smoke",
       "Correlation study --- smoke",
       Param(p3minEff, "0.8"),
-      Param(p3seed, "42600"),
+      Param(p3seed, "42601"),
       Param(p3flags, "R"),
       Param(p3specimen, "0--21", Strategy.USE_FIRST, Strategy.USE_FIRST),
       Param(
         p3fitCap,
-        "0.025;0.8"
+        "0.025;0.3;0.8"
       ),
       Param(p3generateMax, "2"),
       Param(p3generatePow, "10"),
