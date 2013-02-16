@@ -36,6 +36,10 @@ public class EdgeDataSparseTest extends TestCase {
     eData.set(4, 2, 11.0);
   }
 
+  public void testNonDefCount() {
+    assertEquals(4, eData.getNonDefCount());
+  }
+
   public void testGet() throws Exception {
     assertEquals(4, eData.getNonDefCount());
 

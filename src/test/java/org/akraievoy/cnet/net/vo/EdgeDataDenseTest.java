@@ -35,6 +35,10 @@ public class EdgeDataDenseTest extends TestCase {
     eData.set(4, 2, 11.0);
   }
 
+  public void testNonDefCount() {
+    assertEquals(4, eData.getNonDefCount());
+  }
+
   public void testGet() throws Exception {
     assertEquals(12.0, eData.get(3, 4));
     assertEquals(11.0, eData.get(2, 4));
