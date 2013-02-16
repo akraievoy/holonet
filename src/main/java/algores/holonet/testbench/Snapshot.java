@@ -21,11 +21,35 @@ package algores.holonet.testbench;
 import algores.holonet.core.Network;
 import algores.holonet.core.Node;
 import org.akraievoy.holonet.exp.store.StoreLens;
+import scala.Tuple4;
+
+import java.util.Collection;
 
 /**
  * Metrics that make sense in static context.
  */
 public class Snapshot {
+  private Tuple4<Integer, Double, Double, Double> elemStats;
+  private Tuple4<Integer, Double, Double, Double> rangeStats;
+
+  public static interface NodeFun{
+    public double apply(final Node n);
+  }
+
+  public static NodeFun ELEMS = new NodeFun() {
+    @Override
+    public double apply(final Node n) {
+      return n.getServices().getStorage().getDataEntries().size();
+    }
+  };
+
+  public static NodeFun RANGE = new NodeFun() {
+    @Override
+    public double apply(final Node n) {
+      return n.getServices().getRouting().getOwnRoute().getRange().width().doubleValue();
+    }
+  };
+
   private final String name;
 
   public Snapshot(String newName) {
@@ -37,53 +61,75 @@ public class Snapshot {
   }
 
   public void process(final Network network) {
-    nodeCount = network.getAllNodes().size();
-    processMean(network);
-    processDeviation(network);
+    elemStats = processFun(network, ELEMS);
+    rangeStats = processFun(network, RANGE);
   }
 
-  private void processMean(final Network network) {
-    totalMappings = 0;
-    for (Node node : network.getAllNodes()) {
-      totalMappings += node.getServices().getStorage().getDataEntries().size();
-    }
+  public double getKeyRangePerNodeAvg() {
+    return rangeStats._3();
   }
 
-  /**
-   * Actually this is not a classic deviation (I think). It is normalized against
-   * mean^-2 to make this metric consistent with situations with different mean value.
-   */
-  private void processDeviation(final Network network) {
-    final double mean = getMappingsAverage();
-    double deviationTotal = 0;
-    for (Node node : network.getAllNodes()) {
-      final double entryDeviation = 1 - node.getServices().getStorage().getDataEntries().size() / mean;
-      deviationTotal += Math.pow(entryDeviation, 2);
-    }
-
-    deviation = deviationTotal / nodeCount;
+  public double getKeyRangePerNodeDev() {
+    return rangeStats._4();
   }
 
-  private int nodeCount;
-  private int totalMappings;
-  private double deviation;
+  public double getElemPerNodeAvg() {
+    return elemStats._3();
+  }
 
-  public double getMappingsAverage() {
-    return (double) totalMappings / nodeCount;
+  public double getElemPerNodeDev() {
+    return elemStats._4();
   }
 
   public int getNodeCount() {
-    return nodeCount;
+    return elemStats._1();
   }
 
-  public int getTotalMappings() {
-    return totalMappings;
+  public double getElemCount() {
+    return elemStats._2();
   }
 
   public void store(StoreLens<Double> reportLens) {
-    reportLens.forTypeName(Integer.class, name + "_nodeCount").set(getNodeCount());
-    reportLens.forTypeName(Integer.class, name + "_elemCount").set(getTotalMappings());
-    reportLens.forName(name + "_elemPerNodeAvg").set(getMappingsAverage());
-    reportLens.forName(name + "_elemPerNodeDev").set(deviation);
+    reportLens.forTypeName(Integer.class, name + "_nodeCount").set(elemStats._1());
+    reportLens.forTypeName(Double.class, name + "_elemCount").set(elemStats._2());
+    reportLens.forName(name + "_elemsPerNodeAvg").set(elemStats._3());
+    reportLens.forName(name + "_elemsPerNodeDev").set(elemStats._4());
+    reportLens.forName(name + "_rangePerNodeAvg").set(rangeStats._3());
+    reportLens.forName(name + "_rangePerNodeDev").set(rangeStats._4());
+  }
+
+  protected static Tuple4<Integer, Double, Double, Double> processFun(
+      final Network network,
+      final NodeFun nodeFun
+  ) {
+    final Collection<Node> nodes = network.getAllNodes();
+    int nodeCount = nodes.size();
+    final double[] funVals = new double[nodeCount];
+    {
+      int nodeIndex = 0;
+      for (Node node : nodes) {
+        funVals[nodeIndex] = nodeFun.apply(node);
+        nodeIndex++;
+      }
+    }
+
+    double total = 0;
+    for (double funVal : funVals) {
+      total += funVal;
+    }
+
+    final double mean = total / nodeCount;
+
+    double deviationTotal = 0;
+    for (double funVal : funVals) {
+      final double entryDeviation = funVal / mean - 1;
+      deviationTotal += Math.pow(entryDeviation, 2);
+    }
+
+    final double deviation = Math.pow(deviationTotal / nodeCount, .5);
+
+    return new Tuple4<Integer, Double, Double, Double>(
+        nodeCount, total, mean, deviation
+    );
   }
 }
