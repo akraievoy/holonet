@@ -82,7 +82,7 @@ public class SeedSourceHeuristic implements SeedSource<GenomeSoo> {
 
     final Map<Integer, Integer> nodeToCluster =
         clusterize.assignNodeToClusters(solution);
-    while (clusterize.apply(nodeToCluster, 1, solution) == 0) {
+    while (clusterize.apply(nodeToCluster, 1, solution, dist) == 0) {
       storeSeed(seedRange, solution, eigenGapScalar);
     }
 

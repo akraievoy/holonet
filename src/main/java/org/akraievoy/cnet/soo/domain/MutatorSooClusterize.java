@@ -52,17 +52,21 @@ public class MutatorSooClusterize implements Mutator<GenomeSoo> {
         solution.getNonDefCount() * state.getMutateRatio()
     );
 
+    EdgeData distance = strategy.getDistSource().getValue();
+
     apply(
         assignNodeToClusters(solution),
         rewireLimit,
-        solution
+        solution,
+        distance
     );
   }
 
   public int apply(
       final Map<Integer, Integer> nodeToCluster,
       final int rewireLimitOuter,
-      final EdgeData solution
+      final EdgeData solution,
+      final EdgeData distance
   ) {
     final int size = solution.getSize();
 
@@ -132,9 +136,12 @@ public class MutatorSooClusterize implements Mutator<GenomeSoo> {
             nodeDonor = node;
           }
           if (
-              nodeReceiver == -1 &&
               nodeCluster == receivingCluster &&
-              !solution.conn(nodeRewire, node)
+              !solution.conn(nodeRewire, node) &&
+              (
+                  nodeReceiver == -1 ||
+                  distance.get(nodeRewire, nodeReceiver) > distance.get(nodeRewire, node)
+              )
           ) {
             nodeReceiver = node;
           }
