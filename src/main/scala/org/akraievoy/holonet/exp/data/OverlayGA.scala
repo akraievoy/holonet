@@ -100,6 +100,8 @@ object OverlayGA {
     //  stage 3 outputs
     val p3genome = ParamName[JDouble]("p3genome")
     val p3genomeBest = ParamName[EdgeDataSparse]("p3genomeBest.0")
+    val p3genomeBestDist = ParamName[StoreDouble]("p3genomeBestDist")
+    val p3genomeBestPowers = ParamName[StoreInt]("p3genomeBestPowers")
     val p3time = ParamName[String]("p3time")
     val p3timeMillis = ParamName[JLong]("p3timeMillis")
   }
@@ -426,14 +428,16 @@ object OverlayGA {
       edgeWidth = {rs => Some(rs.lens(p2req))},
       edgeLabel = {rs => Some(rs.lens(p2req))},
       edgeColor = {rs => Some(rs.lens(p2nodeDist))},
-      vertexColor = {rs => Some(rs.lens(p2density))},
-      vertexCoordX = {rs => Some(rs.lens(p2locX))},
-      vertexCoordY = {rs => Some(rs.lens(p2locY))},
-      vertexRadius = {
+      vertexColor = {
         rs =>
           val powers = new MetricVDataPowers()
           powers.setSource(rs.lens(p2req))
           Some(powers)
+      },
+      vertexCoordX = {rs => Some(rs.lens(p2locX))},
+      vertexCoordY = {rs => Some(rs.lens(p2locY))},
+      vertexRadius = {
+        rs => Some(rs.lens(p2density))
       },
       vertexLabel = {rs => Some(rs.lens(p2nodeIndex))}
     )
@@ -524,6 +528,24 @@ object OverlayGA {
         timing.setDurationRef(rs.lens(p3timeMillis))
 
         timing.run()
+
+        val powersMetric = new MetricVDataPowers(
+          rs.lens(p3genomeBest)
+        )
+        powersMetric.run()
+
+        val powersStoreMetric = new MetricStoreVData(
+          powersMetric, rs.lens(p3genomeBestPowers), Width.INT
+        )
+        powersStoreMetric.run()
+
+        new MetricStoreEData(
+          rs.lens(p3genomeBest),
+          rs.lens(p2nodeDist),
+          rs.lens(p3genomeBestDist),
+          Width.DOUBLE
+        ).run()
+
     },
     Config(
       Param(p3seed, "42600--42602"),
@@ -649,6 +671,16 @@ object OverlayGA {
           Some(powers)
       },
       vertexLabel = {rs => Some(rs.lens(p2nodeIndex))}
+    )
+  ).withStoreExport(
+    StoreExport(
+      "distances", desc = "overlay network, distance distribution",
+      Seq(p3genomeBestDist)
+    )
+  ).withStoreExport(
+    StoreExport(
+      "powers", desc = "overlay network, power distribution",
+      Seq(p3genomeBestPowers)
     )
   )
 }
