@@ -22,7 +22,7 @@ import java.io._
 import scalaz.Lens
 import org.akraievoy.cnet.net.vo._
 import org.akraievoy.cnet.net.vo.EdgeDataFactory.EdgeDataConstant
-import org.akraievoy.holonet.exp.{Experiment, Config, ParamPos}
+import org.akraievoy.holonet.exp.{ParamName, Experiment, Config, ParamPos}
 
 class ExperimentStore(
   val fs: FileSystem,
@@ -353,14 +353,17 @@ class ExperimentStore(
     }
   }
 
-  def primitives: Map[String, Manifest[_]] = {
+  def primitives: Seq[ParamName[_]] = {
     schema.filter {
       case (name, alias) =>
         ExperimentStore.primitiveAliases.contains(alias)
-    }.mapValues {
-      alias =>
-        ExperimentStore.primitiveAliasToSerializer(alias).mt
-    }
+    }.map {
+      case (name, alias) =>
+        new ParamName(
+          ExperimentStore.primitiveAliasToSerializer(alias).mt.asInstanceOf[Manifest[_]],
+          name
+        )
+    }.toSeq
   }
 }
 

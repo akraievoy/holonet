@@ -15,24 +15,26 @@ trait Exports extends ParamSpaceNav {
     expStore: ExperimentStore,
     subchain: Seq[Registry.ExpConfPair],
     requiredIndexes: Set[Int],
-    fs: FileSystem
+    fs: FileSystem,
+    primitives: Seq[ParamName[_]],
+    exportName: String = "primitives"
   ) {
-    //  LATER looks like a type-name I've added for param names
-    val primitives = expStore.primitives
     val axisSorted = spaceAxis(subchain, requiredIndexes).sortBy(_.name)
-    val primitiveNamesSorted = primitives.keys.toSeq.sorted
+    val primitivesSorted = primitives.sortBy(_.name)
     val primitiveExport =
       Stream(
-        Seq("spacePos") ++ axisSorted.map(_.name) ++ primitiveNamesSorted
+        Seq("spacePos") ++
+          axisSorted.map(_.name) ++
+          primitivesSorted.map(_.name)
       ) ++ spacePosMap(
         subchain, requiredIndexes, expStore, {
           runStore =>
             val posInt = ParamPos.pos(runStore.spacePos, requiredIndexes)
             val rowSeq = Seq[Option[Any]](Some(posInt)) ++
                 axisSorted.map(p => expStore.get(p.name, runStore.spacePos)(p.mt)) ++
-                primitiveNamesSorted.map{
+                primitivesSorted.map{
                   pn =>
-                    expStore.get(pn, runStore.spacePos)(primitives(pn))
+                    expStore.get(pn.name, runStore.spacePos)(pn.mt)
                 }
             rowSeq.map(elem => elem.map(String.valueOf).getOrElse(""))
         }, false
@@ -40,7 +42,7 @@ trait Exports extends ParamSpaceNav {
 
     fs.dumpCSV(
       expStore.uid,
-      "export/primitives.csv",
+      "export/%s.csv".format(exportName),
       Map.empty
     )(primitiveExport)
   }

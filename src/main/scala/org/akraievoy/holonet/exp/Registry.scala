@@ -167,7 +167,14 @@ object Registry extends RegistryData with Exports with ParamSpaceNav {
         log.info("write shutdown for {}", currentExpPair._1.name)
         expStore.writeShutdown()
 
-        exportPrimitives(expStore, subchain, requiredIndexes, fs)
+        exportPrimitives(
+          expStore, subchain, requiredIndexes, fs,
+          expStore.primitives
+        )
+        exportPrimitives(
+          expStore, subchain, requiredIndexes, fs,
+          (runChain :+ expStore).map(_.primitives).flatten, "primitives_deep"
+        )
         exportGraphvis(expStore, subchain, requiredIndexes, fs)
         exportStore(expStore, subchain, requiredIndexes, fs)
 
