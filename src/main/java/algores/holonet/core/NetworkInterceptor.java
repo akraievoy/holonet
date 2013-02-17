@@ -63,43 +63,8 @@ public interface NetworkInterceptor {
     double[] posts();
 
     double[] averages(double unusedvalue);
-  }
 
-  public static class SimpleCounters implements Counters<SimpleCounters> {
-    private int[] data = new int[0];
-
-    public void post(int pos) {
-      if (data.length <= pos) {
-        final int[] dataOld = data;
-        data = new int[pos +1];
-        System.arraycopy(dataOld, 0, data, 0, dataOld.length);
-      }
-      data[pos]++;
-    }
-
-    @Override
-    public double[] posts() {
-      final double[] res = new double[data.length];
-      for (int i = 0; i < res.length; i++) {
-        res[i] = data[i];
-      }
-      return res;
-    }
-
-    @Override
-    public double[] averages(double unusedValue) {
-      final double[] res = new double[data.length];
-      for (int i = 0; i < res.length; i++) {
-        int dataI = data[i];
-        res[i] = dataI > 0 ? dataI : unusedValue;
-      }
-      return res;
-    }
-
-    @Override
-    public SimpleCounters proto() {
-      return new SimpleCounters();
-    }
+    double[] totals();
   }
 
   public static class WeightedCounters implements Counters<WeightedCounters> {
@@ -128,6 +93,15 @@ public interface NetworkInterceptor {
 
     @Override
     public double[] posts() {
+      double[] totals = new double[data.length / 2];
+      for (int i = 0; i < totals.length; i++) {
+        totals[i] = data[i*2];
+      }
+      return totals;
+    }
+
+    @Override
+    public double[] totals() {
       double[] totals = new double[data.length / 2];
       for (int i = 0; i < totals.length; i++) {
         totals[i] = data[i*2 + 1];
