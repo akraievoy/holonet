@@ -30,6 +30,8 @@ libraryDependencies += "com.novocode" % "junit-interface" % "0.8" % "test->defau
 
 mainClass in (Compile, run) := Some("org.akraievoy.holonet.exp.Runner")
 
+javaOptions += "-Xmx3G"
+
 // parallelExecution in Test := false
 
 
