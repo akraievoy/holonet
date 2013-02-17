@@ -21,6 +21,8 @@ package algores.holonet.testbench;
 import algores.holonet.core.Network;
 import algores.holonet.core.events.Event;
 import org.akraievoy.base.ref.Ref;
+import org.akraievoy.cnet.net.vo.EdgeData;
+import org.akraievoy.cnet.net.vo.VertexData;
 import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.vo.EntropySourceRandom;
 import org.akraievoy.holonet.exp.store.StoreLens;
@@ -73,9 +75,38 @@ public class Testbench implements Runnable {
     this.network = network;
   }
 
+  private Ref<VertexData> rangeSizes = new RefObject<VertexData>();
+  public void setRangeSizes(Ref<VertexData> rangeSizes) {
+    this.rangeSizes = rangeSizes;
+  }
+
+  private Ref<EdgeData> rpcCounts = new RefObject<EdgeData>();
+  @SuppressWarnings("unchecked")
+  public void setRpcCounts(Ref<? extends EdgeData> rpcCounts) {
+    this.rpcCounts = (Ref<EdgeData>) rpcCounts;
+  }
+
+  private Ref<EdgeData> rpcFailures = new RefObject<EdgeData>();
+  @SuppressWarnings("unchecked")
+  public void setRpcFailures(Ref<? extends EdgeData> rpcFailures) {
+    this.rpcFailures = (Ref<EdgeData>) rpcFailures;
+  }
+
+  private Ref<EdgeData> lookupCounts = new RefObject<EdgeData>();
+  @SuppressWarnings("unchecked")
+  public void setLookupCounts(Ref<? extends EdgeData> lookupCounts) {
+    this.lookupCounts = (Ref<EdgeData>) lookupCounts;
+  }
+
+  private Ref<EdgeData> lookupFailures = new RefObject<EdgeData>();
+  @SuppressWarnings("unchecked")
+  public void setLookupFailures(Ref<? extends EdgeData> lookupFailures) {
+    this.lookupFailures = (Ref<EdgeData>) lookupFailures;
+  }
+
   public void startPeriod(String name) {
     stopCurrentPeriod();
-    currentMetrics = Metrics.createInstance(name);
+    currentMetrics = Metrics.createInstance(network, name);
     network.setInterceptor(currentMetrics);
   }
 
@@ -116,6 +147,15 @@ public class Testbench implements Runnable {
       }
       for (Metrics mtx : periodStats) {
         mtx.store(reportLens);
+        if ("run".equals(mtx.getPeriodName())) {
+          mtx.storeStats(
+              rangeSizes,
+              rpcCounts,
+              rpcFailures,
+              lookupCounts,
+              lookupFailures
+          );
+        }
       }
     } finally {
       network.dispose();

@@ -24,6 +24,8 @@ import store.{RefObject, RunStore}
 import algores.holonet.core.{Network, EnvCNet}
 import algores.holonet.testbench.Testbench
 import algores.holonet.core.events._
+import org.akraievoy.cnet.metrics.domain.MetricVDataPowers
+import org.akraievoy.cnet.net.vo.{EdgeDataDense, VertexData}
 
 object DhtSim {
   import java.lang.{
@@ -43,9 +45,15 @@ object DhtSim {
     val p5joinProb = ParamName[JDouble]("p5joinProb")
     val p5stabilizeProb = ParamName[JDouble]("p5stabilizeProb")
     val p5attackProb = ParamName[JDouble]("p5attackProb")
-    val p5routingRedundancy= ParamName[JDouble]("p5routingRedundancy")
+    val p5routingRedundancy = ParamName[JDouble]("p5routingRedundancy")
     //  stage 3 outputs
-    val p6report= ParamName[JDouble]("p6report")
+    val p6report = ParamName[JDouble]("p6report")
+
+    val p6rangeSizes = ParamName[VertexData]("p6rangeSizes")
+    val p6rpcCounts = ParamName[EdgeDataDense]("p6rpcCounts")
+    val p6rpcFailures = ParamName[EdgeDataDense]("p6rpcFailures")
+    val p6lookupCounts = ParamName[EdgeDataDense]("p6lookupCounts")
+    val p6lookupFailures = ParamName[EdgeDataDense]("p6lookupFailures")
   }
 
   import ParamNames._
@@ -68,7 +76,7 @@ object DhtSim {
     Config(
       "42x3",
       "42 inits * 3 runs",
-      Param(p4initSeed, "9348492--9348533"),
+      Param(p4initSeed, "9348524--9348533"),  //  TODO revert back to full range
       Param(p4runSeed, "91032843--91032845")
     )
   )
@@ -148,7 +156,7 @@ object DhtSim {
 
   import OverlayGA.ParamNames._
 
-  val experiment3attack = Experiment(
+  val experiment3attack = commonExports(Experiment(
     "p2p-stage3-attack",
     "P2P [stage3] Attack and profile lookups",
     Seq("p2p-stage2-paramSpace"),
@@ -176,9 +184,45 @@ object DhtSim {
     },
     Config(
     )
+  ))
+
+  def commonExports(exp: Experiment) = exp.withGraphvizExport(
+    GraphvizExport(
+      name = "rpc_failures", desc = "overlay stats - rpc failures",
+      edgeStructure = {_.lens(p6rpcCounts)},
+      edgeWidth = {rs => Some(rs.lens(p6rpcCounts))},
+      edgeColor = {rs => Some(rs.lens(p6rpcFailures))},
+      vertexColor = {
+        rs =>
+          val powers = new MetricVDataPowers()
+          powers.setSource(rs.lens(p6rpcFailures))
+          Some(powers)
+      },
+      vertexCoordX = {rs => Some(rs.lens(p2locX))},
+      vertexCoordY = {rs => Some(rs.lens(p2locY))},
+      vertexRadius = {rs => Some(rs.lens(p6rangeSizes))},
+      vertexLabel = {rs => Some(rs.lens(p2nodeIndex))}
+    )
+  ).withGraphvizExport(
+    GraphvizExport(
+      name = "lookup_failures", desc = "overlay stats - lookup failures",
+      edgeStructure = {_.lens(p6lookupCounts)},
+      edgeWidth = {rs => Some(rs.lens(p6lookupCounts))},
+      edgeColor = {rs => Some(rs.lens(p6lookupFailures))},
+      vertexColor = {
+        rs =>
+          val powers = new MetricVDataPowers()
+          powers.setSource(rs.lens(p6lookupFailures))
+          Some(powers)
+      },
+      vertexCoordX = {rs => Some(rs.lens(p2locX))},
+      vertexCoordY = {rs => Some(rs.lens(p2locY))},
+      vertexRadius = {rs => Some(rs.lens(p6rangeSizes))},
+      vertexLabel = {rs => Some(rs.lens(p2nodeIndex))}
+    )
   )
 
-  val experiment3static = Experiment(
+  val experiment3static = commonExports(Experiment(
     "p2p-stage3-static",
     "P2P [stage3] Static scenario",
     Seq("p2p-stage2-paramSpace"),
@@ -196,9 +240,9 @@ object DhtSim {
     },
     Config(
     )
-  )
+  ))
 
-  val experiment3destab = Experiment(
+  val experiment3destab = commonExports(Experiment(
     "p2p-stage3-staticDestab",
     "P2P [stage3] Destabilize while running",
     Seq("p2p-stage2-paramSpace"),
@@ -233,9 +277,9 @@ object DhtSim {
     },
     Config(
     )
-  )
+  ))
 
-  val experiment3attackDestab = Experiment(
+  val experiment3attackDestab = commonExports(Experiment(
     "p2p-stage3-attackDestab",
     "P2P [stage3] Attack scenario",
     Seq("p2p-stage2-paramSpace"),
@@ -281,7 +325,7 @@ object DhtSim {
     },
     Config(
     )
-  )
+  ))
 
   val experiment3attackChained = chainWithGA(experiment3attack)
   val experiment3staticChained = chainWithGA(experiment3static)
@@ -328,6 +372,7 @@ object DhtSim {
     )
 
     val testBench = new Testbench()
+
     testBench.setNetwork(network)
     testBench.setReportLens(rs.lens(p6report))
 
@@ -336,6 +381,12 @@ object DhtSim {
 
     testBench.setRunSeedRef(rs.lens(p4runSeed))
     testBench.setRuntimeEvent(runtimeEvent)
+
+    testBench.setRangeSizes(rs.lens(p6rangeSizes))
+    testBench.setRpcCounts(rs.lens(p6rpcCounts))
+    testBench.setRpcFailures(rs.lens(p6rpcFailures))
+    testBench.setLookupCounts(rs.lens(p6lookupCounts))
+    testBench.setLookupFailures(rs.lens(p6lookupFailures))
 
     testBench
   }

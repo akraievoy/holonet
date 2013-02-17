@@ -53,7 +53,7 @@ public abstract class DhtProtocolTestCase extends TestCase {
     }
     stabilizeProgress.stop();
 
-    final Metrics testMetrics = Metrics.createInstance("test");
+    final Metrics testMetrics = Metrics.createInstance(net, "test");
     net.setInterceptor(testMetrics);
 
     int testCount = (int) Math.ceil(nodes * Math.log(nodes) / Math.log(2));

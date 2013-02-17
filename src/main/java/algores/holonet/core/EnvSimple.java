@@ -29,12 +29,35 @@ import java.util.*;
 
 public class EnvSimple implements Env {
   protected final Map<Address, Node> addressToNode =
-      new HashMap<Address, algores.holonet.core.Node>(128, 0.25f);
+      new HashMap<Address, algores.holonet.core.Node>(256, 0.25f);
   protected final EnvMappings mappings = new EnvMappings();
   protected final AddressMeta addressMeta = new PlanarAddressMeta();
+  protected final Map<Address, Integer> addressToIndex =
+      new HashMap<Address, Integer>(256, 0.25f);
 
   public Address createNetworkAddress(EntropySource eSource) {
-    return addressMeta.create(eSource);
+    final Address nextAddress = addressMeta.create(eSource);
+    final Integer prevIndex = addressToIndex.put(
+        nextAddress,
+        addressToIndex.size()
+    );
+    if (prevIndex != null) {
+      throw new IllegalStateException(
+          "double generation of address " + nextAddress
+      );
+    }
+    return nextAddress;
+  }
+
+  @Override
+  public int indexOf(Address address) {
+    final Integer index = addressToIndex.get(address);
+    if (index == null) {
+      throw new IllegalArgumentException(
+          "address not registered: " + address
+      );
+    }
+    return index;
   }
 
   @Override

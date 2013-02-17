@@ -138,11 +138,14 @@ public class Network {
    */
   public void removeNode(Node nodeToRemove, final boolean forceFailure) throws CommunicationException {
     Collection<Key> keys = nodeToRemove.getServices().getStorage().getKeys();
+    final double rangeWidth =
+        nodeToRemove.getServices().getRouting()
+            .getOwnRoute().getRange().width().doubleValue();
     if (!forceFailure) {
-      getInterceptor().registerNodeDepartures(1);
+      getInterceptor().registerNodeDeparture(nodeToRemove.getAddress(), rangeWidth);
       nodeToRemove.getServices().getOverlay().leave();
     } else {
-      getInterceptor().registerNodeFailures(1);
+      getInterceptor().registerNodeFailure(nodeToRemove.getAddress(), rangeWidth);
     }
 
     env.removeNode(nodeToRemove.getAddress());
@@ -300,6 +303,8 @@ public class Network {
         (double) stats.traversalsFailed / stats.traversalsCalled;
 
     interceptor.modeToLookups(mode).registerLookup(
+        firstAddr,
+        lastAddr,
         latency,
         route.size() - 1,
         routeRedundancy,

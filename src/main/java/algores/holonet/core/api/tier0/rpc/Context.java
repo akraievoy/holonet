@@ -23,7 +23,6 @@ import algores.holonet.core.Network;
 import algores.holonet.core.Node;
 import algores.holonet.core.api.Address;
 import com.google.common.base.Optional;
-import org.akraievoy.base.Die;
 import org.akraievoy.base.introspect.Introspect;
 
 import java.lang.reflect.Proxy;
@@ -75,7 +74,11 @@ public class Context {
 
     parentNetwork.registerRpcCall(request.getSource(), request.getTarget());
     targetNode = parentNetwork.getEnv().getNode(request.getTarget());
-    parentNetwork.getInterceptor().registerRpcCallResult(targetNode != null);
+    parentNetwork.getInterceptor().registerRpcCallResult(
+        request.getSource().getAddress(),
+        request.getTarget(),
+        targetNode != null
+    );
 
     if (targetNode != null) {
       activeRequests.add(request);
@@ -118,7 +121,12 @@ public class Context {
   }
 
   public void onCallCompleted() {
-    parentNetwork.getInterceptor().registerRpcCallResult(true);
+    Call call = activeRequests.get(activeRequests.size() - 1);
+    parentNetwork.getInterceptor().registerRpcCallResult(
+        call.getSource().getAddress(),
+        call.getTarget(),
+        true
+    );
     activeRequests.remove(activeRequests.size() - 1);
     servedRequests--;
   }

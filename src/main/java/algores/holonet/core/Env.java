@@ -52,4 +52,6 @@ public interface Env extends RoutingDistance, RoutingSeeder {
   Optional<RequestPair> generateRequestPair(EntropySource entropy);
 
   SortedMap<Key, Node> keyToNode();
+
+  int indexOf(Address address);
 }

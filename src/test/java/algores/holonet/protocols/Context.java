@@ -43,7 +43,7 @@ public class Context {
   }
 
   public void injectMetrics(String newMetricsName) {
-    final Metrics newMetrics = Metrics.createInstance(newMetricsName);
+    final Metrics newMetrics = Metrics.createInstance(this.net, newMetricsName);
     this.net.setInterceptor(newMetrics);
     nameToMetrics.put(newMetricsName, newMetrics);
   }

@@ -213,6 +213,11 @@ public class EnvCNet implements Env {
     return keyToNode;
   }
 
+  @Override
+  public int indexOf(Address address) {
+    return ((AddressCNet) address).getNodeIdx();
+  }
+
   public Node getNode(Address address) {
     if (fallback != null) {
       return fallback.getNode(address);

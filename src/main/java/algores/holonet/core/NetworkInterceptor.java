@@ -18,7 +18,12 @@
 
 package algores.holonet.core;
 
+import algores.holonet.core.api.Address;
 import algores.holonet.core.api.tier1.delivery.LookupService;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Unifies hooks for intercepting various network events.
@@ -38,7 +43,7 @@ public interface NetworkInterceptor {
   //	RPC failure/success ratio
   //	----------------------------
 
-  void registerRpcCallResult(boolean successful);
+  void registerRpcCallResult(Address address, Address target, boolean successful);
 
   //	-------------------------------------
   //	Network structure dynamics aggregates
@@ -46,16 +51,138 @@ public interface NetworkInterceptor {
 
   void registerNodeArrivals(final int nodeCount, boolean successful);
 
-  void registerNodeFailures(final int nodeCount);
+  void registerNodeFailure(Address address, double rangeWidth);
 
-  void registerNodeDepartures(final int nodeCount);
+  void registerNodeDeparture(Address address, double rangeWidth);
 
   LookupMetrics modeToLookups(LookupService.Mode mode);
+
+  public static interface Counters<T> {
+    public T proto();
+
+    double[] posts();
+
+    double[] averages(double unusedvalue);
+  }
+
+  public static class SimpleCounters implements Counters<SimpleCounters> {
+    private int[] data = new int[0];
+
+    public void post(int pos) {
+      if (data.length <= pos) {
+        final int[] dataOld = data;
+        data = new int[pos +1];
+        System.arraycopy(dataOld, 0, data, 0, dataOld.length);
+      }
+      data[pos]++;
+    }
+
+    @Override
+    public double[] posts() {
+      final double[] res = new double[data.length];
+      for (int i = 0; i < res.length; i++) {
+        res[i] = data[i];
+      }
+      return res;
+    }
+
+    @Override
+    public double[] averages(double unusedValue) {
+      final double[] res = new double[data.length];
+      for (int i = 0; i < res.length; i++) {
+        int dataI = data[i];
+        res[i] = dataI > 0 ? dataI : unusedValue;
+      }
+      return res;
+    }
+
+    @Override
+    public SimpleCounters proto() {
+      return new SimpleCounters();
+    }
+  }
+
+  public static class WeightedCounters implements Counters<WeightedCounters> {
+    private double[] data = new double[0];
+
+    public void post(int pos, double weight) {
+      int pos0 = pos * 2;
+      if (data.length <= pos0) {
+        final double[] dataOld = data;
+        data = new double[pos0 + 2];
+        System.arraycopy(dataOld, 0, data, 0, dataOld.length);
+      }
+      data[pos0] += 1;
+      data[pos0 + 1] += weight;
+    }
+
+    @Override
+    public double[] averages(double unusedvalue) {
+      double[] averages = new double[data.length / 2];
+      for (int i = 0; i < averages.length; i++) {
+        double postCount = data[i * 2];
+        averages[i] = postCount > 0 ? data[i*2 + 1] / postCount : unusedvalue;
+      }
+      return averages;
+    }
+
+    @Override
+    public double[] posts() {
+      double[] totals = new double[data.length / 2];
+      for (int i = 0; i < totals.length; i++) {
+        totals[i] = data[i*2 + 1];
+      }
+      return totals;
+    }
+
+    @Override
+    public WeightedCounters proto() {
+      return new WeightedCounters();
+    }
+  }
+
+  public static class LazyCounters<T extends Counters<T>> {
+    private Map<Integer, T> indexToCounters =
+        new HashMap<Integer, T>(256, 0.25f);
+
+    private final T t;
+
+    public LazyCounters(T t) {
+      this.t = t;
+    }
+
+    public T at(int index) {
+      final T stored = indexToCounters.get(index);
+      if (stored != null) {
+        return stored;
+      }
+
+      final T created = t.proto();
+      indexToCounters.put(index, created);
+      return created;
+    }
+
+    public Map<Integer, T> getIndexToCounters() {
+      return Collections.unmodifiableMap(indexToCounters);
+    }
+  }
 
   //	----------------------------------------------------------
   //	hopcount/latency aggregates + lookup failure/success ratio
   //	----------------------------------------------------------
   public static class LookupMetrics {
+    private final Network network;
+
+    public LookupMetrics(Network network) {
+      this.network = network;
+    }
+
+    private LazyCounters<WeightedCounters> lookupFailureCounters =
+        new LazyCounters<WeightedCounters>(new WeightedCounters());
+    public LazyCounters<WeightedCounters> getLookupFailureCounters() {
+      return lookupFailureCounters;
+    }
+
     private long totalHopCount;
     private long lookupCount;
     private double routeRedundancyTotal;
@@ -89,11 +216,9 @@ public interface NetworkInterceptor {
       return lookupVsDirectTotal / lookupVsDirectCount;
     }
 
-    public long getLookupVsDirectCount() {
-      return lookupVsDirectCount;
-    }
-
     public void registerLookup(
+        final Address source,
+        final Address target,
         final double latency,
         final long hopCount,
         final double routeRedundancy,
@@ -103,6 +228,7 @@ public interface NetworkInterceptor {
         final double directLatency,
         final boolean success
     ) {
+      final double failureWeight;
       if (success) {
         totalLatency += latency;
         totalHopCount += hopCount;
@@ -111,14 +237,22 @@ public interface NetworkInterceptor {
           lookupVsDirectCount++;
         }
         lookupSuccesses += 1.0;
+        failureWeight = 0;
       } else {
         lookupFailures += 1.0;
+        failureWeight = 1;
       }
       routeRedundancyTotal += routeRedundancy;
       routeRetractionTotal += routeRetraction;
       routeExhaustionTotal += routeExhaustion;
       routeRpcFailRatioTotal += routeRpcFailRatio;
       lookupCount++;
+
+      if (network != null) {
+        final int sourceIndex = network.getEnv().indexOf(source);
+        final int targetIndex = network.getEnv().indexOf(target);
+        lookupFailureCounters.at(sourceIndex).post(targetIndex, failureWeight);
+      }
     }
 
     public void reportInconsistentLookup() {
@@ -131,18 +265,6 @@ public interface NetworkInterceptor {
 
     public double getLookupSuccessRatio() {
       return (double) lookupSuccesses / (lookupSuccesses + lookupFailures);
-    }
-
-    public double getLookupFailureRatio() {
-      return (double) lookupFailures / (lookupSuccesses + lookupFailures);
-    }
-
-    public long getLookupSuccesses() {
-      return lookupSuccesses;
-    }
-
-    public long getLookupFailures() {
-      return lookupFailures;
     }
 
     public void registerRoutingStats(
@@ -185,7 +307,7 @@ public interface NetworkInterceptor {
   }
 
   NetworkInterceptor NOOP = new NetworkInterceptor() {
-    private final LookupMetrics mockLookups = new LookupMetrics();
+    private final LookupMetrics mockLookups = new LookupMetrics(null);
 
     public void reportInconsistentLookup(LookupService.Mode get) {
       //  nothing to do
@@ -195,15 +317,15 @@ public interface NetworkInterceptor {
       //  nothing to do
     }
 
-    public void registerNodeFailures(int nodeCount) {
+    public void registerNodeFailure(Address address, double rangeWidth) {
       //  nothing to do
     }
 
-    public void registerNodeDepartures(int nodeCount) {
+    public void registerNodeDeparture(Address address, double rangeWidth) {
       //  nothing to do
     }
 
-    public void registerRpcCallResult(boolean successful) {
+    public void registerRpcCallResult(Address source, Address target, boolean successful) {
       //  nothing to do
     }
 
