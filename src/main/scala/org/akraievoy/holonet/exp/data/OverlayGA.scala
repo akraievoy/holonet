@@ -672,7 +672,7 @@ object OverlayGA {
       },
       vertexLabel = {rs => Some(rs.lens(p2nodeIndex))}
     )
-  ).withStoreExport(
+  )/*.withStoreExport(  //  FIXME breaks with out of memory
     StoreExport(
       "distances", desc = "overlay network, distance distribution",
       Seq(p3genomeBestDist)
@@ -682,5 +682,5 @@ object OverlayGA {
       "powers", desc = "overlay network, power distribution",
       Seq(p3genomeBestPowers)
     )
-  )
+  )*/
 }
