@@ -26,6 +26,7 @@ import algores.holonet.testbench.Testbench
 import algores.holonet.core.events._
 import org.akraievoy.cnet.metrics.domain.MetricVDataPowers
 import org.akraievoy.cnet.net.vo.{EdgeDataDense, VertexData}
+import org.akraievoy.holonet.exp.GraphvizExport.ColorScheme
 
 object DhtSim {
   import java.lang.{
@@ -201,7 +202,9 @@ object DhtSim {
       vertexCoordX = {rs => Some(rs.lens(p2locX))},
       vertexCoordY = {rs => Some(rs.lens(p2locY))},
       vertexRadius = {rs => Some(rs.lens(p6rangeSizes))},
-      vertexLabel = {rs => Some(rs.lens(p2nodeIndex))}
+      vertexLabel = {rs => Some(rs.lens(p2nodeIndex))},
+      edgeColorScheme = ColorScheme.VIOLET_RED,
+      vertexColorScheme = ColorScheme.VIOLET_RED
     )
   ).withGraphvizExport(
     GraphvizExport(
@@ -218,7 +221,9 @@ object DhtSim {
       vertexCoordX = {rs => Some(rs.lens(p2locX))},
       vertexCoordY = {rs => Some(rs.lens(p2locY))},
       vertexRadius = {rs => Some(rs.lens(p6rangeSizes))},
-      vertexLabel = {rs => Some(rs.lens(p2nodeIndex))}
+      vertexLabel = {rs => Some(rs.lens(p2nodeIndex))},
+      edgeColorScheme = ColorScheme.VIOLET_RED,
+      vertexColorScheme = ColorScheme.VIOLET_RED
     )
   )
 
