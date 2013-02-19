@@ -22,6 +22,7 @@ import algores.holonet.core.api.API;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
+import algores.holonet.core.api.tier0.routing.RoutingService;
 import algores.holonet.core.api.tier0.rpc.NetworkRpc;
 import algores.holonet.core.api.tier0.rpc.NetworkRpcBase;
 import algores.holonet.core.api.tier1.delivery.LookupService;
@@ -284,12 +285,20 @@ public class Network {
       final LookupService.Mode mode,
       final double lookupStartTime,
       final List<RoutingEntry> route,
+      final Key key,
       final LookupService.RecursiveLookupState.StatsTuple stats,
       final boolean success
   ) {
     final double latency = getElapsedTime() - lookupStartTime;
     final Address firstAddr = route.get(0).getAddress();
     final Address lastAddr = route.get(route.size() - 1).getAddress();
+    Address targetAddr = lastAddr;
+    for (Node node : env.getAllNodes()) {
+      RoutingService nodeRouting = node.getServices().getRouting();
+      if (nodeRouting.getOwnRoute().isReplicaFor(key, (byte) 0)) {
+        targetAddr = node.getAddress();
+      }
+    }
     final double directLatency = 2 * firstAddr.getDistance(lastAddr);
 
     final NetworkInterceptor interceptor = getInterceptor();
@@ -304,7 +313,7 @@ public class Network {
 
     interceptor.modeToLookups(mode).registerLookup(
         firstAddr,
-        lastAddr,
+        targetAddr,
         latency,
         route.size() - 1,
         routeRedundancy,

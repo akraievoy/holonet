@@ -61,20 +61,20 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
 
       if (state.replicaOpt.isPresent()) {
         getOwner().getNetwork().registerLookupSuccess(
-            mode, lookupStartTime, state.replicaPath, state.getStats(), true
+            mode, lookupStartTime, state.replicaPath, key, state.getStats(), true
         );
         return state.replicaOpt.get();
       }
 
     } catch (CommunicationException nfe) {
       getOwner().getNetwork().registerLookupSuccess(
-          mode, lookupStartTime, state.replicaPath, state.getStats(), false
+          mode, lookupStartTime, state.replicaPath, key, state.getStats(), false
       );
       throw nfe;
     }
 
     getOwner().getNetwork().registerLookupSuccess(
-        mode, lookupStartTime, state.replicaPath, state.getStats(), false
+        mode, lookupStartTime, state.replicaPath, key, state.getStats(), false
     );
     throw new CommunicationException(
         String.format(
