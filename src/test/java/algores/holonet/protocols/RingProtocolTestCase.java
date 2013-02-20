@@ -25,6 +25,7 @@ import algores.holonet.core.api.Key;
 import algores.holonet.core.api.tier1.delivery.LookupService;
 import algores.holonet.protocols.ring.RingRoutingServiceImpl;
 import algores.holonet.protocols.ring.RingService;
+import com.google.common.base.Optional;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -62,7 +63,8 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
     final Key testKey = API.createKey(testValue);
     net.getEnv().getNode(
       net.getRandomNode(ctx.getEntropy()).getServices().getLookup().lookup(
-        testKey, false, LookupService.Mode.GET
+        testKey, false, LookupService.Mode.GET,
+        Optional.<Address>absent()
       )
     ).getServices().getStorage().put(testKey, testValue);
 
@@ -77,7 +79,8 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
         try {
           final Address responsible =
               net.getRandomNode(ctx.getEntropy()).getServices().getLookup().lookup(
-                  testKey, true, LookupService.Mode.GET
+                  testKey, true, LookupService.Mode.GET,
+                  Optional.<Address>absent()
               );
 
           assertEquals(
@@ -128,7 +131,8 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
 
     net.getEnv().getNode(
         net.getRandomNode(ctx.getEntropy()).getServices().getLookup().lookup(
-            testKey, false, LookupService.Mode.GET
+            testKey, false, LookupService.Mode.GET,
+            Optional.<Address>absent()
         )
     ).getServices().getStorage().put(testKey, testValue);
 
@@ -141,7 +145,8 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
         try {
           final Address responsible =
               net.getRandomNode(ctx.getEntropy()).getServices().getLookup().lookup(
-                  testKey, true, LookupService.Mode.GET
+                  testKey, true, LookupService.Mode.GET,
+                  Optional.<Address>absent()
               );
           assertEquals(
               "TestCount: " + testCount,
@@ -175,7 +180,8 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
 
     net.getEnv().getNode(
         net.getRandomNode(ctx.getEntropy()).getServices().getLookup().lookup(
-            testKey, false, LookupService.Mode.GET
+            testKey, false, LookupService.Mode.GET,
+            Optional.<Address>absent()
         )
     ).getServices().getStorage().put(testKey, testValue);
 
@@ -189,7 +195,8 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
         randomNode.getServices().getOverlay().stabilize();
         final Address responsible =
             randomNode.getServices().getLookup().lookup(
-                testKey, true, LookupService.Mode.GET
+                testKey, true, LookupService.Mode.GET,
+                Optional.<Address>absent()
             );
         assertEquals(
             "TestCount: " + testCount,

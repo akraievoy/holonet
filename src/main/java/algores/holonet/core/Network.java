@@ -250,8 +250,7 @@ public class Network {
 
       final Address responsibleAddress =
           getRandomNode(eSource).getServices().getLookup().lookup(
-              key, false, LookupService.Mode.PUT
-          );
+              key, false, LookupService.Mode.PUT, Optional.<Address>absent());
       final Node owner = env.getNode(responsibleAddress);
       owner.getServices().getStorage().put(key, bytes.clone());
       progress.iter(i);
@@ -286,6 +285,7 @@ public class Network {
       final double lookupStartTime,
       final List<RoutingEntry> route,
       final Key key,
+      final Optional<Address> actualTarget,
       final LookupService.RecursiveLookupState.StatsTuple stats,
       final boolean success
   ) {
@@ -293,13 +293,28 @@ public class Network {
     final Address firstAddr = route.get(0).getAddress();
     final Address lastAddr = route.get(route.size() - 1).getAddress();
     Address targetAddr = lastAddr;
-    for (Node node : env.getAllNodes()) {
-      RoutingService nodeRouting = node.getServices().getRouting();
-      if (nodeRouting.getOwnRoute().isReplicaFor(key, (byte) 0)) {
-        targetAddr = node.getAddress();
+    if (!success) {
+      if (actualTarget.isPresent()) {
+        targetAddr = actualTarget.get();
+      } else {
+        for (Node node : env.getAllNodes()) {
+          RoutingService nodeRouting = node.getServices().getRouting();
+          //  this check yields any nodes which have been cut-off the main ring
+          if (nodeRouting.getOwnRoute().isReplicaFor(key, (byte) 0)) {
+            targetAddr = node.getAddress();
+          }
+          //  this check yields only correct and those stuck with other's data
+          if (
+              node.getAddress().getKey().equals(key) ||
+              node.getServices().getStorage().get(key) != null
+          ) {
+            targetAddr = node.getAddress();
+            break;
+          }
+        }
       }
     }
-    final double directLatency = 2 * firstAddr.getDistance(lastAddr);
+    final double directLatency = 2 * firstAddr.getDistance(targetAddr);
 
     final NetworkInterceptor interceptor = getInterceptor();
     final double routeRedundancy =

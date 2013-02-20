@@ -65,7 +65,8 @@ public class EventNetLookup extends Event<EventNetLookup> {
       final Address address;
       try {
         address = lookupSvc.lookup(
-            mapping.getKey(), true, LookupService.Mode.GET
+            mapping.getKey(), true, LookupService.Mode.GET,
+            Optional.of(request.server.getAddress())
         );
       } catch (CommunicationException e) {
         if (!aggregateResult.equals(Result.FAILURE)) {

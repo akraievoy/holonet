@@ -22,10 +22,10 @@ import algores.holonet.core.CommunicationException;
 import algores.holonet.core.Network;
 import algores.holonet.core.Node;
 import algores.holonet.core.api.tier1.delivery.LookupService;
+import com.google.common.base.Optional;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -51,7 +51,8 @@ public class EventNetDiscover extends Event<EventNetDiscover> {
             nodeFrom.getServices().getLookup().lookup(
                 nodeInto.getKey(),
                 false,
-                LookupService.Mode.GET
+                LookupService.Mode.GET,
+                Optional.of(nodeInto.getAddress())
             );
             discoverSucceeded += 1;
           } catch (CommunicationException e) {

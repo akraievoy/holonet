@@ -26,6 +26,7 @@ import algores.holonet.core.api.tier0.routing.RoutingServiceBase;
 import algores.holonet.core.api.tier0.storage.StorageService;
 import algores.holonet.core.api.tier1.delivery.LookupService;
 import algores.holonet.testbench.Metrics;
+import com.google.common.base.Optional;
 import junit.framework.TestCase;
 
 public abstract class DhtProtocolTestCase extends TestCase {
@@ -72,7 +73,8 @@ public abstract class DhtProtocolTestCase extends TestCase {
       final Address lookup;
       try {
         lookup = client.getServices().getLookup().lookup(
-            request, false, LookupService.Mode.GET
+            request, false, LookupService.Mode.GET,
+            Optional.of(server.getAddress())
         );
       } catch (CommunicationException e) {
         throw new IllegalStateException("failed at test # " + testIndex, e);
@@ -137,7 +139,8 @@ public abstract class DhtProtocolTestCase extends TestCase {
       try {
         randomNode.getServices().getOverlay().stabilize();
         final Address address = randomNode.getServices().getLookup().lookup(
-            testKey, true, LookupService.Mode.GET
+            testKey, true, LookupService.Mode.GET,
+            Optional.<Address>absent()
         );
         assertEquals(
             testMessage,
@@ -160,7 +163,8 @@ public abstract class DhtProtocolTestCase extends TestCase {
       final Address lookup;
       try {
         lookup = client.getServices().getLookup().lookup(
-            request, false, LookupService.Mode.GET
+            request, false, LookupService.Mode.GET,
+            Optional.of(server.getAddress())
         );
       } catch (CommunicationException e) {
         throw new IllegalStateException(testMessage, e);

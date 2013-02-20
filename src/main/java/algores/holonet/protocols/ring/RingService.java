@@ -48,7 +48,8 @@ public class RingService extends OverlayServiceBase {
     }
 
     final Address successor = rpcToDelivery(oldNode).lookup(
-        owner.getKey(), false, LookupService.Mode.JOIN
+        owner.getKey(), false, LookupService.Mode.JOIN,
+        Optional.<Address>absent()
     );
     getRouting().setSuccessor(new RoutingEntry(successor.getKey(), successor));
 

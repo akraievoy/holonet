@@ -54,7 +54,8 @@ public class ChordServiceBase extends RingService implements ChordService {
       return;
     } else {
       final Address successor = rpcToDelivery(dhtNodeAddress).lookup(
-          owner.getKey(), false, LookupService.Mode.JOIN
+          owner.getKey(), false, LookupService.Mode.JOIN,
+          Optional.<Address>absent()
       );
       getRouting().setSuccessor(rpcToRouting(successor).getOwnRoute());
     }
@@ -127,7 +128,8 @@ public class ChordServiceBase extends RingService implements ChordService {
     for (int power = 0; power < Key.BITNESS; power++) {
       try {
         final Address address = owner.getServices().getLookup().lookup(
-            ownerKey.next(power), false, LookupService.Mode.FIXFINGERS
+            ownerKey.next(power), false, LookupService.Mode.FIXFINGERS,
+            Optional.<Address>absent()
         );
 
         //  it's possible that finger ends up pointing to the same node

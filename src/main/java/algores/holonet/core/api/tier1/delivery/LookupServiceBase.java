@@ -42,15 +42,21 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
   /**
    * An iterative lookup algorithm, starting from startingAddr.
    *
-   *
    * @param key       to be looked up.
-   * @param mustExist would not search the replicas if current node is responsible for the key and does not have it
+   * @param mustExist would not search the replicas if current node is
+   *                    responsible for the key and does not have it
    * @param mode which operation this lookup supports
+   * @param actualTarget used for reporting, should not be used in lookup logic
    * @return the final address that is responsible for the key.
    * @throws algores.holonet.core.CommunicationException
    *          propagated
    */
-  public Address lookup(Key key, boolean mustExist, Mode mode) throws CommunicationException {
+  public Address lookup(
+      Key key,
+      boolean mustExist,
+      Mode mode,
+      Optional<Address> actualTarget
+  ) throws CommunicationException {
     final double lookupStartTime = getOwner().getNetwork().getElapsedTime();
     RecursiveLookupState state = new RecursiveLookupState(
         getOwner().getServices().getRouting().getOwnRoute()
@@ -61,20 +67,20 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
 
       if (state.replicaOpt.isPresent()) {
         getOwner().getNetwork().registerLookupSuccess(
-            mode, lookupStartTime, state.replicaPath, key, state.getStats(), true
+            mode, lookupStartTime, state.replicaPath, key, actualTarget, state.getStats(), true
         );
         return state.replicaOpt.get();
       }
 
     } catch (CommunicationException nfe) {
       getOwner().getNetwork().registerLookupSuccess(
-          mode, lookupStartTime, state.replicaPath, key, state.getStats(), false
+          mode, lookupStartTime, state.replicaPath, key, actualTarget, state.getStats(), false
       );
       throw nfe;
     }
 
     getOwner().getNetwork().registerLookupSuccess(
-        mode, lookupStartTime, state.replicaPath, key, state.getStats(), false
+        mode, lookupStartTime, state.replicaPath, key, actualTarget, state.getStats(), false
     );
     throw new CommunicationException(
         String.format(

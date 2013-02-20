@@ -35,7 +35,12 @@ public interface LookupService {
 
   enum Mode {JOIN, LEAVE, FIXFINGERS, GET, PUT}
 
-  Address lookup(Key key, boolean mustExist, Mode mode) throws CommunicationException;
+  Address lookup(
+      Key key,
+      boolean mustExist,
+      Mode mode,
+      Optional<Address> actualTarget
+  ) throws CommunicationException;
 
   RecursiveLookupState recursiveLookup(
       Key key,
