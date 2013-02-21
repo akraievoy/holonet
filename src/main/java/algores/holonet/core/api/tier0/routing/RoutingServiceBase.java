@@ -210,7 +210,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       }
     }
 
-        //  seed addresses are not masked by num limit
+    //  seed addresses are not masked by num limit
     final List<Address> seedAddresses =
         owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
     for (Address seedAddress : seedAddresses) {
@@ -324,14 +324,17 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
       final RoutingEntry newRe = upEntry.copy();
       newRe.updateLiveness(event);
-      tuple = flavorize(getOwnRoute(), newRe);
-      if (!tuple.requireFullReflavor) {
-        final Integer oldCount = flavorToCount.get(tuple.flavor);
-        flavorToCount.put(tuple.flavor, oldCount == null ? 1 : oldCount + 1);
+
+      final FlavorTuple currentFlavor = flavorize(getOwnRoute(), newRe);
+      final Integer oldCount = flavorToCount.get(currentFlavor.flavor);
+      flavorToCount.put(currentFlavor.flavor, oldCount == null ? 1 : oldCount + 1);
+
+      if (tuple == null || !tuple.requireFullReflavor) {
+        tuple = currentFlavor;
       }
     }
 
-    if (tuple != null && tuple.requireFullReflavor) {
+    if (requiresCleanup() || tuple != null && tuple.requireFullReflavor) {
       fullReflavor();
     }
   }
@@ -383,11 +386,11 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     final RoutingEntry newRe = upEntry.copy();
     newRe.updateLiveness(event);
     routes.add(newRe);
-    if (fTuple.requireFullReflavor) {
+    final Integer oldCount = flavorToCount.get(fTuple.flavor);
+    flavorToCount.put(fTuple.flavor, oldCount == null ? 1 : oldCount + 1);
+
+    if (fTuple.requireFullReflavor || requiresCleanup()) {
       fullReflavor();
-    } else {
-      final Integer oldCount = flavorToCount.get(fTuple.flavor);
-      flavorToCount.put(fTuple.flavor, oldCount == null ? 1 : oldCount + 1);
     }
   }
 
@@ -411,9 +414,23 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       );
     }
 
-    final double trigger = flavorToCount.size() * redundancy * MAINTENANCE_THRESHOLD;
-    if (routes.size() > trigger) {
+    final List<Address> seedAddresses =
+        owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
+    for (Address seedAddress : seedAddresses) {
+      final RoutingEntry seedEntry =
+          new RoutingEntry(seedAddress.getKey(), seedAddress);
+      final FlavorTuple tuple = flavorize(ownRoute, seedEntry);
+      if (tuple.requireFullReflavor) {
+        continue;
+      }
+      final Integer countPrev = flavorToCount.get(tuple.flavor);
+      flavorToCount.put(
+          tuple.flavor,
+          countPrev == null ? 1 : countPrev + 1
+      );
+    }
 
+    if (requiresCleanup()) {
       Collections.sort(routes, livenessOrder);
 
       final int totalMax = (int) Math.ceil(flavorToCount.size() * redundancy);
@@ -437,6 +454,11 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     }
 
     entryToFlavorCache.clear();
+  }
+
+  protected boolean requiresCleanup() {
+    final double trigger = flavorToCount.size() * redundancy * MAINTENANCE_THRESHOLD;
+    return routes.size() > trigger;
   }
 
   protected static class FlavorTuple {
