@@ -417,8 +417,19 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     final List<Address> seedAddresses =
         owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
     for (Address seedAddress : seedAddresses) {
+      boolean foundInRoutes = false;
+      for (RoutingEntry re: routes) {
+        if (re.getAddress().equals(seedAddress)) {
+          foundInRoutes = true;
+          continue;
+        }
+      }
+      if (foundInRoutes) {
+        continue;
+      }
       final RoutingEntry seedEntry =
           new RoutingEntry(seedAddress.getKey(), seedAddress);
+
       final FlavorTuple tuple = flavorize(ownRoute, seedEntry);
       if (tuple.requireFullReflavor) {
         continue;

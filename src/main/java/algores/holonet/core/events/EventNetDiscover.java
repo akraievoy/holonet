@@ -61,8 +61,7 @@ public class EventNetDiscover extends Event<EventNetDiscover> {
                 String.format(
                     "stabilize failed: %s",
                     e.getMessage()
-                ),
-                e
+                )
             );
           }
 

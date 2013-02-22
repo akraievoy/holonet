@@ -563,13 +563,13 @@ object OverlayGA {
       Param(p3densityMin, "0.75"),
       Param(p3stepDelta, "1"),
       Param(p3flags, ""),
-      Param(p3minEff, "1.2"),
+      Param(p3minEff, "1.25"),
       Param(p3fitCap, "1")
     ),
     Config(
       "corrStudy-smoke",
       "Correlation study --- smoke",
-      Param(p3minEff, "0.8"),
+      Param(p3minEff, "1.25"),
       Param(p3seed, "42601"),
       Param(p3flags, "R"),
       Param(p3specimen, "0--21", Strategy.USE_FIRST, Strategy.USE_FIRST),
@@ -579,14 +579,15 @@ object OverlayGA {
       ),
       Param(p3generateMax, "2"),
       Param(p3generatePow, "10"),
-      Param(p3densityMin, "1.5"),
+      Param(p3densityMax, "0.5"),
+      Param(p3densityMin, "0.5"),
       Param(p3generation, "0--10", Strategy.ITERATE, Strategy.USE_LAST),
       Param(p3elite, "1")
     ),
     Config(
       "corrStudy-full",
       "Correlation study --- full",
-      Param(p3minEff, "0.8"),
+      Param(p3minEff, "1.25"),
       Param(p3seed, "42600--42603"),
       Param(p3flags, "R"),
       Param(p3specimen, "0--21", Strategy.USE_FIRST, Strategy.USE_FIRST),
@@ -596,7 +597,8 @@ object OverlayGA {
       ),
       Param(p3generateMax, "2"),
       Param(p3generatePow, "10"),
-      Param(p3densityMin, "1.5"),
+      Param(p3densityMax, "0.5"),
+      Param(p3densityMin, "0.5"),
       Param(p3generation, "0--22", Strategy.ITERATE, Strategy.USE_LAST),
       Param(p3elite, "0.9")
     ),
