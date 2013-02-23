@@ -47,7 +47,8 @@ public class MutatorSooRegularize implements Mutator<GenomeSoo> {
     }
 
     final double step = 1.0 / strategy.getSteps();
-    final int limit = strategy.getNodeLinkLowerLimit();
+    final int lowerLimit = strategy.getNodeLinkLowerLimit();
+    final int upperLimit = strategy.getNodeLinkUpperLimit();
     final EdgeData data = child.getSolution();
     final MetricVDataPowers powersMetric =
         new MetricVDataPowers(new RefObject<EdgeData>(data));
@@ -76,7 +77,10 @@ public class MutatorSooRegularize implements Mutator<GenomeSoo> {
         }
       }
 
-      moarRewires = minPow < limit && limit < maxPow && maxPow - minPow >= step;
+      moarRewires = maxPow - minPow >= step && (
+          minPow < lowerLimit && lowerLimit < maxPow ||
+          minPow < upperLimit && upperLimit < maxPow
+      );
       if (moarRewires) {
         rewireChoices.clear();
         for (int node = 0; node < size; node++) {

@@ -25,7 +25,8 @@ import org.akraievoy.cnet.opt.api.GeneticStrategy;
 import java.util.Collection;
 
 public class ConditionSooVertexDensity implements Condition<GenomeSoo> {
-  protected int linkLimit = 0;
+  protected int lowerLinkLimit = 0;
+  protected int upperLinkLimit = 0;
 
   public boolean isValid(GeneticStrategy<GenomeSoo> strategy, GenomeSoo child, Collection<GenomeSoo> generation, int generationIndex) {
     final GeneticStrategySoo strategySoo = (GeneticStrategySoo) strategy;
@@ -36,9 +37,11 @@ public class ConditionSooVertexDensity implements Condition<GenomeSoo> {
 
     final EdgeData sol = child.getSolution();
 
-    linkLimit = strategySoo.getNodeLinkLowerLimit();
+    lowerLinkLimit = strategySoo.getNodeLinkLowerLimit();
+    upperLinkLimit = strategySoo.getNodeLinkUpperLimit();
     for (int from = 0, size = sol.getSize(); from < size; from++) {
-      if (sol.power(from) < linkLimit) {
+      final double powerFrom = sol.power(from);
+      if (powerFrom < lowerLinkLimit || powerFrom > upperLinkLimit) {
         return false;
       }
     }
@@ -47,6 +50,6 @@ public class ConditionSooVertexDensity implements Condition<GenomeSoo> {
   }
 
   public String toString() {
-    return "[ Links(per node) >= " + linkLimit + " ]";
+    return "[ " + upperLinkLimit + " => Links(per node) >= " + lowerLinkLimit + " ]";
   }
 }

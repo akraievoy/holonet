@@ -91,8 +91,9 @@ object OverlayGA {
     val p3stateCrossoverMax = ParamName[JDouble]("p3stateCrossoverMax")
     val p3stateFitPowMax = ParamName[JDouble]("p3stateFitPowMax")
     val p3stateMutateMax = ParamName[JDouble]("p3stateMutateMax")
-    val p3densityMax = ParamName[JDouble]("p3densityMax")
-    val p3densityMin = ParamName[JDouble]("p3densityMin")
+    val p3netDensityMax = ParamName[JDouble]("p3netDensityMax")
+    val p3nodeDensityMin = ParamName[JDouble]("p3nodeDensityMin")
+    val p3nodeDensityMax = ParamName[JDouble]("p3nodeDensityMax")
     val p3stepDelta = ParamName[JInt]("p3stepDelta")
     val p3minEff = ParamName[JDouble]("p3minEff")
     val p3flags = ParamName[String]("p3flags")
@@ -472,8 +473,9 @@ object OverlayGA {
           new MetricRoutesFloydWarshall()
         )
         gaStrategy.setMinEff(rs.lens(p3minEff).get.get)
-        gaStrategy.setTheta(rs.lens(p3densityMax).get.get)
-        gaStrategy.setThetaTilde(rs.lens(p3densityMin).get.get)
+        gaStrategy.setNetDensityMax(rs.lens(p3netDensityMax).get.get)
+        gaStrategy.setNodeDensityMin(rs.lens(p3nodeDensityMin).get.get)
+        gaStrategy.setNodeDensityMax(rs.lens(p3nodeDensityMax).get.get)
         gaStrategy.setModes(rs.lens(p3flags).get.get)
         gaStrategy.setSteps(rs.lens(p3stepDelta).get.get)
         gaStrategy.setDistSource(rs.lens(p2nodeDist))
@@ -529,22 +531,24 @@ object OverlayGA {
 
         timing.run()
 
-        val powersMetric = new MetricVDataPowers(
-          rs.lens(p3genomeBest)
-        )
-        powersMetric.run()
+        if (rs.lens(p3genomeBest).get.isDefined) {
+          val powersMetric = new MetricVDataPowers(
+            rs.lens(p3genomeBest)
+          )
+          powersMetric.run()
 
-        val powersStoreMetric = new MetricStoreVData(
-          powersMetric, rs.lens(p3genomeBestPowers), Width.INT
-        )
-        powersStoreMetric.run()
+          val powersStoreMetric = new MetricStoreVData(
+            powersMetric, rs.lens(p3genomeBestPowers), Width.INT
+          )
+          powersStoreMetric.run()
 
-        new MetricStoreEData(
-          rs.lens(p3genomeBest),
-          rs.lens(p2nodeDist),
-          rs.lens(p3genomeBestDist),
-          Width.DOUBLE
-        ).run()
+          new MetricStoreEData(
+            rs.lens(p3genomeBest),
+            rs.lens(p2nodeDist),
+            rs.lens(p3genomeBestDist),
+            Width.DOUBLE
+          ).run()
+        }
 
     },
     Config(
@@ -553,14 +557,14 @@ object OverlayGA {
       Param(p3specimen, "0--90", Strategy.USE_FIRST, Strategy.USE_FIRST),
       Param(p3generateMax, "233"),
       Param(p3generatePow, "2"),
-      Param(p3elite, "0.1"),
-      Param(p3stateCrossoverMax, "0.25"),
-      Param(p3crossover, "0.15"),
-      Param(p3mutate, "0.15"),
-      Param(p3stateFitPowMax, "3"),
-      Param(p3stateMutateMax, "0.05"),
-      Param(p3densityMax, "1.75"),
-      Param(p3densityMin, "0.75"),
+      Param(p3elite, "0.2"),
+      Param(p3stateCrossoverMax, "0.1"),
+      Param(p3crossover, "0.05"),
+      Param(p3mutate, "0.05"),
+      Param(p3stateFitPowMax, "2"),
+      Param(p3stateMutateMax, "0.025"),
+      Param(p3netDensityMax, "1.75"),
+      Param(p3nodeDensityMin, "0.75"),
       Param(p3stepDelta, "1"),
       Param(p3flags, ""),
       Param(p3minEff, "1.25"),
@@ -569,38 +573,40 @@ object OverlayGA {
     Config(
       "corrStudy-smoke",
       "Correlation study --- smoke",
-      Param(p3minEff, "1.25"),
+      Param(p3minEff, "0.8"),
       Param(p3seed, "42601"),
       Param(p3flags, "R"),
       Param(p3specimen, "0--21", Strategy.USE_FIRST, Strategy.USE_FIRST),
       Param(
         p3fitCap,
-        "0.025;0.3;0.8"
+        "0.025;0.2;0.4"
       ),
-      Param(p3generateMax, "2"),
-      Param(p3generatePow, "10"),
-      Param(p3densityMax, "0.5"),
-      Param(p3densityMin, "0.5"),
+      Param(p3generateMax, "12"),
+      Param(p3generatePow, "3"),
+      Param(p3netDensityMax, "0.5"),
+      Param(p3nodeDensityMin, "0.5"),
+      Param(p3nodeDensityMax, "0.5"),
       Param(p3generation, "0--10", Strategy.ITERATE, Strategy.USE_LAST),
-      Param(p3elite, "1")
+      Param(p3elite, "0.2")
     ),
     Config(
       "corrStudy-full",
       "Correlation study --- full",
-      Param(p3minEff, "1.25"),
+      Param(p3minEff, "0.8"),
       Param(p3seed, "42600--42603"),
       Param(p3flags, "R"),
       Param(p3specimen, "0--21", Strategy.USE_FIRST, Strategy.USE_FIRST),
       Param(
         p3fitCap,
-        "0.025;0.05;0.1;0.3;0.5;0.8"
+        "0.025;0.05;0.1;0.2;0.3;0.4"
       ),
-      Param(p3generateMax, "2"),
-      Param(p3generatePow, "10"),
-      Param(p3densityMax, "0.5"),
-      Param(p3densityMin, "0.5"),
+      Param(p3generateMax, "12"),
+      Param(p3generatePow, "3"),
+      Param(p3netDensityMax, "0.5"),
+      Param(p3nodeDensityMin, "0.5"),
+      Param(p3nodeDensityMax, "0.5"),
       Param(p3generation, "0--22", Strategy.ITERATE, Strategy.USE_LAST),
-      Param(p3elite, "0.9")
+      Param(p3elite, "0.2")
     ),
     Config(
       "minEff12x2x3",
@@ -645,7 +651,7 @@ object OverlayGA {
     Config(
       "thetaProf",
       "Varying Density (Theta)",
-      Param(p3densityMax, "1;1.25;1.5;1.75")
+      Param(p3netDensityMax, "1;1.25;1.5;1.75")
     ),
     Config(
       "stepsProf",

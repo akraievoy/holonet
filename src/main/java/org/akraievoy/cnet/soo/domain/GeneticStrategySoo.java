@@ -50,14 +50,24 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
   protected String modes = "" + MODE_REGULAR;
 
   //	connectivity upper limit
-  protected double theta = 2;
+  protected double netDensityMax = 2;
   protected long generationNum;
 
-  public void setTheta(double theta) { this.theta = theta; }
+  public void setNetDensityMax(double netDensityMax) {
+    this.netDensityMax = netDensityMax;
+  }
 
   //	regularity (vertex power) lower limit
-  protected double thetaTilde = 0;
-  public void setThetaTilde(double thetaTilde) { this.thetaTilde = thetaTilde; }
+  protected double nodeDensityMin = 0;
+  public void setNodeDensityMin(double nodeDensityMin) {
+    this.nodeDensityMin = nodeDensityMin;
+  }
+
+  //	regularity (vertex power) upper limit
+  protected double nodeDensityMax = 0;
+  public void setNodeDensityMax(double nodeDensityMax) {
+    this.nodeDensityMax = nodeDensityMax;
+  }
 
   //	effectiveness lower limit
   protected double minEff = 0;
@@ -135,7 +145,7 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
   protected int getTotalLinkUpperLimit() {
     final int size = distSource.getValue().getSize();
 
-    final double thetaVal = theta;
+    final double thetaVal = netDensityMax;
     return getTotalLinkUpperLimit(size, thetaVal);
   }
 
@@ -144,14 +154,25 @@ public class GeneticStrategySoo implements GeneticStrategy<GenomeSoo> {
   }
 
   protected int getNodeLinkLowerLimit() {
-    final int size = distSource.getValue().getSize();
-
-    final double thetaTildeVal = thetaTilde;
-    return getNodeLinkLowerLimit(size, thetaTildeVal);
+    return getNodeLinkLowerLimit(
+        distSource.getValue().getSize(),
+        nodeDensityMin
+    );
   }
 
-  public static int getNodeLinkLowerLimit(int size, double thetaTildeVal) {
-    return (int) Math.floor(thetaTildeVal * Math.log(size) / Math.log(2));
+  protected int getNodeLinkUpperLimit() {
+    return getNodeLinkUpperLimit(
+        distSource.getValue().getSize(),
+        nodeDensityMin
+    );
+  }
+
+  public static int getNodeLinkLowerLimit(int size, double nodeDensityMin) {
+    return (int) Math.floor(nodeDensityMin * Math.log(size) / Math.log(2));
+  }
+
+  public static int getNodeLinkUpperLimit(int size, double nodeDensityMax) {
+    return (int) Math.ceil(nodeDensityMax * Math.log(size) / Math.log(2));
   }
 
   public GenomeSoo createGenome() {

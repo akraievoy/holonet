@@ -59,7 +59,7 @@ public class BreederSooTest extends TestCase {
     strategy = new GeneticStrategySoo(new MetricRoutesFloydWarshall());
     strategy.setDistSource(new RefObject<EdgeData>(dist));
     strategy.setRequestSource(new RefObject<EdgeData>(req));
-    strategy.setTheta(1);
+    strategy.setNetDensityMax(1);
 
     state = new GeneticState();
     state.setCompleteness(0.0);
