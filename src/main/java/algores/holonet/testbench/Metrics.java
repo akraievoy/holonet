@@ -155,31 +155,35 @@ public class Metrics implements NetworkInterceptor {
   }
 
   public void store(StoreLens<Double> reportLens ) {
-    reportLens.forTypeName(Integer.class, periodName + "_joins").set(getNodeJoins());
-    reportLens.forName(periodName + "_joinSuccessRatio").set(getArrivalSuccessRatio());
-    reportLens.forTypeName(Integer.class, periodName + "_leaveCount").set(getNodeDepartures());
-    reportLens.forTypeName(Integer.class, periodName + "_failCount").set(getNodeFailures());
+    reportLens.forTypeName(Integer.class, periodName + "Joins").set(getNodeJoins());
+    reportLens.forName(periodName + "JoinScsRatio").set(getArrivalSuccessRatio());
+    reportLens.forTypeName(Integer.class, periodName + "LeaveCount").set(getNodeDepartures());
+    reportLens.forTypeName(Integer.class, periodName + "FailCount").set(getNodeFailures());
 
     for (LookupService.Mode mode : LookupService.Mode.values()) {
       final LookupMetrics lookups = modeToLookups(mode);
-      final String prefix = "_lookup_" + mode.toString().toLowerCase();
-      reportLens.forTypeName(Long.class, periodName + prefix + "_count").set(lookups.getLookupCount());
-      reportLens.forName(periodName + prefix + "_hopAvg").set(lookups.getMeanPathLength());
-      reportLens.forName(periodName + prefix + "_delayAvg").set(lookups.getMeanLatency());
-      reportLens.forName(periodName + prefix + "_vsDirectRatioAvg").set(lookups.getLookupVsDirectRatioAvg());
-      reportLens.forName(periodName + prefix + "_successRatio").set(lookups.getLookupSuccessRatio());
-      reportLens.forName(periodName + prefix + "_correctRatio").set(lookups.getLookupConsistency());
-      reportLens.forName(periodName + prefix + "_routingServiceRouteCountAvg").set(lookups.getRoutingServiceRouteCountAvg());
-      reportLens.forName(periodName + prefix + "_routingServiceRedundancyAvg").set(lookups.getRoutingServiceRedundancyAvg());
-      reportLens.forName(periodName + prefix + "_routingServiceRedundancyChangeAvg").set(lookups.getRoutingServiceRedundancyChangeAvg());
-      reportLens.forName(periodName + prefix + "_routeRedundancyAvg").set(lookups.getRouteRedundancyAvg());
-      reportLens.forName(periodName + prefix + "_routeExhaustionAvg").set(lookups.getRouteExhaustionAvg());
-      reportLens.forName(periodName + prefix + "_routeRetractionAvg").set(lookups.getRouteRetractionAvg());
-      reportLens.forName(periodName + prefix + "_routeRpcFailRatioAvg").set(lookups.getRouteRpcFailRatioAvg());
+      final String prefix = capitalize(mode.toString().toLowerCase());
+      reportLens.forTypeName(Long.class, periodName + prefix + "Count").set(lookups.getLookupCount());
+      reportLens.forName(periodName + prefix + "HopAvg").set(lookups.getMeanPathLength());
+      reportLens.forName(periodName + prefix + "DelayAvg").set(lookups.getMeanLatency());
+      reportLens.forName(periodName + prefix + "VsDirectRatioAvg").set(lookups.getLookupVsDirectRatioAvg());
+      reportLens.forName(periodName + prefix + "ScsRatio").set(lookups.getLookupSuccessRatio());
+      reportLens.forName(periodName + prefix + "CorrRatio").set(lookups.getLookupConsistency());
+      reportLens.forName(periodName + prefix + "RoutingServiceRouteCountAvg").set(lookups.getRoutingServiceRouteCountAvg());
+      reportLens.forName(periodName + prefix + "RoutingServiceRedundancyAvg").set(lookups.getRoutingServiceRedundancyAvg());
+      reportLens.forName(periodName + prefix + "RoutingServiceRedundancyChangeAvg").set(lookups.getRoutingServiceRedundancyChangeAvg());
+      reportLens.forName(periodName + prefix + "RouteRedundancyAvg").set(lookups.getRouteRedundancyAvg());
+      reportLens.forName(periodName + prefix + "RouteExhaustionAvg").set(lookups.getRouteExhaustionAvg());
+      reportLens.forName(periodName + prefix + "RouteRetractionAvg").set(lookups.getRouteRetractionAvg());
+      reportLens.forName(periodName + prefix + "RouteRpcFailRatioAvg").set(lookups.getRouteRpcFailRatioAvg());
     }
 
-    reportLens.forTypeName(Integer.class, periodName + "_rpcCount").set(getRpcCallsTotal());
-    reportLens.forName(periodName + "_rpcSuccessRatio").set(getRpcSuccessRatio());
+    reportLens.forTypeName(Integer.class, periodName + "RpcCount").set(getRpcCallsTotal());
+    reportLens.forName(periodName + "RpcScsRatio").set(getRpcSuccessRatio());
+  }
+
+  public String capitalize(String s) {
+    return s.substring(0, 1).toUpperCase() + s.substring(1).toLowerCase();
   }
 
   public void storeStats(
