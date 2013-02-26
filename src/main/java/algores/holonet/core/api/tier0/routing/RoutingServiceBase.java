@@ -559,6 +559,17 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     return routingDist * Math.pow(2, envDist);
   }
 
+  @Override
+  public int getRouteCount() {
+    int routeCount = getOwnRoute() != null ? 1 : 0;
+
+    for (Integer count : flavorToCount.values()) {
+      routeCount += count;
+    }
+
+    return routeCount;
+  }
+
   protected static class LivenessComparator implements Comparator<RoutingEntry> {
     public int compare(RoutingEntry o1, RoutingEntry o2) {
       final float l1 = o1.getLiveness();

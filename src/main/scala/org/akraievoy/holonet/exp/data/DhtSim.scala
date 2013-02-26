@@ -167,7 +167,7 @@ object DhtSim {
         val runtimeEvent = new EventCompositeSequence(
           Seq(
             new EventCompositeLoop(
-              new EventNodeAttack()
+              new EventNodeAttackRoutingRank()
             ).withCountRef(
               new RefObject[JLong](
                 math.ceil(rs.lens(p5nodes).get.get * rs.lens(p5attackProb).get.get).asInstanceOf[Long]

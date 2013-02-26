@@ -27,14 +27,14 @@ import org.akraievoy.holonet.exp.store.RefObject;
 /**
  * Node failure event.
  */
-public class EventNodeAttack extends Event<EventNodeAttack> {
+public class EventNodeAttackAddresRange extends Event<EventNodeAttackAddresRange> {
   protected Ref<Long> count = new RefObject<Long>(1L);
 
   public void setCountRef(Ref<Long> nodeCount) {
     this.count = nodeCount;
   }
 
-  public EventNodeAttack withCountRef(Ref<Long> nodeCountRef) {
+  public EventNodeAttackAddresRange withCountRef(Ref<Long> nodeCountRef) {
     setCountRef(nodeCountRef);
     return this;
   }
@@ -51,7 +51,7 @@ public class EventNodeAttack extends Event<EventNodeAttack> {
 
     if (targetNetwork.getAllNodes().size() > countInt) {
       try {
-        targetNetwork.attackNodes(countInt);
+        targetNetwork.attackNodesAddressRange(countInt);
       } catch (CommunicationException e) {
         return handleEventFailure(e, null);
       }

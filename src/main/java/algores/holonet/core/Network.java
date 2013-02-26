@@ -218,7 +218,7 @@ public class Network {
     }
   }
 
-  public void attackNodes(
+  public void attackNodesAddressRange(
       int count
   ) throws CommunicationException {
     final List<Node> nodes = new ArrayList<Node>(getAllNodes());
@@ -231,6 +231,28 @@ public class Network {
             o2.getServices().getRouting().getOwnRoute().getRange().width();
 
         return o1width.compareTo(o2width);
+      }
+    });
+    //  okay, but attacker would like to crash the widest masters first, so
+    Collections.reverse(nodes);
+    for (int i = 0; i < count; i++) {
+      removeNode(nodes.get(i), true);
+    }
+  }
+
+  public void attackNodesRoutingRank(
+      int count
+  ) throws CommunicationException {
+    final List<Node> nodes = new ArrayList<Node>(getAllNodes());
+    Collections.sort(nodes, new Comparator<Node>() {
+      @Override
+      public int compare(Node o1, Node o2) {
+        final int o1routes =
+            o1.getServices().getRouting().getRouteCount();
+        final int o2routes =
+            o1.getServices().getRouting().getRouteCount();
+
+        return new Integer(o1routes).compareTo(o2routes);
       }
     });
     //  okay, but attacker would like to crash the widest masters first, so
