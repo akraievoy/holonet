@@ -42,7 +42,12 @@ public class ConditionSooFitnessCapping implements Condition<GenomeSoo> {
 
     final double fitness = child.getOrComputeFitness(strategy);
     final Double fitnessCap = this.fitnessCap.get();
-    final boolean valid = fitness <= fitnessCap;
+    final boolean valid;
+    if (generationIndex > 0) {
+      valid = fitness <= fitnessCap;
+    } else {
+      valid = fitness * 2 <= fitnessCap;
+    }
 
 /*
     System.out.printf("%g <= %g --> %s %n", fitness, fitnessCap, valid ? "valid" : "invalid");
