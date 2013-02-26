@@ -157,8 +157,8 @@ public class Metrics implements NetworkInterceptor {
   public void store(StoreLens<Double> reportLens ) {
     reportLens.forTypeName(Integer.class, periodName + "Joins").set(getNodeJoins());
     reportLens.forName(periodName + "JoinScsRatio").set(getArrivalSuccessRatio());
-    reportLens.forTypeName(Integer.class, periodName + "LeaveCount").set(getNodeDepartures());
-    reportLens.forTypeName(Integer.class, periodName + "FailCount").set(getNodeFailures());
+    reportLens.forTypeName(Integer.class, periodName + "Leaves").set(getNodeDepartures());
+    reportLens.forTypeName(Integer.class, periodName + "Fails").set(getNodeFailures());
 
     for (LookupService.Mode mode : LookupService.Mode.values()) {
       final LookupMetrics lookups = modeToLookups(mode);
