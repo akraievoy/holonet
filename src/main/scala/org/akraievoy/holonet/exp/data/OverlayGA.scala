@@ -574,14 +574,14 @@ object OverlayGA {
       "corrStudy-smoke",
       "Correlation study --- smoke",
       Param(p3minEff, "0.8"),
-      Param(p3seed, "42601"),
+      Param(p3seed, "42600"),
       Param(p3flags, "R"),
       Param(p3specimen, "0--21", Strategy.USE_FIRST, Strategy.USE_FIRST),
       Param(
         p3fitCap,
-        "0.025;0.2;0.4"
+        "0.05;0.25"
       ),
-      Param(p3generateMax, "12"),
+      Param(p3generateMax, "64"),
       Param(p3generatePow, "3"),
       Param(p3netDensityMax, "0.5"),
       Param(p3nodeDensityMin, "0.5"),
@@ -598,9 +598,9 @@ object OverlayGA {
       Param(p3specimen, "0--21", Strategy.USE_FIRST, Strategy.USE_FIRST),
       Param(
         p3fitCap,
-        "0.025;0.05;0.1;0.2;0.3;0.4"
+        "0.05;0.1;0.15;0.2;0.25"
       ),
-      Param(p3generateMax, "12"),
+      Param(p3generateMax, "64"),
       Param(p3generatePow, "3"),
       Param(p3netDensityMax, "0.5"),
       Param(p3nodeDensityMin, "0.5"),

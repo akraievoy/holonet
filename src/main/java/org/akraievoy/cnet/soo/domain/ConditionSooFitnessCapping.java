@@ -37,17 +37,19 @@ public class ConditionSooFitnessCapping implements Condition<GenomeSoo> {
     final GeneticStrategySoo strategySoo = (GeneticStrategySoo) strategy;
 
     if (!fitnessCap.isPresent()) {
-      fitnessCap = Optional.of(strategySoo.getFitnessCap());
+      double fcTarget = strategySoo.getFitnessCap();
+      fitnessCap = Optional.of(
+          Interpolate.norm(
+              0, strategySoo.generationNum * 0.85,
+              fcTarget * 3, fcTarget,
+              Interpolate.LINEAR
+          ).apply(generationIndex)
+      );
     }
 
     final double fitness = child.getOrComputeFitness(strategy);
     final Double fitnessCap = this.fitnessCap.get();
-    final boolean valid;
-    if (generationIndex > 0) {
-      valid = fitness <= fitnessCap;
-    } else {
-      valid = fitness * 2 <= fitnessCap;
-    }
+    final boolean valid = fitness <= fitnessCap;
 
 /*
     System.out.printf("%g <= %g --> %s %n", fitness, fitnessCap, valid ? "valid" : "invalid");
