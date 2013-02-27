@@ -553,8 +553,16 @@ public class EdgeDataSparse implements EdgeData {
     result = (int) (temp ^ (temp >>> 32));
     result = 31 * result + (symmetric ? 1 : 0);
     result = 13 * result + (getNonDefCount());
+    final int[] resultRef = {result};
+    visitNonDef(new EdgeVisitor() {
+      @Override
+      public void visit(int from, int into, double e) {
+        resultRef[0] = 101 * resultRef[0] + from;
+        resultRef[0] = 107 * resultRef[0] + into;
+      }
+    });
 
-    return result;
+    return resultRef[0];
   }
 
   //	TODO add a generic similarity measure with an Edge Iterator
