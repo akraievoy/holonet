@@ -102,6 +102,8 @@ public class MutatorSooRegularize implements Mutator<GenomeSoo> {
       }
 
     } while(moarRewires);
+
+    child.resetFitness();
   }
 
   public String toString() {

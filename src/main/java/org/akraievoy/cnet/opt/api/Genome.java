@@ -34,10 +34,19 @@ public abstract class Genome {
   protected Double fitness;
   public Double getFitness() { return fitness; }
   public void setFitness(Double fitness) { this.fitness = fitness; }
+  public void resetFitness() {
+    setFitness(null);
+  }
 
   @SuppressWarnings("unchecked")
   public <G extends Genome> double getOrComputeFitness(GeneticStrategy<G> strategy) {
     if (fitness != null) {
+      if (System.currentTimeMillis() % 128 == 0) {
+          double computed = strategy.computeFitness((G) this);
+          if (computed != fitness) {
+            throw new IllegalStateException("incorrect cached fitness");
+          }
+      }
       return fitness;
     }
 

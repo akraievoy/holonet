@@ -78,6 +78,8 @@ public abstract class MutatorSooRewire implements Mutator<GenomeSoo> {
     if (genome.getSolution().total() > strategySoo.getTotalLinkUpperLimit() * 2) {
       log.warn("too much links: {} > {}",  genome.getSolution().total() / 2, strategySoo.getTotalLinkUpperLimit());
     }
+
+    genome.resetFitness();
   }
 
   protected TIntArrayList chooseOldWire(final EdgeData linkFitness, int linkNum, EntropySource eSource, GeneticState state, GenomeSoo genome) {

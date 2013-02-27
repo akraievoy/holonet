@@ -60,6 +60,8 @@ public class MutatorSooClusterize implements Mutator<GenomeSoo> {
         solution,
         distance
     );
+
+    child.resetFitness();
   }
 
   public int apply(

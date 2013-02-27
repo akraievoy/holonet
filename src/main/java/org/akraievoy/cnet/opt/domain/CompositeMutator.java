@@ -56,6 +56,8 @@ public class CompositeMutator extends Composite<Mutator<Genome>> {
       elemUses[index]++;
 
       wrapped.mutate(strategy, child, state, eSource);
+
+      child.resetFitness();
     }
 
     public int getIndex() {

@@ -37,6 +37,8 @@ public class MutatorChain<G extends Genome> implements Mutator<G> {
     for (Mutator<G> m : chain) {
       m.mutate(strategy, child, state, eSource);
     }
+
+    child.resetFitness();
   }
 
   public void setChain(List<Mutator<G>> chain) {
