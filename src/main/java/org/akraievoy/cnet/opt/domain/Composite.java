@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Composite<Component> {
+  public static final double MIN_RATIO = 1.0 / 1024;
+
   protected final List<Component> elems = new ArrayList<Component>();
   protected final WeightedEventModel elemsModel =
       new WeightedEventModelBase(Optional.of("composite"));
@@ -93,7 +95,7 @@ public abstract class Composite<Component> {
   }
 
   protected double ratio(final int fails, final int uses, final double rank) {
-    final double successFreq = (0.05 + uses - fails) / (1.0 + uses);
+    final double successFreq = MIN_RATIO + (uses - fails) / (1.0 + uses);
 
     if (uses > fails && rank > 0) {
       final double averageRank = rank / (uses - fails);
@@ -132,18 +134,14 @@ public abstract class Composite<Component> {
 
     missReport.append(getTitle()).append(": {");
     for (int i = 0, conditionsSize = elems.size(); i < conditionsSize; i++) {
-      missReport.append("\n\t");
-      missReport.append(elems.get(i).toString());
-      missReport.append(" : ");
-      missReport.append(elemUses[i] - elemFails[i]);
-      missReport.append("/");
-      missReport.append(elemUses[i]);
-      if (elemRanks[i] > 0) {
-        missReport.append("@");
-        missReport.append(Format.format6(elemRanks[i]));
-      }
-      missReport.append(" = ");
-      missReport.append(Format.format6(ratio(elemFails[i], elemUses[i], elemRanks[i])));
+      missReport.append(String.format(
+          "\n * %s : %d/%d@%4.2g = %4.2g",
+          elems.get(i).toString(),
+          elemUses[i] - elemFails[i],
+          elemUses[i],
+          elemRanks[i],
+          ratio(elemFails[i], elemUses[i], elemRanks[i])
+      ));
 
     }
     missReport.append("\n};");
