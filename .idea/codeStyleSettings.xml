@@ -17,7 +17,6 @@
             <option name="USE_RELATIVE_INDENTS" value="false" />
           </value>
         </option>
-        <option name="RIGHT_MARGIN" value="80" />
         <option name="KEEP_SIMPLE_METHODS_IN_ONE_LINE" value="true" />
         <XML>
           <option name="XML_LEGACY_SETTINGS_IMPORTED" value="true" />
