@@ -20,6 +20,14 @@ package algores.holonet.testbench;
 
 import algores.holonet.core.Network;
 import algores.holonet.core.Node;
+import algores.holonet.core.api.Address;
+import algores.holonet.core.api.tier0.routing.RoutingService;
+import org.akraievoy.cnet.metrics.api.Metric;
+import org.akraievoy.cnet.metrics.domain.MetricScalarEigenGap;
+import org.akraievoy.cnet.net.vo.EdgeData;
+import org.akraievoy.cnet.net.vo.EdgeDataFactory;
+import org.akraievoy.cnet.net.vo.EdgeDataSparse;
+import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.holonet.exp.store.StoreLens;
 import scala.Tuple4;
 
@@ -31,6 +39,12 @@ import java.util.Collection;
 public class Snapshot {
   private Tuple4<Integer, Double, Double, Double> elemStats;
   private Tuple4<Integer, Double, Double, Double> rangeStats;
+  private EdgeData linksAll;
+  private EdgeData linksSeed;
+  private EdgeData linksDht;
+  private Double lambdaAll;
+  private Double lambdaDht;
+  private Double lambdaSeed;
 
   public static interface NodeFun{
     public double apply(final Node n);
@@ -63,30 +77,55 @@ public class Snapshot {
   public void process(final Network network) {
     elemStats = processFun(network, ELEMS);
     rangeStats = processFun(network, RANGE);
-  }
 
-  public double getKeyRangePerNodeAvg() {
-    return rangeStats._3();
-  }
+    final Collection<Node> nodes = network.getAllNodes();
+    int maxIndex = 0;
+    for (Node node : nodes) {
+      maxIndex = Math.max(maxIndex, network.getEnv().indexOf(node.getAddress()));
+    }
+    linksAll = EdgeDataFactory.sparse(false, maxIndex + 1);
+    linksSeed = EdgeDataFactory.sparse(false, maxIndex + 1);
+    linksDht = EdgeDataFactory.sparse(false, maxIndex + 1);
+    for (Node nodeFrom : nodes) {
+      final RoutingService fromROuting = nodeFrom.getServices().getRouting();
+      final int fromIndex = network.getEnv().indexOf(nodeFrom.getAddress());
 
-  public double getKeyRangePerNodeDev() {
-    return rangeStats._4();
-  }
+      for (Node nodeInto : nodes) {
+        final Address intoAddr = nodeInto.getAddress();
+        if (nodeFrom.getAddress().equals(intoAddr)) {
+          continue;
+        }
 
-  public double getElemPerNodeAvg() {
-    return elemStats._3();
-  }
+        final boolean linkAll =
+            fromROuting.hasRouteFor(intoAddr, true);
+        final boolean linkDht =
+            fromROuting.hasRouteFor(intoAddr, false);
 
-  public double getElemPerNodeDev() {
-    return elemStats._4();
-  }
+        final int intoIndex = network.getEnv().indexOf(nodeInto.getAddress());
 
-  public int getNodeCount() {
-    return elemStats._1();
-  }
+        if (linkAll) {
+          linksAll.set(fromIndex, intoIndex, 1);
+        }
+        if (linkDht) {
+          linksDht.set(fromIndex, intoIndex, 1);
+        }
+        if (linkAll && !linkDht) {
+          linksSeed.set(fromIndex, intoIndex, 1);
+        }
+      }
+    }
 
-  public double getElemCount() {
-    return elemStats._2();
+    final MetricScalarEigenGap eigenGapMetric = new MetricScalarEigenGap();
+
+    eigenGapMetric.setSource(new RefObject<EdgeData>(linksAll));
+    lambdaAll = Metric.fetch(eigenGapMetric);
+
+    eigenGapMetric.setSource(new RefObject<EdgeData>(linksDht));
+    lambdaDht = Metric.fetch(eigenGapMetric);
+
+    eigenGapMetric.setSource(new RefObject<EdgeData>(linksSeed));
+    lambdaSeed = Metric.fetch(eigenGapMetric);
+
   }
 
   public void store(StoreLens<Double> reportLens) {
@@ -96,6 +135,14 @@ public class Snapshot {
     reportLens.forName(name + "_elemsPerNodeDev").set(elemStats._4());
     reportLens.forName(name + "_rangePerNodeAvg").set(rangeStats._3());
     reportLens.forName(name + "_rangePerNodeDev").set(rangeStats._4());
+
+    reportLens.forName(name + "_lambdaAll").set(lambdaAll);
+    reportLens.forName(name + "_lambdaDht").set(lambdaDht);
+    reportLens.forName(name + "_lambdaSeed").set(lambdaSeed);
+
+    reportLens.forTypeName(EdgeDataSparse.class, name + "_linksAll").set((EdgeDataSparse) linksAll);
+    reportLens.forTypeName(EdgeDataSparse.class, name + "_linksDht").set((EdgeDataSparse) linksDht);
+    reportLens.forTypeName(EdgeDataSparse.class, name + "_linksSeed").set((EdgeDataSparse) linksSeed);
   }
 
   protected static Tuple4<Integer, Double, Double, Double> processFun(

@@ -215,6 +215,10 @@ public class EnvCNet implements Env {
 
   @Override
   public int indexOf(Address address) {
+    if (fallback != null) {
+      return fallback.indexOf(address);
+    }
+
     return ((AddressCNet) address).getNodeIdx();
   }
 

@@ -516,7 +516,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   @Override
   public RoutingStatsTuple getStats() {
     final int routeCount =
-        routes.size() + (routes.contains(getOwnRoute()) ? 0 : 1);
+        getRouteCount();
     final float routeRedundancy =
         (float) routeCount / flavorToCount.size();
     return new RoutingStatsTuple(routeCount, routeRedundancy);
@@ -568,6 +568,31 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     }
 
     return routeCount;
+  }
+
+  @Override
+  public boolean hasRouteFor(Address address, boolean includeSeedRoutes) {
+    if (ownRoute != null && ownRoute.getAddress().equals(ownRoute)) {
+      return false;
+    }
+
+    for (RoutingEntry route : routes) {
+      if (address.equals(route.getAddress())) {
+        return true;
+      }
+    }
+
+    if (includeSeedRoutes) {
+      final List<Address> seedAddresses =
+        owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
+      for (Address seedAddress : seedAddresses) {
+        if (address.equals(seedAddress)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   protected static class LivenessComparator implements Comparator<RoutingEntry> {

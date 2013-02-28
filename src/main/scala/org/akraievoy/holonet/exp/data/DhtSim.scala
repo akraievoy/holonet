@@ -25,7 +25,7 @@ import algores.holonet.core.{Network, EnvCNet}
 import algores.holonet.testbench.Testbench
 import algores.holonet.core.events._
 import org.akraievoy.cnet.metrics.domain.MetricVDataPowers
-import org.akraievoy.cnet.net.vo.{EdgeDataDense, VertexData}
+import org.akraievoy.cnet.net.vo.{EdgeDataSparse, EdgeDataDense, VertexData}
 import org.akraievoy.holonet.exp.GraphvizExport.ColorScheme
 
 object DhtSim {
@@ -187,45 +187,84 @@ object DhtSim {
     )
   ))
 
-  def commonExports(exp: Experiment) = exp.withGraphvizExport(
-    GraphvizExport(
-      name = "rpc_failures", desc = "overlay stats - rpc failures",
-      edgeStructure = {_.lens(p6rpcCounts)},
-      edgeWidth = {rs => Some(rs.lens(p6rpcCounts))},
-      edgeColor = {rs => Some(rs.lens(p6rpcFailures))},
-      vertexColor = {
-        rs =>
-          val powers = new MetricVDataPowers()
-          powers.setSource(rs.lens(p6rpcFailures))
-          Some(powers)
-      },
-      vertexCoordX = {rs => Some(rs.lens(p2locX))},
-      vertexCoordY = {rs => Some(rs.lens(p2locY))},
-      vertexRadius = {rs => Some(rs.lens(p6rangeSizes))},
-      vertexLabel = {rs => Some(rs.lens(p2nodeIndex))},
-      edgeColorScheme = ColorScheme.VIOLET_RED,
-      vertexColorScheme = ColorScheme.VIOLET_RED
+  def commonExports(exp: Experiment) = {
+    val withExports = exp.withGraphvizExport(
+      GraphvizExport(
+        name = "rpc_failures", desc = "overlay stats - rpc failures",
+        edgeStructure = {_.lens(p6rpcCounts)},
+        edgeWidth = {rs => Some(rs.lens(p6rpcCounts))},
+        edgeColor = {rs => Some(rs.lens(p6rpcFailures))},
+        vertexColor = {
+          rs =>
+            val powers = new MetricVDataPowers()
+            powers.setSource(rs.lens(p6rpcFailures))
+            Some(powers)
+        },
+        vertexCoordX = {rs => Some(rs.lens(p2locX))},
+        vertexCoordY = {rs => Some(rs.lens(p2locY))},
+        vertexRadius = {rs => Some(rs.lens(p6rangeSizes))},
+        vertexLabel = {rs => Some(rs.lens(p2nodeIndex))},
+        edgeColorScheme = ColorScheme.VIOLET_RED,
+        vertexColorScheme = ColorScheme.VIOLET_RED
+      )
+    ).withGraphvizExport(
+      GraphvizExport(
+        name = "lookup_failures", desc = "overlay stats - lookup failures",
+        edgeStructure = {_.lens(p6lookupCounts)},
+        edgeWidth = {rs => Some(rs.lens(p6lookupCounts))},
+        edgeColor = {rs => Some(rs.lens(p6lookupFailures))},
+        vertexColor = {
+          rs =>
+            val powers = new MetricVDataPowers()
+            powers.setSource(rs.lens(p6lookupFailures))
+            Some(powers)
+        },
+        vertexCoordX = {rs => Some(rs.lens(p2locX))},
+        vertexCoordY = {rs => Some(rs.lens(p2locY))},
+        vertexRadius = {rs => Some(rs.lens(p6rangeSizes))},
+        vertexLabel = {rs => Some(rs.lens(p2nodeIndex))},
+        edgeColorScheme = ColorScheme.VIOLET_RED,
+        vertexColorScheme = ColorScheme.VIOLET_RED
+      )
     )
-  ).withGraphvizExport(
-    GraphvizExport(
-      name = "lookup_failures", desc = "overlay stats - lookup failures",
-      edgeStructure = {_.lens(p6lookupCounts)},
-      edgeWidth = {rs => Some(rs.lens(p6lookupCounts))},
-      edgeColor = {rs => Some(rs.lens(p6lookupFailures))},
-      vertexColor = {
-        rs =>
-          val powers = new MetricVDataPowers()
-          powers.setSource(rs.lens(p6lookupFailures))
-          Some(powers)
-      },
-      vertexCoordX = {rs => Some(rs.lens(p2locX))},
-      vertexCoordY = {rs => Some(rs.lens(p2locY))},
-      vertexRadius = {rs => Some(rs.lens(p6rangeSizes))},
-      vertexLabel = {rs => Some(rs.lens(p2nodeIndex))},
-      edgeColorScheme = ColorScheme.VIOLET_RED,
-      vertexColorScheme = ColorScheme.VIOLET_RED
+
+    Seq(
+      withLinkExport("preRun_links", "pre-run links", "preRun_linksAll") _,
+      withLinkExport("preRun_linksDht", "pre-run DHT links", "preRun_linksDht") _,
+      withLinkExport("preRun_linksSeed", "pre-run seed links", "preRun_linksSeed") _,
+      withLinkExport("postRun_links", "post-run links", "postRun_linksAll") _,
+      withLinkExport("postRun_linksDht", "post-run DHT links", "postRun_linksDht") _,
+      withLinkExport("postRun_linksSeed", "post-run seed links", "postRun_linksSeed") _
+    ).foldLeft(withExports){
+      (exp, modFun) =>
+        modFun(exp)
+    }
+  }
+
+  def withLinkExport(
+      exportName: String, desc: String, edgeDataSparseName: String
+  )(e: Experiment): Experiment = {
+    e.withGraphvizExport(
+      GraphvizExport(
+        name = exportName, desc = desc,
+        edgeStructure = {_.lens(ParamName[EdgeDataSparse](edgeDataSparseName))},
+        edgeWidth = {rs => Some(rs.lens(p6lookupCounts))},
+        edgeColor = {rs => Some(rs.lens(p6lookupFailures))},
+        vertexColor = {
+          rs =>
+            val powers = new MetricVDataPowers()
+            powers.setSource(rs.lens(p6lookupFailures))
+            Some(powers)
+        },
+        vertexCoordX = {rs => Some(rs.lens(p2locX))},
+        vertexCoordY = {rs => Some(rs.lens(p2locY))},
+        vertexRadius = {rs => Some(rs.lens(p6rangeSizes))},
+        vertexLabel = {rs => Some(rs.lens(p2nodeIndex))},
+        edgeColorScheme = ColorScheme.VIOLET_RED,
+        vertexColorScheme = ColorScheme.VIOLET_RED
+      )
     )
-  )
+  }
 
   val experiment3static = commonExports(Experiment(
     "p2p-stage3-static",
