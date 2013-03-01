@@ -116,7 +116,7 @@ trait Exports extends ParamSpaceNav {
       case (exportName, export) =>
         spacePosMap(
           subchain, requiredIndexes, expStore, {
-            rs =>
+            rs => try {
               val structureRef = export.edgeStructure(rs)
               Option(structureRef.getValue).map{
                 structure =>
@@ -335,7 +335,9 @@ trait Exports extends ParamSpaceNav {
                     }
                   }
               }
-        }, false
+        } catch {
+          case e: Exception => log.warn("export failed for pos %s".format(rs.spacePos), e)
+        } }, false
       )
       log.info("GraphViz export {} completed", export.desc)
     }

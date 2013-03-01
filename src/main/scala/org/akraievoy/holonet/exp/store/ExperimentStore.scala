@@ -211,11 +211,19 @@ class ExperimentStore(
           val binaryFName = "%s/%s".format(paramFName, posStr)
           val fetchOp: (String) => Option[T] = {
             binaryFName1 =>
-              fs.readBinary(
-                uid,
-                binaryFName1,
-                serializer.readOp
-              ).asInstanceOf[Option[T]]
+              try {
+                fs.readBinary(
+                  uid,
+                  binaryFName1,
+                  serializer.readOp
+                ).asInstanceOf[Option[T]]
+              } catch {
+                case e: Exception =>
+                  throw new RuntimeException(
+                    "failed on read of %s.%s.%s@%s".format(experiment.name, config.name, paramName, posStr),
+                    e
+                  )
+              }
           }
 
           if (writeLockedLocal) {
