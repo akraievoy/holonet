@@ -232,7 +232,11 @@ public class StoreInt implements Store {
     size = unescapeInt(in);
     arr = new int[size];
     for (int pos = 0; pos < size; pos++) {
-      arr[pos] = unescapeInt(in);
+      try {
+        arr[pos] = unescapeInt(in);
+      } catch (IOException e) {
+        throw new IOException("failed at pos " + pos + " of " + size, e);
+      }
     }
 
     return this;
