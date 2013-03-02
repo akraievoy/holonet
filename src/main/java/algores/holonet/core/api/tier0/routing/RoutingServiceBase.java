@@ -571,14 +571,20 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   @Override
-  public boolean hasRouteFor(Address address, boolean includeSeedRoutes) {
+  public boolean hasRouteFor(
+      Address address,
+      boolean includeStoredRoutes,
+      boolean includeSeedRoutes
+  ) {
     if (ownRoute != null && ownRoute.getAddress().equals(ownRoute)) {
       return false;
     }
 
-    for (RoutingEntry route : routes) {
-      if (address.equals(route.getAddress())) {
-        return true;
+    if (includeStoredRoutes) {
+      for (RoutingEntry route : routes) {
+        if (address.equals(route.getAddress())) {
+          return true;
+        }
       }
     }
 

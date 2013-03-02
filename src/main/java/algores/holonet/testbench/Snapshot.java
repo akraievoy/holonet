@@ -83,11 +83,11 @@ public class Snapshot {
     for (Node node : nodes) {
       maxIndex = Math.max(maxIndex, network.getEnv().indexOf(node.getAddress()));
     }
-    linksAll = EdgeDataFactory.sparse(false, maxIndex + 1);
-    linksSeed = EdgeDataFactory.sparse(false, maxIndex + 1);
-    linksDht = EdgeDataFactory.sparse(false, maxIndex + 1);
+    linksAll = EdgeDataFactory.sparse(true, maxIndex + 1);
+    linksSeed = EdgeDataFactory.sparse(true, maxIndex + 1);
+    linksDht = EdgeDataFactory.sparse(true, maxIndex + 1);
     for (Node nodeFrom : nodes) {
-      final RoutingService fromROuting = nodeFrom.getServices().getRouting();
+      final RoutingService fromRouting = nodeFrom.getServices().getRouting();
       final int fromIndex = network.getEnv().indexOf(nodeFrom.getAddress());
 
       for (Node nodeInto : nodes) {
@@ -96,20 +96,20 @@ public class Snapshot {
           continue;
         }
 
-        final boolean linkAll =
-            fromROuting.hasRouteFor(intoAddr, true);
+        final boolean linkSeed =
+            fromRouting.hasRouteFor(intoAddr, false, true);
         final boolean linkDht =
-            fromROuting.hasRouteFor(intoAddr, false);
+            fromRouting.hasRouteFor(intoAddr, true, false);
 
         final int intoIndex = network.getEnv().indexOf(nodeInto.getAddress());
 
-        if (linkAll) {
+        if (linkSeed || linkDht) {
           linksAll.set(fromIndex, intoIndex, 1);
         }
         if (linkDht) {
           linksDht.set(fromIndex, intoIndex, 1);
         }
-        if (linkAll && !linkDht) {
+        if (linkSeed) {
           linksSeed.set(fromIndex, intoIndex, 1);
         }
       }

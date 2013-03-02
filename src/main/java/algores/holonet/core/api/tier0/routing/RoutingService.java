@@ -101,7 +101,7 @@ public interface RoutingService extends RoutingState<RoutingEntry, Key> {
 
   int getRouteCount();
 
-  boolean hasRouteFor(Address address, boolean includeSeedRoutes);
+  boolean hasRouteFor(Address address, boolean includeStoredRoutes, boolean includeSeedRoutes);
 
   public static class RoutingStatsTuple {
     public final int routeCount;
