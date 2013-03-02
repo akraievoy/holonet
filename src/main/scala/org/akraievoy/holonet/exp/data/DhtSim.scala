@@ -173,11 +173,14 @@ object DhtSim {
                 math.ceil(rs.lens(p5nodes).get.get * rs.lens(p5attackProb).get.get).asInstanceOf[Long]
               )
             ),
+            new EventNetDiscover()
+/*
             new EventCompositeLoop(
               new EventCompositeLoop(
                 new EventNetLookup()
               ).withCountRef(rs.lens(p5nodes))
             ).withCountRef(rs.lens(p5loops))
+*/
           )
         )
 
