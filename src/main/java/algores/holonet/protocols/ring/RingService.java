@@ -80,11 +80,11 @@ public class RingService extends OverlayServiceBase {
     final RingRoutingService routing = getRouting();
     if (KeySpace.isInOpenRange(succPred, routing.getSuccessor().getAddress(), owner.getAddress())) {
       routing.setPredecessor(succPred);
-      rpcToRouting(succPred).setSuccessor(routing.getOwnRoute());
+      rpcToRouting(succPred).setSuccessor(routing.ownRoute());
     } else if (KeySpace.isInOpenLeftRange(owner, routing.getSuccessor(), succPred)) {
       routing.setSuccessor(succPred);
     }
-    rpcToRouting(routing.getSuccessor()).setPredecessor(routing.getOwnRoute());
+    rpcToRouting(routing.getSuccessor()).setPredecessor(routing.ownRoute());
 
     final StorageService succStorage = rpcToStorage(routing.getSuccessor());
     final Map<Key, Object> ownData = succStorage.filter(routing.getPredecessor().getKey(), false, owner.getKey(), true);

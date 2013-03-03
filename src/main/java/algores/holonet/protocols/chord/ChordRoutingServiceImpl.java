@@ -23,11 +23,25 @@ import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.protocols.ring.RingRoutingServiceImpl;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+
+import static algores.holonet.core.api.tier0.routing.RoutingPackage.Flavor;
 
 /**
  * Default implementation.
  */
 public class ChordRoutingServiceImpl extends RingRoutingServiceImpl implements ChordRoutingService {
+  public static List<Flavor> FLAVOR_FINGER = createFingerFlavors();
+
+  private static ArrayList<Flavor> createFingerFlavors() {
+    final ArrayList<Flavor> fingers = new ArrayList<Flavor>();
+    for (int distanceBits = 0; distanceBits <= Key.BITNESS; distanceBits++) {
+      fingers.add(new Flavor("finger" + ":" + distanceBits));
+    }
+    return fingers;
+  }
+
   public ChordRoutingServiceImpl() {
   }
 
@@ -41,18 +55,18 @@ public class ChordRoutingServiceImpl extends RingRoutingServiceImpl implements C
   }
 
   @Override
-  protected FlavorTuple flavorize(RoutingEntry owner, RoutingEntry entry) {
-    final FlavorTuple superFlavor = super.flavorize(owner, entry);
+  protected Flavor flavorize(RoutingEntry entry) {
+    final Flavor superFlavor = super.flavorize(entry);
 
-    if (!FLAVOR_EXTRA.equals(superFlavor.flavor)) {
+    if (!FLAVOR_EXTRA.equals(superFlavor)) {
       return superFlavor;
     }
 
     final Key fromKey = getOwner().getKey();
     final Key toKey = entry.getNodeId();
     final BigInteger distance = fromKey.distance(toKey);
-    final String flavor = FLAVORBASE_FINGER + ":" + (distance.bitLength() - 1);
+    final Flavor flavor = FLAVOR_FINGER.get(distance.bitLength());
 
-    return new FlavorTuple(flavor, false);
+    return flavor;
   }
 }

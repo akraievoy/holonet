@@ -25,7 +25,12 @@ import algores.holonet.core.api.tier0.routing.RoutingDistance;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.routing.RoutingServiceBase;
 
+import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
+
 class PGridRouting extends RoutingServiceBase {
+  public static final Flavor FLAVOR_REPLICA_SPEC = new Flavor("replica-specialized");
+  public static final Flavor FLAVOR_REPLICA_GEN = new Flavor("replica-generalized");
+
   protected static final int MAX_SAME_PATHS = 5;
   protected static final int MAX_SAME_COMPLEMENT = 7;
 
@@ -42,33 +47,33 @@ class PGridRouting extends RoutingServiceBase {
   public void init(Node ownerNode) {
     super.init(ownerNode);
 
-    ownRoute = new RoutingEntry(
+    routez.add(FLAVOR_OWNER, new RoutingEntry(
         ownerNode.getKey(),
         ownerNode.getAddress(),
         new RangeBase(ownerNode.getKey(), 0),
         ownerNode.getServices().getStorage().getEntryCount()
-    );
+    ));
 
     setRedundancy(MAX_SAME_PATHS);
   }
 
-  protected FlavorTuple flavorize(RoutingEntry owner, RoutingEntry created) {
-    if (created.getAddress().equals(getOwner().getAddress())) {
-      return new FlavorTuple(FLAVOR_OWNER, true);
+  protected Flavor flavorize(RoutingEntry entry) {
+    if (entry.getAddress().equals(getOwner().getAddress())) {
+      return FLAVOR_OWNER;
     }
 
-    final Range ownerRange = owner.getRange();
-    final Range otherRange = created.getRange();
+    final Range ownerRange = ownRoute().getRange();
+    final Range otherRange = entry.getRange();
 
     if (ownerRange.isPrefixFor(otherRange, true)) {
-      return new FlavorTuple("replica-specialized");
+      return FLAVOR_REPLICA_SPEC;
     }
     if (otherRange.isPrefixFor(ownerRange, false)) {
-      return new FlavorTuple("replica-generalized");
+      return FLAVOR_REPLICA_GEN;
     }
 
     final int commonPrefixLen = ownerRange.getCommonPrefixLen(otherRange);
-    return new FlavorTuple("complement:" + commonPrefixLen);
+    return new Flavor("complement:" + commonPrefixLen);
   }
 
   public RoutingDistance getRoutingDistance() {
@@ -76,11 +81,11 @@ class PGridRouting extends RoutingServiceBase {
   }
 
   public Range getPath() {
-    return getOwnRoute().getRange();
+    return ownRoute().getRange();
   }
 
   public void setPath(Range newPath) {
-    final RoutingEntry ownRoute = getOwnRoute();
+    final RoutingEntry ownRoute = ownRoute();
     updateOwnRoute(new RoutingEntry(newPath.getKey(), ownRoute.getAddress(), newPath, ownRoute.getEntryCount()));
   }
 

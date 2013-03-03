@@ -59,7 +59,7 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
   ) throws CommunicationException {
     final double lookupStartTime = getOwner().getNetwork().getElapsedTime();
     RecursiveLookupState state = new RecursiveLookupState(
-        getOwner().getServices().getRouting().getOwnRoute()
+        getOwner().getServices().getRouting().ownRoute()
     );
 
     try {
@@ -106,7 +106,7 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     final RoutingService routing = services.getRouting();
     if (
         services.getStorage().getKeys().contains(key) ||
-        !mustExist && routing.getOwnRoute().isReplicaFor(key, (byte) 0)
+        !mustExist && routing.ownRoute().isReplicaFor(key, (byte) 0)
     ) {
       return updateRoutes(mode, state.withReplica(ownerAddress));
     }

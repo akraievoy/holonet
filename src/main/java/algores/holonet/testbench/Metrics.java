@@ -196,7 +196,7 @@ public class Metrics implements NetworkInterceptor {
     for (Node node : network.getAllNodes()) {
       this.rangeSizeCounters.post(
           network.getEnv().indexOf(node.getAddress()),
-          node.getServices().getRouting().getOwnRoute().getRange().width().doubleValue()
+          node.getServices().getRouting().ownRoute().getRange().width().doubleValue()
       );
     }
     double[] rangeSizeAverages = rangeSizeCounters.averages(0);

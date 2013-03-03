@@ -26,7 +26,7 @@ import org.akraievoy.base.Die;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static algores.holonet.core.api.tier0.routing.Routing.*;
+import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
 
 /**
  * Implementation of basic methods.
@@ -37,14 +37,10 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
    */
   public static final double MAINTENANCE_THRESHOLD = (1 + Math.sqrt(5)) / 2;
 
-  private final RouteTable routez = new RouteTable();
+  protected final RouteTable routez = new RouteTable();
 
   protected List<RoutingEntry> routes = new ArrayList<RoutingEntry>();
 
-  /**
-   * essentially the same structure used to describe the owner node
-   */
-  protected RoutingEntry ownRoute = null;
   /**
    * collects all known entry flavors
    */
@@ -71,8 +67,32 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     this.redundancy = redundancy;
   }
 
+  @Override
+  public RoutingEntry ownRoute() {
+    return ownRoute(true);
+  }
+
+  @Override
+  public RoutingEntry ownRoute(boolean safe) {
+    if (owner == null) {
+      if (safe) {
+        throw new IllegalStateException("owner not set");
+      }
+      return null;
+    }
+
+    final RoutingEntry ownRoute = routez.route(owner.getAddress());
+    if (ownRoute != null) {
+      return ownRoute;
+    }
+    if (safe) {
+      throw new IllegalStateException("routez do not contain entry for ownRoute");
+    }
+    return null;
+  }
+
   public List<RoutingEntry> localLookup(Key key, int num, boolean safe) {
-    Die.ifNull("ownRoute", ownRoute);
+    final RoutingEntry ownRoute = ownRoute();
     final List<RoutingEntry> result = new ArrayList<RoutingEntry>();
 
     if (safe) {
@@ -148,7 +168,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   public List<RoutingEntry> neighborSet(int num) {
-    Die.ifNull("ownRoute", ownRoute);
+    final RoutingEntry ownRoute = ownRoute();
 
     final List<RoutingEntry> result = new ArrayList<RoutingEntry>();
 
@@ -199,7 +219,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   public List<RoutingEntry> replicaSet(Key key, byte maxRank) {
-    Die.ifNull("ownRoute", ownRoute);
+    final RoutingEntry ownRoute = ownRoute();
 
     final List<RoutingEntry> result = new ArrayList<RoutingEntry>();
 
@@ -253,7 +273,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       AtomicReference<Key> lKey,
       AtomicReference<Key> rKey
   ) {
-    Die.ifNull("ownRoute", ownRoute);
+    final RoutingEntry ownRoute = ownRoute();
 
     final RoutingEntry re = getEntry(handle);
     if (re == null) {
@@ -270,7 +290,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   public Range getRange(NodeHandle handle, byte rank, Key lKey) {
-    Die.ifNull("ownRoute", ownRoute);
+    final RoutingEntry ownRoute = ownRoute();
 
     final RoutingEntry re = getEntry(handle);
     if (re == null) {
@@ -287,7 +307,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   protected RoutingEntry getEntry(final Address address) {
-    Die.ifNull("ownRoute", ownRoute);
+    final RoutingEntry ownRoute = ownRoute();
 
     for (RoutingEntry re : routes) {
       if (re.getAddress().equals(address)) {
@@ -299,9 +319,9 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   public void update(RoutingEntry[] entries, Event event) {
-    Die.ifNull("ownRoute", ownRoute);
+    final RoutingEntry ownRoute = ownRoute();
 
-    FlavorTuple tuple = null;
+    Flavor flavor = null;
 
         //  seed addresses are not masked by num limit
     final List<Address> seedAddresses =
@@ -341,25 +361,25 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       final RoutingEntry newRe = upEntry.copy();
       newRe.updateLiveness(event);
 
-      final FlavorTuple currentFlavor = flavorize(getOwnRoute(), newRe);
+      final Flavor currentFlavor = flavorize(newRe);
 
-      if (true || isSeed || currentFlavor.requireFullReflavor) {
-        final Integer oldCount = flavorToCount.get(currentFlavor.flavor);
-        flavorToCount.put(currentFlavor.flavor, oldCount == null ? 1 : oldCount + 1);
+      if (true || isSeed || currentFlavor.forceReflavor()) {
+        final Integer oldCount = flavorToCount.get(currentFlavor.name());
+        flavorToCount.put(currentFlavor.name(), oldCount == null ? 1 : oldCount + 1);
 
-        if (tuple == null || !tuple.requireFullReflavor) {
-          tuple = currentFlavor;
+        if (flavor == null || !flavor.forceReflavor()) {
+          flavor = currentFlavor;
         }
       }
     }
 
-    if (requiresCleanup() || tuple != null && tuple.requireFullReflavor) {
+    if (requiresCleanup() || flavor != null && flavor.forceReflavor()) {
       fullReflavor();
     }
   }
 
   public void update(RoutingEntry upEntry, Event event) {
-    Die.ifNull("ownRoute", ownRoute);
+    final RoutingEntry ownRoute = ownRoute();
 
     if (upEntry.getAddress().equals(ownRoute.getAddress())) {
       return;
@@ -383,13 +403,13 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
         myRe.updateLiveness(event);
       } else {
         routes.remove(i);
-        final FlavorTuple fTuple = flavorize(getOwnRoute(), upEntry);
-        final Integer oldCount = flavorToCount.get(fTuple.flavor);
+        final Flavor fTuple = flavorize(upEntry);
+        final Integer oldCount = flavorToCount.get(fTuple.name());
         if (oldCount != null) {
           if (oldCount > 1) {
-            flavorToCount.put(fTuple.flavor, oldCount - 1);
+            flavorToCount.put(fTuple.name(), oldCount - 1);
           } else {
-            flavorToCount.remove(fTuple.flavor);
+            flavorToCount.remove(fTuple.name());
           }
         }
       }
@@ -408,19 +428,19 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       }
     }
 
-    final FlavorTuple fTuple = flavorize(getOwnRoute(), upEntry);
-    if (true || isSeed || fTuple.requireFullReflavor) {
-      final Integer count = flavorToCount.get(fTuple.flavor);
+    final Flavor fTuple = flavorize(upEntry);
+    if (true || isSeed || fTuple.forceReflavor()) {
+      final Integer count = flavorToCount.get(fTuple.name());
       if (newLiveness < minLiveness || count != null && count > Math.floor(redundancy)) {
         return;
       }
       final RoutingEntry newRe = upEntry.copy();
       newRe.updateLiveness(event);
       routes.add(newRe);
-      final Integer oldCount = flavorToCount.get(fTuple.flavor);
-      flavorToCount.put(fTuple.flavor, oldCount == null ? 1 : oldCount + 1);
+      final Integer oldCount = flavorToCount.get(fTuple.name());
+      flavorToCount.put(fTuple.name(), oldCount == null ? 1 : oldCount + 1);
 
-      if (fTuple.requireFullReflavor || requiresCleanup()) {
+      if (fTuple.forceReflavor() || requiresCleanup()) {
         fullReflavor();
       }
     }
@@ -429,6 +449,8 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   private Map<RoutingEntry, String> entryToFlavorCache;
 
   protected void fullReflavor() {
+    final RoutingEntry ownRoute = ownRoute();
+
     //  allocate the map lazily, basing on actual load on the data structure
     if (entryToFlavorCache == null) {
       entryToFlavorCache =
@@ -437,11 +459,11 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
     flavorToCount.clear();
     for (RoutingEntry re : routes) {
-      final FlavorTuple tuple = flavorize(ownRoute, re);
-      entryToFlavorCache.put(re, tuple.flavor);
-      final Integer countPrev = flavorToCount.get(tuple.flavor);
+      final Flavor tuple = flavorize(re);
+      entryToFlavorCache.put(re, tuple.name());
+      final Integer countPrev = flavorToCount.get(tuple.name());
       flavorToCount.put(
-          tuple.flavor,
+          tuple.name(),
           countPrev == null ? 1 : countPrev + 1
       );
     }
@@ -462,13 +484,13 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       final RoutingEntry seedEntry =
           new RoutingEntry(seedAddress.getKey(), seedAddress);
 
-      final FlavorTuple tuple = flavorize(ownRoute, seedEntry);
-      if (tuple.requireFullReflavor) {
+      final Flavor tuple = flavorize(seedEntry);
+      if (tuple.forceReflavor()) {
         continue;
       }
-      final Integer countPrev = flavorToCount.get(tuple.flavor);
+      final Integer countPrev = flavorToCount.get(tuple.name());
       flavorToCount.put(
-          tuple.flavor,
+          tuple.name(),
           countPrev == null ? 1 : countPrev + 1
       );
     }
@@ -504,31 +526,15 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     return routes.size() > trigger;
   }
 
-  protected static class FlavorTuple {
-    public final String flavor;
-    public final boolean requireFullReflavor;
-
-    public FlavorTuple(final String flavor) {
-      this(flavor, false);
-    }
-
-    public FlavorTuple(final String flavor, final boolean fullReflavor1) {
-      this.flavor = flavor;
-      this.requireFullReflavor = fullReflavor1;
-    }
-  }
-
-  protected abstract FlavorTuple flavorize(RoutingEntry owner, RoutingEntry created);
-
-  public RoutingEntry getOwnRoute() {
-    return ownRoute;
-  }
+  protected abstract Flavor flavorize(RoutingEntry entry);
 
   public void updateOwnRoute(RoutingEntry owner) {
     Die.ifNull("owner", owner);
-    Die.ifNotEqual("owner.nodeId", this.ownRoute.getNodeId(), owner.getNodeId());
+    if (!getOwner().getAddress().equals(owner.getAddress())) {
+      throw new IllegalArgumentException("setting owner route with invalid address");
+    }
 
-    this.ownRoute = owner;
+    routez.add(FLAVOR_OWNER, owner);
 
     fullReflavor();
   }
@@ -538,8 +544,8 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   public List<RoutingEntry> getRoutes() {
     final ArrayList<RoutingEntry> routesRes = new ArrayList<RoutingEntry>(routes);
 
-    if (!routes.contains(getOwnRoute())) {
-      routesRes.add(getOwnRoute());
+    if (!routes.contains(ownRoute())) {
+      routesRes.add(ownRoute());
     }
 
     return routesRes;
@@ -593,7 +599,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
   @Override
   public int getRouteCount() {
-    int routeCount = getOwnRoute() != null ? 1 : 0;
+    int routeCount = ownRoute() != null ? 1 : 0;
 
     for (Integer count : flavorToCount.values()) {
       routeCount += count;
@@ -608,6 +614,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       boolean includeStoredRoutes,
       boolean includeSeedRoutes
   ) {
+    final RoutingEntry ownRoute = ownRoute();
     if (ownRoute != null && ownRoute.getAddress().equals(ownRoute)) {
       return false;
     }

@@ -48,7 +48,7 @@ public class ChordServiceBase extends RingService implements ChordService {
     // check if node is the first node in DHT
     if (dhtNodeAddress == null) {
       //  successor must be the same node, that will mean that all of keys are managed by this node
-      final RoutingEntry ownRoute = getRouting().getOwnRoute();
+      final RoutingEntry ownRoute = getRouting().ownRoute();
       getRouting().setSuccessor(ownRoute);
       getRouting().setPredecessor(ownRoute);
       return;
@@ -57,7 +57,7 @@ public class ChordServiceBase extends RingService implements ChordService {
           owner.getKey(), false, LookupService.Mode.JOIN,
           Optional.<Address>absent()
       );
-      getRouting().setSuccessor(rpcToRouting(successor).getOwnRoute());
+      getRouting().setSuccessor(rpcToRouting(successor).ownRoute());
     }
 
     stabilize();
@@ -96,7 +96,7 @@ public class ChordServiceBase extends RingService implements ChordService {
       final Optional<RingRoutingService> rsOpt =
           rpc.rpcTo(succPred.getAddress(), RingRoutingService.class);
       if (rsOpt.isPresent()) {
-        rsOpt.get().setSuccessor(ownRouting.getOwnRoute());
+        rsOpt.get().setSuccessor(ownRouting.ownRoute());
       } else {
         ownRouting.registerCommunicationFailure(succPred.getAddress());
         throw new CommunicationException("predecessor just was alive?");
@@ -104,7 +104,7 @@ public class ChordServiceBase extends RingService implements ChordService {
     } else if (KeySpace.isInOpenLeftRange(owner, ownRouting.getSuccessor(), succPred)) {
       ownRouting.setSuccessor(succPred);
     }
-    rpcToRouting(ownRouting.getSuccessor()).setPredecessor(ownRouting.getOwnRoute());
+    rpcToRouting(ownRouting.getSuccessor()).setPredecessor(ownRouting.ownRoute());
 
     owner.getServices().getStorage().putAll(
         rpcToStorage(ownRouting.getSuccessor()).filter(
@@ -138,7 +138,7 @@ public class ChordServiceBase extends RingService implements ChordService {
           continue;
         }
 
-        final RoutingEntry entry = rpcToRouting(address).getOwnRoute();
+        final RoutingEntry entry = rpcToRouting(address).ownRoute();
         getRouting().update(entry, Event.HEART_BEAT);
       } catch (CommunicationException nfe) {
         //	should be ignored...

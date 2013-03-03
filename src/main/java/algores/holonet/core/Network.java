@@ -141,7 +141,7 @@ public class Network {
     Collection<Key> keys = nodeToRemove.getServices().getStorage().getKeys();
     final double rangeWidth =
         nodeToRemove.getServices().getRouting()
-            .getOwnRoute().getRange().width().doubleValue();
+            .ownRoute().getRange().width().doubleValue();
     if (!forceFailure) {
       getInterceptor().registerNodeDeparture(nodeToRemove.getAddress(), rangeWidth);
       nodeToRemove.getServices().getOverlay().leave();
@@ -226,9 +226,9 @@ public class Network {
       @Override
       public int compare(Node o1, Node o2) {
         final BigInteger o1width =
-            o1.getServices().getRouting().getOwnRoute().getRange().width();
+            o1.getServices().getRouting().ownRoute().getRange().width();
         final BigInteger o2width =
-            o2.getServices().getRouting().getOwnRoute().getRange().width();
+            o2.getServices().getRouting().ownRoute().getRange().width();
 
         return o1width.compareTo(o2width);
       }
@@ -322,7 +322,7 @@ public class Network {
         for (Node node : env.getAllNodes()) {
           RoutingService nodeRouting = node.getServices().getRouting();
           //  this check yields any nodes which have been cut-off the main ring
-          if (nodeRouting.getOwnRoute().isReplicaFor(key, (byte) 0)) {
+          if (nodeRouting.ownRoute().isReplicaFor(key, (byte) 0)) {
             targetAddr = node.getAddress();
           }
           //  this check yields only correct and those stuck with other's data

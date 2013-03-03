@@ -30,17 +30,19 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
+
 /**
  * @author Anton Kraievoy
  */
 public interface RoutingService extends RoutingState<RoutingEntry, Key> {
-  String FLAVOR_OWNER = "ownroute";
+  Flavor FLAVOR_OWNER = new Flavor("ownroute", true);
 
   void update(RoutingEntry handle, Event event);
 
   void update(RoutingEntry[] routingData, Event event);
 
-  RoutingEntry getOwnRoute() throws CommunicationException;
+  RoutingEntry ownRoute() throws CommunicationException;
 
   /**
    * Provides information about ranges of keys for which the node <code>handle</code> is currently a <i>r</i>-root.
@@ -104,6 +106,8 @@ public interface RoutingService extends RoutingState<RoutingEntry, Key> {
   int getRouteCount();
 
   boolean hasRouteFor(Address address, boolean includeStoredRoutes, boolean includeSeedRoutes);
+
+  RoutingEntry ownRoute(boolean safe);
 
   public static class RoutingStatsTuple {
     public final int routeCount;

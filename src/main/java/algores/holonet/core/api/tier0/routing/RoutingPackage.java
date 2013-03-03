@@ -22,18 +22,60 @@ import algores.holonet.core.api.Address;
 
 import java.util.*;
 
-public class Routing {
+public class RoutingPackage {
+
+  public static class Flavor implements Comparable<Flavor> {
+    private final String name;
+    private final boolean forceReflavor;
+
+    public Flavor(String name) {
+      this(name, false);
+    }
+
+    public Flavor(String name, final boolean forcesReflavor) {
+      this.name = name;
+      this.forceReflavor = forcesReflavor;
+    }
+
+    public boolean forceReflavor() {
+      return forceReflavor;
+    }
+
+    public String name() {
+      return name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      final Flavor flavor = (Flavor) o;
+
+      return name.equals(flavor.name);
+    }
+
+    @Override
+    public int hashCode() {
+      return name.hashCode();
+    }
+
+    @Override
+    public int compareTo(Flavor o) {
+      return name.compareTo(o.name());
+    }
+  }
 
   public static class RouteTable {
     private final SortedMap<String, TreeSet<Address>> flavorToAddresses =
         new TreeMap<String, TreeSet<Address>>();
-    private final SortedMap<Address, String> addressToFlavor =
-        new TreeMap<Address, String>();
+    private final SortedMap<Address, Flavor> addressToFlavor =
+        new TreeMap<Address, Flavor>();
     private final SortedMap<Address, RoutingEntry> addressToRoute =
         new TreeMap<Address, RoutingEntry>();
 
-    public int count(final String flavor) {
-      final SortedSet<Address> addresses = flavorToAddresses.get(flavor);
+    public int count(final Flavor flavor) {
+      final SortedSet<Address> addresses = flavorToAddresses.get(flavor.name);
       if (addresses == null) {
         return 0;
       }
@@ -41,7 +83,7 @@ public class Routing {
       return addresses.size();
     }
 
-    public String flavor(final Address address) {
+    public Flavor flavor(final Address address) {
       return addressToFlavor.get(address);
     }
 
@@ -53,8 +95,8 @@ public class Routing {
       return addressToFlavor.containsKey(address);
     }
 
-    public Collection<Address> adresses(final String flavor) {
-      final SortedSet<Address> addresses = flavorToAddresses.get(flavor);
+    public Collection<Address> adresses(final Flavor flavor) {
+      final SortedSet<Address> addresses = flavorToAddresses.get(flavor.name);
       if (addresses == null) {
         return Collections.emptySet();
       }
@@ -62,24 +104,24 @@ public class Routing {
       return Collections.unmodifiableCollection(addresses);
     }
 
-    public int add(final String flavor, final RoutingEntry route) {
+    public int add(final Flavor flavor, final RoutingEntry route) {
       final Address address = route.getAddress();
-      final String prevFlavor = addressToFlavor.get(address);
+      final Flavor prevFlavor = addressToFlavor.get(address);
       if (prevFlavor != null) {
         if (prevFlavor.equals(flavor)) {
           addressToRoute.put(address, route);
           return count(flavor);
         }
-        remove(prevFlavor, address);
+        remove(address);
       }
 
       addressToFlavor.put(address, flavor);
       addressToRoute.put(address, route);
-      final TreeSet<Address> addresses = flavorToAddresses.get(flavor);
+      final TreeSet<Address> addresses = flavorToAddresses.get(flavor.name);
       if (addresses == null) {
         final TreeSet<Address> newAddresses = new TreeSet<Address>();
         newAddresses.add(address);
-        flavorToAddresses.put(flavor, newAddresses);
+        flavorToAddresses.put(flavor.name, newAddresses);
         return newAddresses.size();
       }
 
@@ -87,10 +129,13 @@ public class Routing {
       return addresses.size();
     }
 
-    public int remove(final String flavor, final Address address) {
-      addressToFlavor.remove(address);
+    public int remove(final Address address) {
+      final Flavor prevFlavor = addressToFlavor.remove(address);
       addressToRoute.remove(address);
-      final TreeSet<Address> addresses = flavorToAddresses.get(flavor);
+      if (prevFlavor == null) {
+        return -1;
+      }
+      final TreeSet<Address> addresses = flavorToAddresses.get(prevFlavor.name);
       if (addresses == null) {
         return 0;
       }

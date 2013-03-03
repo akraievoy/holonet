@@ -22,13 +22,15 @@ import algores.holonet.core.CommunicationException;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.routing.RoutingService;
 
+import algores.holonet.core.api.tier0.routing.RoutingPackage.*;
+
 /**
  * Some extra operations RingRoutingService should provide.
  */
 public interface RingRoutingService extends RoutingService {
-  String FLAVOR_SUCCESSOR = "successor";
-  String FLAVOR_PREDECESSOR = "predecessor";
-  String FLAVOR_EXTRA = "extra";
+  Flavor FLAVOR_SUCCESSOR = new Flavor("successor", true);
+  Flavor FLAVOR_PREDECESSOR = new Flavor("predecessor", true);
+  Flavor FLAVOR_EXTRA = new Flavor("extra");
 
   RoutingEntry getSuccessor() throws CommunicationException;
 

@@ -35,6 +35,8 @@ import org.akraievoy.base.Die;
 import java.util.Collections;
 import java.util.List;
 
+import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
+
 /**
  * Default implementation.
  */
@@ -60,12 +62,13 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
   public void init(Node ownerNode) {
     super.init(ownerNode);
 
-    ownRoute = new RoutingEntry(
+    final RoutingEntry ownRoute = new RoutingEntry(
         owner.getKey(),
         this.owner.getAddress(),
         new RangeBase(owner.getKey(), owner.getKey()),
         owner.getServices().getStorage().getEntryCount()
     );
+    routez.add(FLAVOR_OWNER, ownRoute);
 
     successor = ownRoute;
     predecessor = ownRoute;
@@ -97,31 +100,32 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
   public RoutingEntry setPredecessor(RoutingEntry predecessor) {
     Die.ifNull("predecessor", predecessor);
     this.predecessor = predecessor;
+    final RoutingEntry ownRoute = ownRoute();
 
     final Range newRange = new RangeBase(predecessor.getKey().next(), ownRoute.getKey().next());
     ownRoute.updateRanges(newRange);
 
     update(predecessor, Event.DISCOVERED);
-
+    routez.add(FLAVOR_OWNER, ownRoute);
     return ownRoute;
   }
 
-  protected FlavorTuple flavorize(RoutingEntry owner, RoutingEntry entry) {
+  protected Flavor flavorize(RoutingEntry entry) {
     final Address address = entry.getAddress();
 
     if (address.equals(getOwner().getAddress())) {
-      return new FlavorTuple(FLAVOR_OWNER, true);
+      return FLAVOR_OWNER;
     }
 
     if (address.equals(predecessor.getAddress())) {
-      return new FlavorTuple(FLAVOR_PREDECESSOR, true);
+      return FLAVOR_PREDECESSOR;
     }
 
     if (address.equals(successor.getAddress())) {
-      return new FlavorTuple(FLAVOR_SUCCESSOR, true);
+      return FLAVOR_SUCCESSOR;
     }
 
-    return new FlavorTuple(FLAVOR_EXTRA, false);
+    return FLAVOR_EXTRA;
   }
 
   @Override
@@ -133,7 +137,7 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
     final Optional<RingRoutingService> predRouting =
         rpc.rpcTo(predAddr, RingRoutingService.class);
     if (predRouting.isPresent()) {
-      return predRouting.get().getOwnRoute();
+      return predRouting.get().ownRoute();
     }
 
     registerCommunicationFailure(predAddr);
@@ -141,7 +145,7 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
     final RecoverRefTuple tuple =
         recoverRef("predecessor", predEntry.getKey());
     final RoutingEntry newPredecessor =
-        tuple.remoteRoutingOpt.get().getOwnRoute();
+        tuple.remoteRoutingOpt.get().ownRoute();
     setPredecessor(newPredecessor);
 
     return newPredecessor;
@@ -170,7 +174,7 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
     Collections.sort(routes, distanceOrder(targetKey));
     int triedRoutes = 0;
     for (RoutingEntry route : routes) {
-      if (route.equals(getOwnRoute())) {
+      if (route.equals(ownRoute())) {
         continue;
       }
 

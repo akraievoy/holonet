@@ -153,13 +153,13 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
   protected RoutingEntry replicaRoute() {
     PGridRouting result = getRouting();
     PGridRouting result1 = getRouting();
-    return result1.replicaSet(result.getOwnRoute().getKey(), Byte.MAX_VALUE).get(0);
+    return result1.replicaSet(result.ownRoute().getKey(), Byte.MAX_VALUE).get(0);
   }
 
   protected InviteResponse inviteResponse(RoutingEntry delegated) {
     final int entries = owner.getServices().getStorage().getDataEntries().size();
     PGridRouting result = getRouting();
-    final RoutingEntry updatedOwnRoute = result.getOwnRoute().updateEntryCount(entries);
+    final RoutingEntry updatedOwnRoute = result.ownRoute().updateEntryCount(entries);
     return new InviteResponse(delegated, updatedOwnRoute);
   }
 
@@ -273,7 +273,7 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
 
     final StorageService storage = owner.getServices().getStorage();
     final Map<Key, Object> movedData = storage.filterTo(remotePath.getKey(), remotePath.getBits(), remove, new TreeMap<Key, Object>());
-    routingLocal.getOwnRoute().updateEntryCount(storage.getDataEntries().size());
+    routingLocal.ownRoute().updateEntryCount(storage.getDataEntries().size());
 
     SplitData splitData = new SplitData(routingLocal.getRoutes(), movedData);
 
@@ -305,7 +305,7 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
     sData.getRoutes().clear();
 
     storage.filterTo(newRemotePath.getKey(), newRemotePath.getBits(), remove, sData.getData());
-    routingLocal.getOwnRoute().updateEntryCount(storage.getDataEntries().size());
+    routingLocal.ownRoute().updateEntryCount(storage.getDataEntries().size());
     sData.getRoutes().clear();
     sData.getRoutes().addAll(routingLocal.getRoutes());
 

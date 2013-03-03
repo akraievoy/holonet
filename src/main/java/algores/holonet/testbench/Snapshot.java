@@ -60,7 +60,7 @@ public class Snapshot {
   public static NodeFun RANGE = new NodeFun() {
     @Override
     public double apply(final Node n) {
-      return n.getServices().getRouting().getOwnRoute().getRange().width().doubleValue();
+      return n.getServices().getRouting().ownRoute().getRange().width().doubleValue();
     }
   };
 

@@ -57,7 +57,7 @@ public class EventNetLookup extends Event<EventNetLookup> {
       final Key mapping =
           serverKeys.isEmpty() ?
               //  we may also pull other keys from the range, not only the greatest one
-              request.server.getServices().getRouting().getOwnRoute().getRange().getRKey().prev() :
+              request.server.getServices().getRouting().ownRoute().getRange().getRKey().prev() :
               eSource.randomElement(serverKeys);
       final LookupService lookupSvc =
           request.client.getServices().getLookup();

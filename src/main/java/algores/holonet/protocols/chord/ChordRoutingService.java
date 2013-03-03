@@ -24,5 +24,4 @@ import algores.holonet.protocols.ring.RingRoutingService;
  * Chord-specific routing primitives.
  */
 public interface ChordRoutingService extends RingRoutingService {
-  static final String FLAVORBASE_FINGER = "finger";
 }
