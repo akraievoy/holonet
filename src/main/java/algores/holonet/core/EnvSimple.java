@@ -74,7 +74,9 @@ public class EnvSimple implements Env {
 
   @Override
   public List<Address> seedLinks(Address localAddress) {
-    return Collections.emptyList();
+    ArrayList<Address> addresses = new ArrayList<Address>(/*addressToIndex.keySet()*/);
+//    addresses.remove(localAddress);
+    return addresses;
   }
 
   public Node getNode(Address address) {

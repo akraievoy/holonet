@@ -228,12 +228,12 @@ object OverlayGA {
 
     },
     Config(
-      Param(p1locProbSeed, "234453"),
-      Param(p1locSeed, "634567"),
-      Param(p1structSeed, "967436"),
-      Param(p1physNodes, "24"),
+      Param(p1locProbSeed, "123098"),
+      Param(p1locSeed, "579384"),
+      Param(p1structSeed, "780293"),
+      Param(p1physNodes, "32"),
       Param(p1physPowFactor, "1.5"),
-      Param(p1physDistFactor, "2.75"),
+      Param(p1physDistFactor, "5"),
       Param(p1physDegree, "3")
     ),
     Config(
@@ -257,34 +257,14 @@ object OverlayGA {
       Param(p1physDegree, "2")
     ),
     Config(
-      "med",
-      "Medium (128 nodes, 1 seed)",
-      Param(p1physNodes, "128")
+      "phys-1024",
+      "Physical (1k nodes, 1 seed)",
+      Param(p1physNodes, "1024")
     ),
     Config(
-      "big",
-      "Big (240 nodes, 1 seed)",
-      Param(p1physNodes, "240")
-    ),
-    Config(
-      "big-1k",
-      "Big (1k nodes, 1 seed)",
-      Param(p1locProbSeed, "123098"),
-      Param(p1locSeed, "579384"),
-      Param(p1structSeed, "780293"),
-      Param(p1physNodes, "1024"),
-      Param(p1physDegree, "3"),
-      Param(p1physDistFactor, "5")
-    ),
-    Config(
-      "big-2k",
-      "Big (2k nodes, 1 seed)",
-      Param(p1physNodes, "2048")
-    ),
-    Config(
-      "big-4k",
-      "Big (4k nodes, 1 seed)",
-      Param(p1physNodes, "4096")
+      "phys-64",
+      "Physical (64 nodes, 1 seed)",
+      Param(p1physNodes, "64")
     )
   ).withGraphvizExport(
     GraphvizExport(
@@ -403,9 +383,9 @@ object OverlayGA {
       Param(p2reqMinRatio, "0.02")
     ),
     Config(
-      "nu20",
-      "Default (select 20% of nodes)",
-      Param(p2nodeRatio, "0.2")
+      "nu25",
+      "Default (select 25% of nodes)",
+      Param(p2nodeRatio, "0.25")
     ),
     Config(
       "nu50",
@@ -573,7 +553,7 @@ object OverlayGA {
     Config(
       "corrStudy-smoke",
       "Correlation study --- smoke",
-      Param(p3minEff, "0.8"),
+      Param(p3minEff, "0.6"),
       Param(p3seed, "42600"),
       Param(p3flags, "R"),
       Param(p3specimen, "0--21", Strategy.USE_FIRST, Strategy.USE_FIRST),
@@ -583,16 +563,16 @@ object OverlayGA {
       ),
       Param(p3generateMax, "64"),
       Param(p3generatePow, "3"),
-      Param(p3netDensityMax, "0.5"),
-      Param(p3nodeDensityMin, "0.5"),
-      Param(p3nodeDensityMax, "0.5"),
+      Param(p3netDensityMax, "0.75"),
+      Param(p3nodeDensityMin, "0.75"),
+      Param(p3nodeDensityMax, "0.75"),
       Param(p3generation, "0--10", Strategy.ITERATE, Strategy.USE_LAST),
       Param(p3elite, "0.2")
     ),
     Config(
       "corrStudy-full",
       "Correlation study --- full",
-      Param(p3minEff, "0.8"),
+      Param(p3minEff, "0.6"),
       Param(p3seed, "42600--42603"),
       Param(p3flags, "R"),
       Param(p3specimen, "0--21", Strategy.USE_FIRST, Strategy.USE_FIRST),
@@ -602,9 +582,9 @@ object OverlayGA {
       ),
       Param(p3generateMax, "64"),
       Param(p3generatePow, "3"),
-      Param(p3netDensityMax, "0.5"),
-      Param(p3nodeDensityMin, "0.5"),
-      Param(p3nodeDensityMax, "0.5"),
+      Param(p3netDensityMax, "0.75"),
+      Param(p3nodeDensityMin, "0.75"),
+      Param(p3nodeDensityMax, "0.75"),
       Param(p3generation, "0--22", Strategy.ITERATE, Strategy.USE_LAST),
       Param(p3elite, "0.2")
     ),

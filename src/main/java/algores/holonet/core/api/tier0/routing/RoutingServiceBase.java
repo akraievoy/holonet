@@ -26,6 +26,8 @@ import org.akraievoy.base.Die;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static algores.holonet.core.api.tier0.routing.Routing.*;
+
 /**
  * Implementation of basic methods.
  */
@@ -35,7 +37,10 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
    */
   public static final double MAINTENANCE_THRESHOLD = (1 + Math.sqrt(5)) / 2;
 
+  private final RouteTable routez = new RouteTable();
+
   protected List<RoutingEntry> routes = new ArrayList<RoutingEntry>();
+
   /**
    * essentially the same structure used to describe the owner node
    */
@@ -338,7 +343,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
       final FlavorTuple currentFlavor = flavorize(getOwnRoute(), newRe);
 
-      if (isSeed || currentFlavor.requireFullReflavor) {
+      if (true || isSeed || currentFlavor.requireFullReflavor) {
         final Integer oldCount = flavorToCount.get(currentFlavor.flavor);
         flavorToCount.put(currentFlavor.flavor, oldCount == null ? 1 : oldCount + 1);
 
@@ -404,7 +409,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     }
 
     final FlavorTuple fTuple = flavorize(getOwnRoute(), upEntry);
-    if (isSeed || fTuple.requireFullReflavor) {
+    if (true || isSeed || fTuple.requireFullReflavor) {
       final Integer count = flavorToCount.get(fTuple.flavor);
       if (newLiveness < minLiveness || count != null && count > Math.floor(redundancy)) {
         return;
@@ -636,3 +641,4 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     }
   }
 }
+
