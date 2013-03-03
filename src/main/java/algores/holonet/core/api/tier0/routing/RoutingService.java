@@ -34,6 +34,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Anton Kraievoy
  */
 public interface RoutingService extends RoutingState<RoutingEntry, Key> {
+  String FLAVOR_OWNER = "ownroute";
+
   void update(RoutingEntry handle, Event event);
 
   void update(RoutingEntry[] routingData, Event event);

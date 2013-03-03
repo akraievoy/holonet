@@ -29,7 +29,6 @@ import algores.holonet.core.api.tier0.routing.RoutingDistance;
 import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.routing.RoutingServiceBase;
 import algores.holonet.core.api.tier0.rpc.RpcService;
-import algores.holonet.core.api.tier0.storage.StorageService;
 import com.google.common.base.Optional;
 import org.akraievoy.base.Die;
 
@@ -108,11 +107,17 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
   }
 
   protected FlavorTuple flavorize(RoutingEntry owner, RoutingEntry entry) {
-    if (entry.getAddress().equals(predecessor.getAddress())) {
+    final Address address = entry.getAddress();
+
+    if (address.equals(getOwner().getAddress())) {
+      return new FlavorTuple(FLAVOR_OWNER, true);
+    }
+
+    if (address.equals(predecessor.getAddress())) {
       return new FlavorTuple(FLAVOR_PREDECESSOR, true);
     }
 
-    if (entry.getAddress().equals(successor.getAddress())) {
+    if (address.equals(successor.getAddress())) {
       return new FlavorTuple(FLAVOR_SUCCESSOR, true);
     }
 

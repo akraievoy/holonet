@@ -48,7 +48,7 @@ public class ChordRoutingServiceImpl extends RingRoutingServiceImpl implements C
       return superFlavor;
     }
 
-    final Key fromKey = owner.getNodeId();
+    final Key fromKey = getOwner().getKey();
     final Key toKey = entry.getNodeId();
     final BigInteger distance = fromKey.distance(toKey);
     final String flavor = FLAVORBASE_FINGER + ":" + (distance.bitLength() - 1);

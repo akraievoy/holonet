@@ -53,6 +53,10 @@ class PGridRouting extends RoutingServiceBase {
   }
 
   protected FlavorTuple flavorize(RoutingEntry owner, RoutingEntry created) {
+    if (created.getAddress().equals(getOwner().getAddress())) {
+      return new FlavorTuple(FLAVOR_OWNER, true);
+    }
+
     final Range ownerRange = owner.getRange();
     final Range otherRange = created.getRange();
 
