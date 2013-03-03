@@ -298,6 +298,10 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
     FlavorTuple tuple = null;
 
+        //  seed addresses are not masked by num limit
+    final List<Address> seedAddresses =
+        owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
+
     for (RoutingEntry upEntry : entries) {
       if (upEntry.getAddress().equals(ownRoute.getAddress())) {
         continue;
@@ -322,15 +326,25 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
         continue;
       }
 
+      boolean isSeed = false;
+      for (Address seedAddress : seedAddresses) {
+        if (upEntry.getAddress().equals(seedAddress)) {
+          isSeed = true;
+          break;
+        }
+      }
       final RoutingEntry newRe = upEntry.copy();
       newRe.updateLiveness(event);
 
       final FlavorTuple currentFlavor = flavorize(getOwnRoute(), newRe);
-      final Integer oldCount = flavorToCount.get(currentFlavor.flavor);
-      flavorToCount.put(currentFlavor.flavor, oldCount == null ? 1 : oldCount + 1);
 
-      if (tuple == null || !tuple.requireFullReflavor) {
-        tuple = currentFlavor;
+      if (isSeed || currentFlavor.requireFullReflavor) {
+        final Integer oldCount = flavorToCount.get(currentFlavor.flavor);
+        flavorToCount.put(currentFlavor.flavor, oldCount == null ? 1 : oldCount + 1);
+
+        if (tuple == null || !tuple.requireFullReflavor) {
+          tuple = currentFlavor;
+        }
       }
     }
 
@@ -378,19 +392,32 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       return;
     }
 
-    final FlavorTuple fTuple = flavorize(getOwnRoute(), upEntry);
-    final Integer count = flavorToCount.get(fTuple.flavor);
-    if (newLiveness < minLiveness || count != null && count > Math.floor(redundancy)) {
-      return;
+    //  seed addresses are not masked by num limit
+    final List<Address> seedAddresses =
+        owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
+    boolean isSeed = false;
+    for (Address seedAddress : seedAddresses) {
+      if (upEntry.getAddress().equals(seedAddress)) {
+        isSeed = true;
+        break;
+      }
     }
-    final RoutingEntry newRe = upEntry.copy();
-    newRe.updateLiveness(event);
-    routes.add(newRe);
-    final Integer oldCount = flavorToCount.get(fTuple.flavor);
-    flavorToCount.put(fTuple.flavor, oldCount == null ? 1 : oldCount + 1);
 
-    if (fTuple.requireFullReflavor || requiresCleanup()) {
-      fullReflavor();
+    final FlavorTuple fTuple = flavorize(getOwnRoute(), upEntry);
+    if (isSeed || fTuple.requireFullReflavor) {
+      final Integer count = flavorToCount.get(fTuple.flavor);
+      if (newLiveness < minLiveness || count != null && count > Math.floor(redundancy)) {
+        return;
+      }
+      final RoutingEntry newRe = upEntry.copy();
+      newRe.updateLiveness(event);
+      routes.add(newRe);
+      final Integer oldCount = flavorToCount.get(fTuple.flavor);
+      flavorToCount.put(fTuple.flavor, oldCount == null ? 1 : oldCount + 1);
+
+      if (fTuple.requireFullReflavor || requiresCleanup()) {
+        fullReflavor();
+      }
     }
   }
 
