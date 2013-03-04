@@ -45,6 +45,10 @@ public class ServiceFactorySpring implements ServiceFactory {
     routing.setRedundancy(routingRedundancy);
   }
 
+  public void setMaxFingerFlavorNum(final int maxFingerFlavorNum) {
+    routing.setMaxFingerFlavorNum(maxFingerFlavorNum);
+  }
+
   public void setLookup(LookupService lookup) {
     this.lookup = lookup;
   }

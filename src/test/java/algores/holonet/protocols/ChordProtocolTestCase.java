@@ -24,8 +24,11 @@ import algores.holonet.protocols.chord.ChordServiceBase;
 public class ChordProtocolTestCase extends DhtProtocolTestCase {
   @Override
   protected ContextMeta createContextMeta() {
+    ChordRoutingServiceImpl routing = new ChordRoutingServiceImpl();
+    routing.setRedundancy(1.75);
+    routing.setMaxFingerFlavorNum(8);
     return new ContextMeta()
-        .withRouting(new ChordRoutingServiceImpl())
+        .withRouting(routing)
         .withOverlay(new ChordServiceBase());
   }
 

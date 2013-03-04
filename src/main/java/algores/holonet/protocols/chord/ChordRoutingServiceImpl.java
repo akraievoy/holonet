@@ -49,6 +49,7 @@ public class ChordRoutingServiceImpl extends RingRoutingServiceImpl implements C
 
     copy.setRedundancy(getRedundancy());
     copy.setRoutingDistance(getRoutingDistance());
+    copy.setMaxFingerFlavorNum(getMaxFingerFlavorNum());
 
     return copy;
   }

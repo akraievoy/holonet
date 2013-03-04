@@ -20,7 +20,7 @@ package org.akraievoy.holonet.exp.data
 
 import org.akraievoy.holonet.exp._
 import scala.collection.JavaConversions._
-import store.{RefObject, RunStore}
+import org.akraievoy.holonet.exp.store.{RefObject, RunStore}
 import algores.holonet.core.{Network, EnvCNet}
 import algores.holonet.testbench.Testbench
 import algores.holonet.core.events._
@@ -47,6 +47,7 @@ object DhtSim {
     val p5stabilizeProb = ParamName[JDouble]("p5stabilizeProb")
     val p5attackProb = ParamName[JDouble]("p5attackProb")
     val p5routingRedundancy = ParamName[JDouble]("p5routingRedundancy")
+    val p5maxFingerFlavorNum = ParamName[JInt]("p5maxFingerFlavorNum")
     //  stage 3 outputs
     val p6report = ParamName[JDouble]("p6report")
 
@@ -94,7 +95,9 @@ object DhtSim {
       Param(p5failProb, "0.003"),
       Param(p5joinProb, "0.01"),
       Param(p5stabilizeProb, "0.01"),
-      Param(p5attackProb, "0.01")
+      Param(p5attackProb, "0.01"),
+      Param(p5routingRedundancy, "1.0"),
+      Param(p5maxFingerFlavorNum, "32")
     ),
     Config(
       "extraLoops",
@@ -146,7 +149,8 @@ object DhtSim {
       Param(p5attackProb, "0.50"),
       Param(p5Elems, "256"),
       Param(p5loops, "80"),
-      Param(p5routingRedundancy, "1.0")
+      Param(p5routingRedundancy, "1.0"),
+      Param(p5maxFingerFlavorNum, "1")
     ),
     Config(
       "corrStudy-large-256",
@@ -155,7 +159,8 @@ object DhtSim {
       Param(p5attackProb, "0.50"),
       Param(p5Elems, "256"),
       Param(p5loops, "80"),
-      Param(p5routingRedundancy, "1.0")
+      Param(p5routingRedundancy, "1.0"),
+      Param(p5maxFingerFlavorNum, "2")
     ),
     Config(
       "attackProf",
@@ -425,6 +430,9 @@ object DhtSim {
     network.setEnv(env)
     network.getFactory.setRoutingRedundancy(
       rs.lens(p5routingRedundancy).get.get
+    )
+    network.getFactory.setMaxFingerFlavorNum(
+      rs.lens(p5maxFingerFlavorNum).get.get
     )
 
     val testBench = new Testbench()

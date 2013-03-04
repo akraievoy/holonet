@@ -33,9 +33,9 @@ import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
  */
 public abstract class RoutingServiceBase extends LocalServiceBase implements RoutingService {
   /**
-   * golden ratio, we should trigger maintenance after some portion of redundant routes is gathered
+   * trigger maintenance after some portion of redundant routes is gathered
    */
-  public static final double MAINTENANCE_THRESHOLD = (1 + Math.sqrt(5)) / 2;
+  public static final double MAINTENANCE_THRESHOLD = 1.2;
 
   protected final RouteTable routes = new RouteTable();
 
@@ -43,6 +43,8 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
    * should we store duplicates of enries of the same flavor, this value might be fractional, like 1.75
    */
   protected double redundancy = 3.25;
+  protected int maxFingerFlavorNum = Key.BITNESS;
+
   /**
    * Comparator defining which redundant entries would be dropped: less means drop, greater means keep.
    * Default strategy is based on sole liveness value, which is itself adjusted by failures and usage frequency.
@@ -58,6 +60,15 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
   public void setRedundancy(double redundancy) {
     this.redundancy = redundancy;
+  }
+
+  public int getMaxFingerFlavorNum() {
+    return maxFingerFlavorNum;
+  }
+
+  @Override
+  public void setMaxFingerFlavorNum(int maxFingerFlavorNum) {
+    this.maxFingerFlavorNum = maxFingerFlavorNum;
   }
 
   @Override
@@ -278,17 +289,16 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     final boolean isSeed = owner.getNetwork().getEnv().seedLink(ownRoute.getAddress(), foreign.getAddress());
     final RoutingEntry next = foreign.liveness(event);
     if (
-        !flavor.forceReflavor() && (                      //  filtering out weak and
-            !isSeed ||                                    //    non-seed
-            routes.size(flavor) > Math.floor(redundancy)  //    or redundant
-        ) ||
-        next.liveness() < routes.minLiveness()            //  or any stale
+        //  filtering out redundant non-seed fingers
+        !flavor.structural && !isSeed && routes.size(flavor) > Math.floor(redundancy) ||
+        //  or any stale
+        next.liveness() < routes.minLiveness()
     ) {
       return UPDATE_NOOP;
     }
     routes.add(flavor, next);
 
-    return flavor.forceReflavor() ? UPDATE_REFLAVOR | UPDATE_CHANGED : UPDATE_CHANGED;
+    return flavor.structural ? UPDATE_REFLAVOR | UPDATE_CHANGED : UPDATE_CHANGED;
   }
 
   protected void fullReflavor() {
@@ -302,18 +312,19 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     if (requiresCleanup()) {
       Collections.sort(prevRoutes, livenessOrder);
 
-      final int totalMax = (int) Math.ceil(routes.flavorCount(false) * redundancy);
       final int redundancyMin = (int) Math.floor(redundancy);
       final int redundancyMax = (int) Math.ceil(redundancy);
 
       int keptTotal = prevRoutes.size();
       for (RoutingEntry re : prevRoutes) {
+        final int totalMax = (int) Math.ceil(routes.flavorCount() * redundancy);
         final Flavor flavor = routes.flavor(re.getAddress());
         final int count = routes.size(flavor);
         final boolean isSeed = owner.getNetwork().getEnv().seedLink(ownRoute.getAddress(), re.getAddress());
+
         if (
-            !flavor.forceReflavor() && !isSeed || //  wipe weak non-seeds
-            count > redundancyMin && (count >= redundancyMax || keptTotal > totalMax) //  or redundant
+            !isSeed && !flavor.structural && routes.flavorCount(true, true, false) > maxFingerFlavorNum ||
+            count > redundancyMin && (count >= redundancyMax || keptTotal > totalMax)
         ) {
           routes.remove(re.getAddress());
           keptTotal--;
@@ -323,7 +334,11 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   protected boolean requiresCleanup() {
-    final double trigger = routes.flavorCount(false) * redundancy * MAINTENANCE_THRESHOLD;
+    if (routes.flavorCount(true, true, false) > maxFingerFlavorNum) {
+      return true;
+    }
+
+    final double trigger = routes.flavorCount() * redundancy * MAINTENANCE_THRESHOLD;
     return routes.size() > trigger;
   }
 
@@ -347,7 +362,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     final int routeCount =
         routes().size();
     final float routeRedundancy =
-        (float) routeCount / routes.flavorCount(false);
+        (float) routeCount / routes.flavorCount();
     return new RoutingStatsTuple(routeCount, routeRedundancy);
   }
 

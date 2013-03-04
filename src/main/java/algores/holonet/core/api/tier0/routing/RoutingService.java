@@ -91,6 +91,10 @@ public interface RoutingService extends RoutingState<RoutingEntry, Key> {
 
   void setRedundancy(double redundancy);
 
+  int getMaxFingerFlavorNum();
+
+  void setMaxFingerFlavorNum(int maxFingerFlavorNum);
+
   Comparator<RoutingEntry> distanceOrder(Key key);
 
   Comparator<RoutingEntry> getLivenessOrder();

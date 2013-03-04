@@ -27,25 +27,17 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class RoutingPackage {
 
-  public static class Flavor implements Comparable<Flavor> {
-    private final String name;
-    private final boolean forceReflavor;
+  public static final class Flavor implements Comparable<Flavor> {
+    public final String name;
+    public final boolean structural;
 
     public Flavor(String name) {
       this(name, false);
     }
 
-    public Flavor(String name, final boolean forcesReflavor) {
+    public Flavor(String name, final boolean structural) {
       this.name = name;
-      this.forceReflavor = forcesReflavor;
-    }
-
-    public boolean forceReflavor() {
-      return forceReflavor;
-    }
-
-    public String name() {
-      return name;
+      this.structural = structural;
     }
 
     @Override
@@ -65,12 +57,12 @@ public class RoutingPackage {
 
     @Override
     public int compareTo(Flavor o) {
-      return name.compareTo(o.name());
+      return name.compareTo(o.name);
     }
 
     @Override
     public String toString() {
-      return name + (forceReflavor ? "!" : "");
+      return name + (structural ? "!" : "");
     }
   }
 
@@ -310,8 +302,8 @@ public class RoutingPackage {
   }
 
   public static class RouteTable {
-    private final SortedMap<String, TreeSet<Address>> flavorToAddresses =
-        new TreeMap<String, TreeSet<Address>>();
+    private final SortedMap<Flavor, TreeSet<Address>> flavorToAddresses =
+        new TreeMap<Flavor, TreeSet<Address>>();
     private final SortedMap<Address, Flavor> addressToFlavor =
         new TreeMap<Address, Flavor>();
     private final SortedMap<Address, RoutingEntry> addressToRoute =
@@ -326,7 +318,7 @@ public class RoutingPackage {
     }
 
     public int size(final Flavor flavor) {
-      final SortedSet<Address> addresses = flavorToAddresses.get(flavor.name);
+      final SortedSet<Address> addresses = flavorToAddresses.get(flavor);
       if (addresses == null) {
         return 0;
       }
@@ -334,20 +326,26 @@ public class RoutingPackage {
       return addresses.size();
     }
 
-    public int flavorCount(boolean includeEmpty) {
-      if (includeEmpty) {
-        return flavorToAddresses.size();
-      }
+    public int flavorCount() {
+      return flavorCount(true, false, false);
+    }
 
-      int nonEmptyFlavorCount = 0;
+    public int flavorCount(boolean ignoreEmpty, boolean ignoreStructural, boolean ignoreFinger) {
+      int flavorCount = 0;
 
-      for (Map.Entry<String, TreeSet<Address>> e : flavorToAddresses.entrySet()) {
-        if (!e.getValue().isEmpty()) {
-          nonEmptyFlavorCount++;
+      for (Map.Entry<Flavor, TreeSet<Address>> e : flavorToAddresses.entrySet()) {
+        if (
+            ignoreEmpty && e.getValue().isEmpty() ||
+            ignoreStructural && e.getKey().structural ||
+            ignoreFinger && !e.getKey().structural
+        ) {
+          continue;
         }
+
+        flavorCount++;
       }
 
-      return nonEmptyFlavorCount;
+      return flavorCount;
     }
 
     public Flavor flavor(final Address address) {
@@ -371,7 +369,7 @@ public class RoutingPackage {
     }
 
     public Collection<Address> adresses(final Flavor flavor) {
-      final SortedSet<Address> addresses = flavorToAddresses.get(flavor.name);
+      final SortedSet<Address> addresses = flavorToAddresses.get(flavor);
       if (addresses == null) {
         return Collections.emptySet();
       }
@@ -401,11 +399,11 @@ public class RoutingPackage {
 
       addressToFlavor.put(address, flavor);
       addressToRoute.put(address, route);
-      final TreeSet<Address> addresses = flavorToAddresses.get(flavor.name);
+      final TreeSet<Address> addresses = flavorToAddresses.get(flavor);
       if (addresses == null) {
         final TreeSet<Address> newAddresses = new TreeSet<Address>();
         newAddresses.add(address);
-        flavorToAddresses.put(flavor.name, newAddresses);
+        flavorToAddresses.put(flavor, newAddresses);
         return newAddresses.size();
       }
 
@@ -431,7 +429,7 @@ public class RoutingPackage {
       }
 
       addressToRoute.remove(address);
-      final TreeSet<Address> addresses = flavorToAddresses.get(prevFlavor.name);
+      final TreeSet<Address> addresses = flavorToAddresses.get(prevFlavor);
       if (addresses == null) {
         return 0;
       }

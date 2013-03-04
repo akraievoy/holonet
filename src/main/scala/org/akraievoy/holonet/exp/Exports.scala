@@ -188,7 +188,7 @@ trait Exports extends ParamSpaceNav {
 
                   p.println("%s %s {".format(graphToken, pos))
                   p.println(
-                    """  size="%s,%s!"; ratio="fill"; splines="true";
+                    """  size="%s,%s!"; ratio="fill"; splines="true"; bgcolor="#99CCFF";
                       |  node [fixedsize=true, fontsize=%d, style=filled,
                       |          shape="circle", colorscheme="%s"];
                       |  edge [colorscheme="%s"];

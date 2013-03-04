@@ -34,6 +34,7 @@ public class EnvSimple implements Env {
   protected final AddressMeta addressMeta = new PlanarAddressMeta();
   protected final Map<Address, Integer> addressToIndex =
       new HashMap<Address, Integer>(256, 0.25f);
+  protected final double seedDensity = 0.25;
 
   public Address createNetworkAddress(EntropySource eSource) {
     final Address nextAddress = addressMeta.create(eSource);
@@ -95,7 +96,8 @@ public class EnvSimple implements Env {
 
   @Override
   public boolean seedLink(Address from, Address into) {
-    return from.getKey().toLong() % 16 + from.getKey().toLong() % 16 > 2;
+    final boolean seedLink = from.getKey().toLong() % 16 + into.getKey().toLong() % 16 > Math.floor(30 * (1 - seedDensity));
+    return seedLink;
   }
 
   public Node getNode(Address address) {
