@@ -38,11 +38,9 @@ import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
 public interface RoutingService extends RoutingState<RoutingEntry, Key> {
   Flavor FLAVOR_OWNER = new Flavor("ownroute", true);
 
-  void update(RoutingEntry handle, Event event);
+  void update(Event event, RoutingEntry... routingData);
 
-  void update(RoutingEntry[] routingData, Event event);
-
-  RoutingEntry ownRoute() throws CommunicationException;
+  RoutingPackage.RoutingEntry ownRoute() throws CommunicationException;
 
   /**
    * Provides information about ranges of keys for which the node <code>handle</code> is currently a <i>r</i>-root.
@@ -87,8 +85,6 @@ public interface RoutingService extends RoutingState<RoutingEntry, Key> {
 
   List<RoutingEntry> replicaSet(Key key, byte maxRank);
 
-  List<RoutingEntry> getRoutes() throws CommunicationException;
-
   void registerCommunicationFailure(Address calleeAddress);
 
   double getRedundancy();
@@ -103,11 +99,11 @@ public interface RoutingService extends RoutingState<RoutingEntry, Key> {
 
   RoutingStatsTuple getStats();
 
-  int getRouteCount();
-
   boolean hasRouteFor(Address address, boolean includeStoredRoutes, boolean includeSeedRoutes);
 
   RoutingEntry ownRoute(boolean safe);
+
+  RouteTable routes();
 
   public static class RoutingStatsTuple {
     public final int routeCount;

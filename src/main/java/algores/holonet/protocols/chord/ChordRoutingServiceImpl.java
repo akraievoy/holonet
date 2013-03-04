@@ -19,14 +19,13 @@
 package algores.holonet.protocols.chord;
 
 import algores.holonet.core.api.Key;
-import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.protocols.ring.RingRoutingServiceImpl;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import static algores.holonet.core.api.tier0.routing.RoutingPackage.Flavor;
+import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
 
 /**
  * Default implementation.

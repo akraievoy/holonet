@@ -37,15 +37,8 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
    */
   public static final double MAINTENANCE_THRESHOLD = (1 + Math.sqrt(5)) / 2;
 
-  protected final RouteTable routez = new RouteTable();
+  protected final RouteTable routes = new RouteTable();
 
-  protected List<RoutingEntry> routes = new ArrayList<RoutingEntry>();
-
-  /**
-   * collects all known entry flavors
-   */
-  protected final SortedMap<String, Integer> flavorToCount =
-      new TreeMap<String, Integer>();
   /**
    * should we store duplicates of enries of the same flavor, this value might be fractional, like 1.75
    */
@@ -73,6 +66,11 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   @Override
+  public RouteTable routes() {
+    return routes;
+  }
+
+  @Override
   public RoutingEntry ownRoute(boolean safe) {
     if (owner == null) {
       if (safe) {
@@ -81,7 +79,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       return null;
     }
 
-    final RoutingEntry ownRoute = routez.route(owner.getAddress());
+    final RoutingEntry ownRoute = routes.route(owner.getAddress());
     if (ownRoute != null) {
       return ownRoute;
     }
@@ -98,7 +96,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     if (safe) {
       filterSafeRoutes(result);
     } else {
-      result.addAll(routes);
+      result.addAll(routes.routes());
     }
 
     localLookupInternal(key, result);
@@ -119,7 +117,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
         }
       }
       if (!found) {
-        result.add(new RoutingEntry(seedAddress.getKey(), seedAddress));
+        result.add(RoutingEntry.stub(seedAddress.getKey(), seedAddress));
       }
     }
 
@@ -146,19 +144,19 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   protected void filterSafeRoutes(List<RoutingEntry> result) {
-    final byte livenessAvg = computeAverageLiveness();
+    final float livenessAvg = computeAverageLiveness();
 
-    for (RoutingEntry re : routes) {
-      if (re.getLiveness() >= livenessAvg) {
+    for (RoutingEntry re : routes.routes()) {
+      if (re.liveness() >= livenessAvg) {
         result.add(re);
       }
     }
   }
 
-  protected byte computeAverageLiveness() {
-    int livenessTotal = 0;
-    for (RoutingEntry re : routes) {
-      livenessTotal += re.getLiveness();
+  protected float computeAverageLiveness() {
+    float livenessTotal = 0;
+    for (RoutingEntry re : routes.routes()) {
+      livenessTotal += re.liveness();
     }
 
     final double avg = Math.floor((double) livenessTotal / routes.size());
@@ -172,7 +170,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
     final List<RoutingEntry> result = new ArrayList<RoutingEntry>();
 
-    for (RoutingEntry re : routes) {
+    for (RoutingEntry re : routes.routes()) {
       if (isNeighbor(ownRoute, re)) {
         result.add(re);
         if (num > 0 && result.size() >= num) {
@@ -186,7 +184,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
         owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
     for (Address seedAddress : seedAddresses) {
       final RoutingEntry seedEntry =
-          new RoutingEntry(seedAddress.getKey(), seedAddress);
+          RoutingEntry.stub(seedAddress.getKey(), seedAddress);
       if (!isNeighbor(ownRoute, seedEntry)) {
         continue;
       }
@@ -227,7 +225,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       result.add(ownRoute);
     }
 
-    for (RoutingEntry re : routes) {
+    for (RoutingEntry re : routes.routes()) {
       //	in some rare cases node would add itself to its own routing table
       //	for example - ring or chord node when it is the only one in the net
       if (!ownRoute.equals(re) && re.isReplicaFor(key, maxRank)) {
@@ -240,7 +238,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
         owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
     for (Address seedAddress : seedAddresses) {
       final RoutingEntry seedEntry =
-          new RoutingEntry(seedAddress.getKey(), seedAddress);
+          RoutingEntry.stub(seedAddress.getKey(), seedAddress);
       if (!seedEntry.isReplicaFor(key, maxRank)) {
         continue;
       }
@@ -263,7 +261,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
   @Deprecated
   public void update(RoutingEntry handle, boolean joined) {
-    update(handle, joined ? Event.JOINED : Event.LEFT);
+    update(joined ? Event.JOINED : Event.LEFT, handle);
   }
 
   @Deprecated
@@ -273,9 +271,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       AtomicReference<Key> lKey,
       AtomicReference<Key> rKey
   ) {
-    final RoutingEntry ownRoute = ownRoute();
-
-    final RoutingEntry re = getEntry(handle);
+    final RoutingEntry re = routes.route(handle.getAddress());
     if (re == null) {
       return false;
     }
@@ -290,9 +286,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   public Range getRange(NodeHandle handle, byte rank, Key lKey) {
-    final RoutingEntry ownRoute = ownRoute();
-
-    final RoutingEntry re = getEntry(handle);
+    final RoutingEntry re = routes.route(handle.getAddress());
     if (re == null) {
       return null;
     }
@@ -302,182 +296,61 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     return range;
   }
 
-  protected RoutingEntry getEntry(final NodeHandle handle) {
-    return getEntry(handle.getAddress());
-  }
-
-  protected RoutingEntry getEntry(final Address address) {
-    final RoutingEntry ownRoute = ownRoute();
-
-    for (RoutingEntry re : routes) {
-      if (re.getAddress().equals(address)) {
-        return re;
-      }
+  public void update(Event event, RoutingEntry... entries) {
+    byte updateStatus = UPDATE_NOOP;
+    for (RoutingEntry entry : entries) {
+      updateStatus |= update0(entry, event);
     }
 
-    return null;
-  }
-
-  public void update(RoutingEntry[] entries, Event event) {
-    final RoutingEntry ownRoute = ownRoute();
-
-    Flavor flavor = null;
-
-        //  seed addresses are not masked by num limit
-    final List<Address> seedAddresses =
-        owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
-
-    for (RoutingEntry upEntry : entries) {
-      if (upEntry.getAddress().equals(ownRoute.getAddress())) {
-        continue;
-      }
-
-      boolean found = false;
-      for (RoutingEntry myRe : routes) {
-        if (!myRe.getAddress().equals(upEntry.getAddress())) {
-          continue;
-        }
-
-        if (myRe.getStamp() < upEntry.getStamp()) {
-          myRe.update(upEntry.getStamp(), upEntry.getEntryCount(), upEntry.getRanges());
-        }
-        myRe.updateLiveness(event);
-
-        found = true;
-        break;
-      }
-
-      if (found) {
-        continue;
-      }
-
-      boolean isSeed = false;
-      for (Address seedAddress : seedAddresses) {
-        if (upEntry.getAddress().equals(seedAddress)) {
-          isSeed = true;
-          break;
-        }
-      }
-      final RoutingEntry newRe = upEntry.copy();
-      newRe.updateLiveness(event);
-
-      final Flavor currentFlavor = flavorize(newRe);
-
-      if (true || isSeed || currentFlavor.forceReflavor()) {
-        final Integer oldCount = flavorToCount.get(currentFlavor.name());
-        flavorToCount.put(currentFlavor.name(), oldCount == null ? 1 : oldCount + 1);
-
-        if (flavor == null || !flavor.forceReflavor()) {
-          flavor = currentFlavor;
-        }
-      }
-    }
-
-    if (requiresCleanup() || flavor != null && flavor.forceReflavor()) {
+    if ((updateStatus & UPDATE_REFLAVOR) > 0 || requiresCleanup()) {
       fullReflavor();
     }
   }
 
-  public void update(RoutingEntry upEntry, Event event) {
+  protected final static byte UPDATE_NOOP = 0;
+  protected final static byte UPDATE_CHANGED = 1;
+  protected final static byte UPDATE_REFLAVOR = 2;
+
+  protected byte update0(final RoutingEntry foreign, final Event event) {
     final RoutingEntry ownRoute = ownRoute();
 
-    if (upEntry.getAddress().equals(ownRoute.getAddress())) {
-      return;
+    if (foreign.getAddress().equals(ownRoute.getAddress())) {
+      return UPDATE_NOOP;
     }
 
-    final float newLiveness = upEntry.computeNewLiveness(event);
-
-    float minLiveness =
-        RoutingEntry.LIVENESS_MIN * RoutingEntry.LIVENESS_COMM_FAIL_PENALTY;
-    for (int i = 0, size = routes.size(); i < size; i++) {
-      RoutingEntry myRe = routes.get(i);
-      minLiveness = Math.min(minLiveness, myRe.getLiveness());
-      if (!myRe.getAddress().equals(upEntry.getAddress())) {
-        continue;
-      }
-
-      if (myRe.getStamp() < upEntry.getStamp()) {
-        myRe.update(upEntry.getStamp(), upEntry.getEntryCount(), upEntry.getRanges());
-      }
-      if (newLiveness >= RoutingEntry.LIVENESS_MIN) {
-        myRe.updateLiveness(event);
-      } else {
-        routes.remove(i);
-        final Flavor fTuple = flavorize(upEntry);
-        final Integer oldCount = flavorToCount.get(fTuple.name());
-        if (oldCount != null) {
-          if (oldCount > 1) {
-            flavorToCount.put(fTuple.name(), oldCount - 1);
-          } else {
-            flavorToCount.remove(fTuple.name());
-          }
+    final Flavor flavor = flavorize(foreign);
+    final RoutingEntry prev = routes.route(foreign.getAddress());
+    if (prev != null) {
+      if (flavor.equals(routes.flavor(prev.getAddress()))) {
+        final RoutingEntry next = prev.update(foreign).liveness(event);
+        if (next.liveness >= RoutingEntry.LIVENESS_MIN) {
+          routes.update(next);
+        } else {
+          routes.remove(foreign.getAddress());
         }
-      }
-
-      return;
-    }
-
-    //  seed addresses are not masked by num limit
-    final List<Address> seedAddresses =
-        owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
-    boolean isSeed = false;
-    for (Address seedAddress : seedAddresses) {
-      if (upEntry.getAddress().equals(seedAddress)) {
-        isSeed = true;
-        break;
+        return UPDATE_CHANGED;
+      } else {
+        routes.remove(foreign.getAddress());
       }
     }
 
-    final Flavor fTuple = flavorize(upEntry);
-    if (true || isSeed || fTuple.forceReflavor()) {
-      final Integer count = flavorToCount.get(fTuple.name());
-      if (newLiveness < minLiveness || count != null && count > Math.floor(redundancy)) {
-        return;
-      }
-      final RoutingEntry newRe = upEntry.copy();
-      newRe.updateLiveness(event);
-      routes.add(newRe);
-      final Integer oldCount = flavorToCount.get(fTuple.name());
-      flavorToCount.put(fTuple.name(), oldCount == null ? 1 : oldCount + 1);
-
-      if (fTuple.forceReflavor() || requiresCleanup()) {
-        fullReflavor();
-      }
+    final boolean isSeed = owner.getNetwork().getEnv().seedLink(ownRoute.getAddress(), foreign.getAddress());
+    final RoutingEntry next = foreign.liveness(event);
+    if (routes.size(flavor) > Math.floor(redundancy) || next.liveness() < routes.minLiveness()) {
+      return UPDATE_NOOP;
     }
+    routes.add(flavor, next);
+
+    return flavor.forceReflavor() ? UPDATE_REFLAVOR | UPDATE_CHANGED : UPDATE_CHANGED;
   }
-
-  private Map<RoutingEntry, String> entryToFlavorCache;
 
   protected void fullReflavor() {
     final RoutingEntry ownRoute = ownRoute();
 
-    //  allocate the map lazily, basing on actual load on the data structure
-    if (entryToFlavorCache == null) {
-      entryToFlavorCache =
-          new HashMap<RoutingEntry, String>(routes.size() * 4, 0.25f);
-    }
-
-    flavorToCount.clear();
-    for (RoutingEntry re : routes) {
-      final Flavor tuple = flavorize(re);
-      entryToFlavorCache.put(re, tuple.name());
-      final Integer countPrev = flavorToCount.get(tuple.name());
-      flavorToCount.put(
-          tuple.name(),
-          countPrev == null ? 1 : countPrev + 1
-      );
-    }
-
-    final List<Address> seedAddresses =
+/*    final List<Address> seedAddresses =
         owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
     for (Address seedAddress : seedAddresses) {
-      boolean foundInRoutes = false;
-      for (RoutingEntry re: routes) {
-        if (re.getAddress().equals(seedAddress)) {
-          foundInRoutes = true;
-          continue;
-        }
-      }
+      final boolean foundInRoutes = routes.has(seedAddress);
       if (foundInRoutes) {
         continue;
       }
@@ -488,41 +361,32 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       if (tuple.forceReflavor()) {
         continue;
       }
-      final Integer countPrev = flavorToCount.get(tuple.name());
-      flavorToCount.put(
-          tuple.name(),
-          countPrev == null ? 1 : countPrev + 1
-      );
-    }
+    }*/
 
+    final List<RoutingEntry> prevRoutes = new ArrayList<RoutingEntry>(routes.routes());
     if (requiresCleanup()) {
-      Collections.sort(routes, livenessOrder);
+      Collections.sort(prevRoutes, livenessOrder);
 
-      final int totalMax = (int) Math.ceil(flavorToCount.size() * redundancy);
+      final int totalMax = (int) Math.ceil(routes.flavorCount(false) * redundancy);
       final int redundancyMin = (int) Math.floor(redundancy);
       final int redundancyMax = (int) Math.ceil(redundancy);
 
-      int keptTotal = routes.size();
-      for (int curIndex = routes.size() - 1; curIndex >= 0; curIndex--) {
-        final RoutingEntry re = routes.get(curIndex);
-        final String flavor = entryToFlavorCache.get(re);
-        final int count = flavorToCount.get(flavor);
+      int keptTotal = prevRoutes.size();
+      for (RoutingEntry re : prevRoutes) {
+        final int count = routes.size(routes.flavor(re.getAddress()));
         if (
             count > redundancyMin &&
             (count >= redundancyMax || keptTotal > totalMax)
         ) {
-          routes.remove(curIndex);
+          routes.remove(re.getAddress());
           keptTotal--;
-          flavorToCount.put(flavor, count - 1);
         }
       }
     }
-
-    entryToFlavorCache.clear();
   }
 
   protected boolean requiresCleanup() {
-    final double trigger = flavorToCount.size() * redundancy * MAINTENANCE_THRESHOLD;
+    final double trigger = routes.flavorCount(false) * redundancy * MAINTENANCE_THRESHOLD;
     return routes.size() > trigger;
   }
 
@@ -534,42 +398,34 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       throw new IllegalArgumentException("setting owner route with invalid address");
     }
 
-    routez.add(FLAVOR_OWNER, owner);
+    routes.update(owner);
 
     fullReflavor();
   }
 
   public abstract RoutingDistance getRoutingDistance();
 
-  public List<RoutingEntry> getRoutes() {
-    final ArrayList<RoutingEntry> routesRes = new ArrayList<RoutingEntry>(routes);
-
-    if (!routes.contains(ownRoute())) {
-      routesRes.add(ownRoute());
-    }
-
-    return routesRes;
-  }
-
   @Override
   public RoutingStatsTuple getStats() {
     final int routeCount =
-        getRouteCount();
+        routes().size();
     final float routeRedundancy =
-        (float) routeCount / flavorToCount.size();
+        (float) routeCount / routes.flavorCount(false);
     return new RoutingStatsTuple(routeCount, routeRedundancy);
   }
 
   public void registerCommunicationFailure(Address calleeAddress) {
-    //	TODO we don't really NEED to create an object just to do a query
-    final NodeHandle dummyHandle = new NodeHandleBase(calleeAddress.getKey(), calleeAddress);
-    final RoutingEntry re = getEntry(dummyHandle);
+    //  FIXME successor/predecessor may fail and should be failed-over accordingly
+    final RoutingEntry route = routes.route(calleeAddress);
+    if (route == null) {
+      return;
+    }
 
-    //  this should also provoke eviction / reflavoring
-    if (re != null) {
-      re.updateLiveness(Event.CONNECTION_FAILED);
+    final RoutingEntry next = route.liveness(Event.CONNECTION_FAILED);
+    if (next.liveness() < RoutingEntry.LIVENESS_MIN) {
+      routes.remove(next.getAddress());
     } else {
-//			System.out.println("stamped a foreign route entry");
+      routes.update(next);
     }
   }
 
@@ -598,32 +454,19 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   @Override
-  public int getRouteCount() {
-    int routeCount = ownRoute() != null ? 1 : 0;
-
-    for (Integer count : flavorToCount.values()) {
-      routeCount += count;
-    }
-
-    return routeCount;
-  }
-
-  @Override
   public boolean hasRouteFor(
       Address address,
       boolean includeStoredRoutes,
       boolean includeSeedRoutes
   ) {
     final RoutingEntry ownRoute = ownRoute();
-    if (ownRoute != null && ownRoute.getAddress().equals(ownRoute)) {
+    if (ownRoute.getAddress().equals(address)) {
       return false;
     }
 
     if (includeStoredRoutes) {
-      for (RoutingEntry route : routes) {
-        if (address.equals(route.getAddress())) {
-          return true;
-        }
+      if (routes.has(address)) {
+        return true;
       }
     }
 
@@ -642,8 +485,8 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
   protected static class LivenessComparator implements Comparator<RoutingEntry> {
     public int compare(RoutingEntry o1, RoutingEntry o2) {
-      final float l1 = o1.getLiveness();
-      final float l2 = o2.getLiveness();
+      final float l1 = o1.liveness();
+      final float l2 = o2.liveness();
       return -Float.compare(l1, l2);
     }
   }

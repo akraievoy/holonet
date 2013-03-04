@@ -93,22 +93,13 @@ public interface RoutingState<NH extends NodeHandle, K extends Key> {
   void update(NH handle, boolean joined);
 
   /**
-   * Invoked to inform the application that node handle has either joined or left the neighbor set of the local
+   * Invoked to inform the application that node handles has either joined or left the neighbor set of the local
    * node as that set would be returned by the neighborSet call.
    *
-   * @param handle node in question
-   * @param event  respective event related to this node
-   */
-  void update(NH handle, Event event);
-
-  /**
-   * Invoked to inform the application that node handle has either joined or left the neighbor set of the local
-   * node as that set would be returned by the neighborSet call.
-   *
-   * @param handles nodes in question
    * @param event   respective event related to this node
+   * @param handles nodes in question
    */
-  void update(NH[] handles, Event event);
+  void update(Event event, NH... handles);
 
   /**
    * Provides information about ranges of keys for which the node <code>handle</code> is currently a <i>r</i>-root.

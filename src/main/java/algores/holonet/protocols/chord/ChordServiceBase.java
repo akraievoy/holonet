@@ -24,13 +24,14 @@ import algores.holonet.core.SimulatorException;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.KeySpace;
-import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.rpc.RpcService;
 import algores.holonet.core.api.tier1.delivery.LookupService;
 import algores.holonet.protocols.ring.RingRoutingService;
 import algores.holonet.protocols.ring.RingRoutingServiceImpl;
 import algores.holonet.protocols.ring.RingService;
 import com.google.common.base.Optional;
+
+import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
 
 public class ChordServiceBase extends RingService implements ChordService {
   public ChordServiceBase copy() {
@@ -139,7 +140,7 @@ public class ChordServiceBase extends RingService implements ChordService {
         }
 
         final RoutingEntry entry = rpcToRouting(address).ownRoute();
-        getRouting().update(entry, Event.HEART_BEAT);
+        getRouting().update(Event.HEART_BEAT, entry);
       } catch (CommunicationException nfe) {
         //	should be ignored...
       }

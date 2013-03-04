@@ -22,13 +22,10 @@ import algores.holonet.core.api.Address;
 
 import java.util.List;
 
-/**
- * Created with IntelliJ IDEA.
- * User: w
- * Date: 2/5/13
- * Time: 10:04 PM
- * To change this template use File | Settings | File Templates.
- */
 public interface RoutingSeeder {
+
   List<Address> seedLinks(Address localAddress);
+
+  boolean seedLink(Address from, Address into);
+
 }

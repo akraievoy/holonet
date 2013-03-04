@@ -22,7 +22,6 @@ import algores.holonet.core.Node;
 import algores.holonet.core.api.Range;
 import algores.holonet.core.api.RangeBase;
 import algores.holonet.core.api.tier0.routing.RoutingDistance;
-import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.routing.RoutingServiceBase;
 
 import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
@@ -47,11 +46,10 @@ class PGridRouting extends RoutingServiceBase {
   public void init(Node ownerNode) {
     super.init(ownerNode);
 
-    routez.add(FLAVOR_OWNER, new RoutingEntry(
+    routes.add(FLAVOR_OWNER, RoutingEntry.own(
         ownerNode.getKey(),
         ownerNode.getAddress(),
-        new RangeBase(ownerNode.getKey(), 0),
-        ownerNode.getServices().getStorage().getEntryCount()
+        ownerNode.getServices().getStorage().getEntryCount(), new RangeBase(ownerNode.getKey(), 0)
     ));
 
     setRedundancy(MAX_SAME_PATHS);
@@ -86,7 +84,7 @@ class PGridRouting extends RoutingServiceBase {
 
   public void setPath(Range newPath) {
     final RoutingEntry ownRoute = ownRoute();
-    updateOwnRoute(new RoutingEntry(newPath.getKey(), ownRoute.getAddress(), newPath, ownRoute.getEntryCount()));
+    updateOwnRoute(RoutingEntry.own(newPath.getKey(), ownRoute.getAddress(), ownRoute.entryCount(), newPath));
   }
 
   public String toString() {

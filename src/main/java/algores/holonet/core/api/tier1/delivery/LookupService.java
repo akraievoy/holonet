@@ -22,7 +22,7 @@ import algores.holonet.capi.Event;
 import algores.holonet.core.CommunicationException;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
-import algores.holonet.core.api.tier0.routing.RoutingEntry;
+import algores.holonet.core.api.tier0.routing.RoutingPackage.*;
 import com.google.common.base.Optional;
 
 import java.util.*;
@@ -197,6 +197,11 @@ public interface LookupService {
 
     public Traversal calledAtHop(final int hopCalled) {
       return new Traversal(re, hopAdded, hopCalled, Event.HEART_BEAT);
+    }
+
+    @Override
+    public String toString() {
+      return re.getAddress() + " : " + hopAdded + " --"+event.toString()+"-->" + hopCalled;
     }
   }
 }

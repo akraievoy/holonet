@@ -79,6 +79,11 @@ public class EnvSimple implements Env {
     return addresses;
   }
 
+  @Override
+  public boolean seedLink(Address from, Address into) {
+    return false;
+  }
+
   public Node getNode(Address address) {
     return addressToNode.get(address);
   }

@@ -21,7 +21,7 @@ package algores.holonet.core;
 import algores.holonet.core.api.API;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
-import algores.holonet.core.api.tier0.routing.RoutingEntry;
+import algores.holonet.core.api.tier0.routing.RoutingPackage;
 import algores.holonet.core.api.tier0.routing.RoutingService;
 import algores.holonet.core.api.tier0.rpc.NetworkRpc;
 import algores.holonet.core.api.tier0.rpc.NetworkRpcBase;
@@ -32,6 +32,8 @@ import org.akraievoy.cnet.gen.vo.EntropySource;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
 
 public class Network {
 
@@ -248,9 +250,9 @@ public class Network {
       @Override
       public int compare(Node o1, Node o2) {
         final int o1routes =
-            o1.getServices().getRouting().getRouteCount();
+            o1.getServices().getRouting().routes().size();
         final int o2routes =
-            o1.getServices().getRouting().getRouteCount();
+            o1.getServices().getRouting().routes().size();
 
         return new Integer(o1routes).compareTo(o2routes);
       }

@@ -19,7 +19,6 @@
 package algores.holonet.protocols.ring;
 
 import algores.holonet.core.CommunicationException;
-import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.routing.RoutingService;
 
 import algores.holonet.core.api.tier0.routing.RoutingPackage.*;

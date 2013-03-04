@@ -191,6 +191,18 @@ public class EnvCNet implements Env {
     return res;
   }
 
+  @Override
+  public boolean seedLink(Address from, Address into) {
+    if (fallback != null) {
+      return fallback.seedLink(from, into);
+    }
+
+    return overlay.getValue().conn(
+        ((AddressCNet) from).getNodeIdx(),
+        ((AddressCNet) into).getNodeIdx()
+    );
+  }
+
   public Address createNetworkAddress(EntropySource eSource) {
     if (fallback != null) {
       return fallback.createNetworkAddress(eSource);

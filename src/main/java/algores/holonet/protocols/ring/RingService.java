@@ -24,7 +24,6 @@ import algores.holonet.core.api.Address;
 import algores.holonet.core.api.AddressSource;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.KeySpace;
-import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.rpc.RpcService;
 import algores.holonet.core.api.tier0.storage.StorageService;
 import algores.holonet.core.api.tier1.delivery.LookupService;
@@ -33,6 +32,8 @@ import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 
 import java.util.Map;
+
+import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
 
 /**
  * Default implementation of generic DhtProtocol operations - actually is a Ring implementation.
@@ -51,7 +52,7 @@ public class RingService extends OverlayServiceBase {
         owner.getKey(), false, LookupService.Mode.JOIN,
         Optional.<Address>absent()
     );
-    getRouting().setSuccessor(new RoutingEntry(successor.getKey(), successor));
+    getRouting().setSuccessor(RoutingEntry.stub(successor.getKey(), successor));
 
     stabilize();
   }
@@ -80,6 +81,7 @@ public class RingService extends OverlayServiceBase {
     final RingRoutingService routing = getRouting();
     if (KeySpace.isInOpenRange(succPred, routing.getSuccessor().getAddress(), owner.getAddress())) {
       routing.setPredecessor(succPred);
+      routing.setSuccessor(rpc.rpcTo(succAddr, RingRoutingService.class).get().ownRoute());
       rpcToRouting(succPred).setSuccessor(routing.ownRoute());
     } else if (KeySpace.isInOpenLeftRange(owner, routing.getSuccessor(), succPred)) {
       routing.setSuccessor(succPred);

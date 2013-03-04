@@ -26,12 +26,12 @@ import algores.holonet.core.api.Key;
 import algores.holonet.core.api.Range;
 import algores.holonet.core.api.RangeBase;
 import algores.holonet.core.api.tier0.routing.RoutingDistance;
-import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.routing.RoutingServiceBase;
 import algores.holonet.core.api.tier0.rpc.RpcService;
 import com.google.common.base.Optional;
 import org.akraievoy.base.Die;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -62,13 +62,13 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
   public void init(Node ownerNode) {
     super.init(ownerNode);
 
-    final RoutingEntry ownRoute = new RoutingEntry(
+    final RoutingEntry ownRoute = RoutingEntry.own(
         owner.getKey(),
         this.owner.getAddress(),
-        new RangeBase(owner.getKey(), owner.getKey()),
-        owner.getServices().getStorage().getEntryCount()
+        owner.getServices().getStorage().getEntryCount(),
+        new RangeBase(owner.getKey(), owner.getKey())
     );
-    routez.add(FLAVOR_OWNER, ownRoute);
+    routes.add(FLAVOR_OWNER, ownRoute);
 
     successor = ownRoute;
     predecessor = ownRoute;
@@ -90,7 +90,7 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
     Die.ifNull("successor", successor);
     this.successor = successor;
 
-    update(successor, Event.DISCOVERED);
+    update(Event.DISCOVERED, successor);
   }
 
   public RoutingEntry getPredecessor() {
@@ -103,11 +103,11 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
     final RoutingEntry ownRoute = ownRoute();
 
     final Range newRange = new RangeBase(predecessor.getKey().next(), ownRoute.getKey().next());
-    ownRoute.updateRanges(newRange);
+    final RoutingEntry newOwnRoute = ownRoute.ranges(newRange);
 
-    update(predecessor, Event.DISCOVERED);
-    routez.add(FLAVOR_OWNER, ownRoute);
-    return ownRoute;
+    update(Event.DISCOVERED, predecessor);
+    routes.update(newOwnRoute);
+    return newOwnRoute;
   }
 
   protected Flavor flavorize(RoutingEntry entry) {
@@ -170,7 +170,7 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
   ) {
     final RpcService rpc = owner.getServices().getRpc();
 
-    final List<RoutingEntry> routes = getRoutes();
+    final List<RoutingEntry> routes = new ArrayList<RoutingEntry>(routes().routes());
     Collections.sort(routes, distanceOrder(targetKey));
     int triedRoutes = 0;
     for (RoutingEntry route : routes) {

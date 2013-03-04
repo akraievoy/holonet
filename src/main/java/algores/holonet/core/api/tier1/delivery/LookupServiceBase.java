@@ -23,12 +23,13 @@ import algores.holonet.core.CommunicationException;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.LocalServiceBase;
-import algores.holonet.core.api.tier0.routing.RoutingEntry;
 import algores.holonet.core.api.tier0.routing.RoutingService;
 import algores.holonet.core.api.tier0.rpc.ServiceRegistry;
 import com.google.common.base.Optional;
 
 import java.util.*;
+
+import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
 
 public class LookupServiceBase extends LocalServiceBase implements LookupService {
   public LookupServiceBase() {
@@ -231,16 +232,27 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     );
   }
 
+  @SuppressWarnings("UnusedDeclaration")
+  protected List<Traversal> traversals(TreeMap<Address, Traversal> localTraversed) {
+    final ArrayList<Traversal> traversals = new ArrayList<Traversal>(localTraversed.values());
+    Collections.sort(traversals, new Comparator<Traversal>() {
+      public int compare(Traversal a, Traversal b) {
+        return new Integer(a.hopCalled).compareTo(b.hopCalled);
+      }
+    });
+    return traversals;
+  }
+
   protected RecursiveLookupState updateRoutes(Mode mode, RecursiveLookupState state) {
     final RoutingService routing = getOwner().getServices().getRouting();
     final RoutingService.RoutingStatsTuple statsBefore =
         routing.getStats();
 
     for (Traversal t : state.traversed.values()) {
-        routing.update(t.re, t.event);
+        routing.update(t.event, t.re);
     }
     for (Traversal t : state.pending.values()) {
-        routing.update(t.re, t.event);
+        routing.update(t.event, t.re);
     }
     final RoutingService.RoutingStatsTuple statsAfter =
         routing.getStats();

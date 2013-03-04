@@ -40,7 +40,8 @@ class PlanarAddress implements Address {
     this.coordY = coordY;
     this.coordX = coordX;
 
-    this.key = API.createKey(this); //  TODO we have hash collisions now
+    //  LATER hash collisions
+    this.key = API.createKey("(" + nf.format(coordX) + ":" + nf.format(coordY) + ")");
 
     int hashCode;
     long temp = coordX != +0.0d ? Double.doubleToLongBits(coordX) : 0L;
@@ -80,7 +81,7 @@ class PlanarAddress implements Address {
   }
 
   public String toString() {
-    return "(" + nf.format(coordX) + ":" + nf.format(coordY) + ")";
+    return String.valueOf(getKey()) + "@(" + nf.format(coordX) + ":" + nf.format(coordY) + ")";
   }
 
   public boolean equals(Object o) {
