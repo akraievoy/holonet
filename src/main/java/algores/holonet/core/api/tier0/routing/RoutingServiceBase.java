@@ -84,13 +84,12 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       return ownRoute;
     }
     if (safe) {
-      throw new IllegalStateException("routez do not contain entry for ownRoute");
+      throw new IllegalStateException("routes do not contain entry for ownRoute");
     }
     return null;
   }
 
   public List<RoutingEntry> localLookup(Key key, int num, boolean safe) {
-    final RoutingEntry ownRoute = ownRoute();
     final List<RoutingEntry> result = new ArrayList<RoutingEntry>();
 
     if (safe) {
@@ -103,22 +102,6 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
     if (num > 0 && result.size() > num) {
       result.subList(num, result.size()).clear();
-    }
-
-    //  seed addresses are not masked by num limit
-    final List<Address> seedAddresses =
-        owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
-    for (Address seedAddress : seedAddresses) {
-      boolean found = false;
-      for (RoutingEntry routingEntry : result) {
-        if (routingEntry.getAddress().equals(seedAddress)) {
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        result.add(RoutingEntry.stub(seedAddress.getKey(), seedAddress));
-      }
     }
 
     return result;
@@ -179,27 +162,6 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       }
     }
 
-    //  seed addresses are not masked by num limit
-    final List<Address> seedAddresses =
-        owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
-    for (Address seedAddress : seedAddresses) {
-      final RoutingEntry seedEntry =
-          RoutingEntry.stub(seedAddress.getKey(), seedAddress);
-      if (!isNeighbor(ownRoute, seedEntry)) {
-        continue;
-      }
-      boolean found = false;
-      for (RoutingEntry routingEntry : result) {
-        if (routingEntry.getAddress().equals(seedAddress)) {
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        result.add(seedEntry);
-      }
-    }
-
     return result;
   }
 
@@ -230,27 +192,6 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       //	for example - ring or chord node when it is the only one in the net
       if (!ownRoute.equals(re) && re.isReplicaFor(key, maxRank)) {
         result.add(re);
-      }
-    }
-
-    //  seed addresses are not masked by num limit
-    final List<Address> seedAddresses =
-        owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
-    for (Address seedAddress : seedAddresses) {
-      final RoutingEntry seedEntry =
-          RoutingEntry.stub(seedAddress.getKey(), seedAddress);
-      if (!seedEntry.isReplicaFor(key, maxRank)) {
-        continue;
-      }
-      boolean found = false;
-      for (RoutingEntry routingEntry : result) {
-        if (routingEntry.getAddress().equals(seedAddress)) {
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        result.add(seedEntry);
       }
     }
 
@@ -336,7 +277,13 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
     final boolean isSeed = owner.getNetwork().getEnv().seedLink(ownRoute.getAddress(), foreign.getAddress());
     final RoutingEntry next = foreign.liveness(event);
-    if (routes.size(flavor) > Math.floor(redundancy) || next.liveness() < routes.minLiveness()) {
+    if (
+        !flavor.forceReflavor() && (                      //  filtering out weak and
+            !isSeed ||                                    //    non-seed
+            routes.size(flavor) > Math.floor(redundancy)  //    or redundant
+        ) ||
+        next.liveness() < routes.minLiveness()            //  or any stale
+    ) {
       return UPDATE_NOOP;
     }
     routes.add(flavor, next);
@@ -347,23 +294,11 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   protected void fullReflavor() {
     final RoutingEntry ownRoute = ownRoute();
 
-/*    final List<Address> seedAddresses =
-        owner.getNetwork().getEnv().seedLinks(ownRoute.getAddress());
-    for (Address seedAddress : seedAddresses) {
-      final boolean foundInRoutes = routes.has(seedAddress);
-      if (foundInRoutes) {
-        continue;
-      }
-      final RoutingEntry seedEntry =
-          new RoutingEntry(seedAddress.getKey(), seedAddress);
-
-      final Flavor tuple = flavorize(seedEntry);
-      if (tuple.forceReflavor()) {
-        continue;
-      }
-    }*/
-
     final List<RoutingEntry> prevRoutes = new ArrayList<RoutingEntry>(routes.routes());
+    for (RoutingEntry re : prevRoutes) {
+      routes.add(flavorize(re),re);
+    }
+
     if (requiresCleanup()) {
       Collections.sort(prevRoutes, livenessOrder);
 
@@ -373,10 +308,12 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
       int keptTotal = prevRoutes.size();
       for (RoutingEntry re : prevRoutes) {
-        final int count = routes.size(routes.flavor(re.getAddress()));
+        final Flavor flavor = routes.flavor(re.getAddress());
+        final int count = routes.size(flavor);
+        final boolean isSeed = owner.getNetwork().getEnv().seedLink(ownRoute.getAddress(), re.getAddress());
         if (
-            count > redundancyMin &&
-            (count >= redundancyMax || keptTotal > totalMax)
+            !flavor.forceReflavor() && !isSeed || //  wipe weak non-seeds
+            count > redundancyMin && (count >= redundancyMax || keptTotal > totalMax) //  or redundant
         ) {
           routes.remove(re.getAddress());
           keptTotal--;

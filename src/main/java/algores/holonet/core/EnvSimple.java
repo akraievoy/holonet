@@ -72,16 +72,30 @@ public class EnvSimple implements Env {
     return keyToNode;
   }
 
+  private final SortedMap<Address, List<Address>> seedLinksCache = new TreeMap<Address, List<Address>>();
+
   @Override
   public List<Address> seedLinks(Address localAddress) {
-    ArrayList<Address> addresses = new ArrayList<Address>(/*addressToIndex.keySet()*/);
-//    addresses.remove(localAddress);
-    return addresses;
+    final List<Address> cachedSeedLinks = seedLinksCache.get(localAddress);
+    if (cachedSeedLinks != null) {
+      return cachedSeedLinks;
+    }
+
+    final ArrayList<Address> seedLinks = new ArrayList<Address>(addressToIndex.keySet());
+    for (Iterator<Address> slIt = seedLinks.iterator(); slIt.hasNext(); ) {
+      if (!seedLink(localAddress, slIt.next())) {
+        slIt.remove();
+      }
+    }
+
+    seedLinksCache.put(localAddress, seedLinks);
+
+    return seedLinks;
   }
 
   @Override
   public boolean seedLink(Address from, Address into) {
-    return false;
+    return from.getKey().toLong() % 16 + from.getKey().toLong() % 16 > 2;
   }
 
   public Node getNode(Address address) {
@@ -90,10 +104,12 @@ public class EnvSimple implements Env {
 
   public void putNode(Node newNode, Address address) {
     addressToNode.put(address, newNode);
+    seedLinksCache.clear();
   }
 
   public void removeNode(Address address) {
     addressToNode.remove(address);
+    seedLinksCache.clear();
   }
 
   public Collection<Node> getAllNodes() {

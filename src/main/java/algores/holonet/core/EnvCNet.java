@@ -169,26 +169,32 @@ public class EnvCNet implements Env {
     return 1 + overlayEdgeDist/8;
   }
 
+  private final SortedMap<Address, List<Address>> seedLinksCache = new TreeMap<Address, List<Address>>();
+
   @Override
   public List<Address> seedLinks(Address localAddress) {
     if (fallback != null) {
       return fallback.seedLinks(localAddress);
     }
 
-    final AddressCNet local = (AddressCNet) localAddress;
+    final List<Address> cachedSeedLinks = seedLinksCache.get(localAddress);
+    if (cachedSeedLinks != null) {
+      return cachedSeedLinks;
+    }
 
-    final TIntArrayList connIndexes =
-        overlay.getValue().connVertexes(local.getNodeIdx());
-    final List<Address> res = new ArrayList<Address>();
-
-    for (int i = 0; i < connIndexes.size(); i++) {
-      final Node optAddress = addressIdxToNode.get(connIndexes.get(i));
-      if (optAddress != null) {
-        res.add(optAddress.getAddress());
+    final ArrayList<Address> seedLinks = new ArrayList<Address>();
+    for (Node node : addressIdxToNode.values()) {
+      seedLinks.add(node.getAddress());
+    }
+    for (Iterator<Address> slIt = seedLinks.iterator(); slIt.hasNext(); ) {
+      if (!seedLink(localAddress, slIt.next())) {
+        slIt.remove();
       }
     }
 
-    return res;
+    seedLinksCache.put(localAddress, seedLinks);
+
+    return seedLinks;
   }
 
   @Override
@@ -257,6 +263,7 @@ public class EnvCNet implements Env {
 
     addressIdxToNode.put(idx, newNode);
     renewRequestModel();
+    seedLinksCache.clear();
   }
 
   public void removeNode(Address address) {
@@ -273,6 +280,7 @@ public class EnvCNet implements Env {
     //	return this slot to event model
     final VertexData density = this.density.getValue();
     nodeModel.add(idx, density.get(idx));
+    seedLinksCache.clear();
   }
 
   public Collection<Node> getAllNodes() {
