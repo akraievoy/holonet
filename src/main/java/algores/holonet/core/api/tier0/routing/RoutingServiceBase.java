@@ -301,7 +301,8 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     return flavor.structural ? UPDATE_REFLAVOR | UPDATE_CHANGED : UPDATE_CHANGED;
   }
 
-  protected void fullReflavor() {
+  @Override
+  public void fullReflavor() {
     final RoutingEntry ownRoute = ownRoute();
 
     final List<RoutingEntry> prevRoutes = new ArrayList<RoutingEntry>(routes.routes());

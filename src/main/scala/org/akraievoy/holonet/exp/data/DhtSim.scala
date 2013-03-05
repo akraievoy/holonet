@@ -150,7 +150,7 @@ object DhtSim {
       Param(p5Elems, "256"),
       Param(p5loops, "80"),
       Param(p5routingRedundancy, "1.0"),
-      Param(p5maxFingerFlavorNum, "1")
+      Param(p5maxFingerFlavorNum, "0;1;2")
     ),
     Config(
       "corrStudy-large-256",
@@ -160,7 +160,7 @@ object DhtSim {
       Param(p5Elems, "256"),
       Param(p5loops, "80"),
       Param(p5routingRedundancy, "1.0"),
-      Param(p5maxFingerFlavorNum, "2")
+      Param(p5maxFingerFlavorNum, "2;4;6")
     ),
     Config(
       "attackProf",
@@ -408,7 +408,8 @@ object DhtSim {
           new EventNetPutEntry().withCountRef(rs.lens(p5Elems))
         ).withCountRef(rs.lens(p5nodes)),
         new EventNetStabilize(),
-        new EventNetDiscover()
+        new EventNetDiscover(),
+        new EventNetReflavor()
       )
     )
   }

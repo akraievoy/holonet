@@ -109,6 +109,8 @@ public interface RoutingService extends RoutingState<RoutingEntry, Key> {
 
   RouteTable routes();
 
+  void fullReflavor();
+
   public static class RoutingStatsTuple {
     public final int routeCount;
     public final float routeRedundancy;

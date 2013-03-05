@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Stabilizes all nodes in the network event.
+ * Forces pair-wise lookups across the network.
  */
 public class EventNetDiscover extends Event<EventNetDiscover> {
   public Result executeInternal(Network targetNetwork, final EntropySource eSource) {
@@ -73,7 +73,7 @@ public class EventNetDiscover extends Event<EventNetDiscover> {
     if (discoverSucceeded != discoverTotal) {
       log.warn(
           String.format(
-              "stabilize success ratio: %.6g",
+              "discover success ratio: %.6g",
               (float) discoverSucceeded / discoverTotal
           )
       );

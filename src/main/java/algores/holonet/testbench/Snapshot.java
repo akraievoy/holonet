@@ -31,7 +31,10 @@ import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.holonet.exp.store.StoreLens;
 import scala.Tuple4;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Metrics that make sense in static context.
@@ -83,9 +86,11 @@ public class Snapshot {
     for (Node node : nodes) {
       maxIndex = Math.max(maxIndex, network.getEnv().indexOf(node.getAddress()));
     }
-    linksAll = EdgeDataFactory.sparse(true, maxIndex + 1);
-    linksSeed = EdgeDataFactory.sparse(true, maxIndex + 1);
-    linksDht = EdgeDataFactory.sparse(true, maxIndex + 1);
+
+    linksAll = EdgeDataFactory.sparse(false, maxIndex + 1);
+    linksSeed = EdgeDataFactory.sparse(false, maxIndex + 1);
+    linksDht = EdgeDataFactory.sparse(false, maxIndex + 1);
+    //  assymetric, keeping node gaps
     for (Node nodeFrom : nodes) {
       final RoutingService fromRouting = nodeFrom.getServices().getRouting();
       final int fromIndex = network.getEnv().indexOf(nodeFrom.getAddress());
@@ -115,16 +120,63 @@ public class Snapshot {
       }
     }
 
+    final List<Integer> addrIndexes = new ArrayList<Integer>(nodes.size());
+    for (Node node : nodes) {
+      addrIndexes.add(network.getEnv().indexOf(node.getAddress()));
+    }
+    Collections.sort(addrIndexes);
+
+    final EdgeData lambdaLinksAll = EdgeDataFactory.sparse(true, addrIndexes.size());
+    final EdgeData lambdaLinksSeed = EdgeDataFactory.sparse(true, addrIndexes.size());
+    final EdgeData lambdaLinksDht = EdgeDataFactory.sparse(true, addrIndexes.size());
+    //  symmetric, avoiding node gaps
+    for (Node nodeFrom : nodes) {
+      final RoutingService fromRouting = nodeFrom.getServices().getRouting();
+      final int fromIndex = Collections.binarySearch(
+          addrIndexes,
+          network.getEnv().indexOf(nodeFrom.getAddress())
+      );
+
+      for (Node nodeInto : nodes) {
+        final Address intoAddr = nodeInto.getAddress();
+        if (nodeFrom.getAddress().equals(intoAddr)) {
+          continue;
+        }
+
+        final boolean linkSeed =
+            fromRouting.hasRouteFor(intoAddr, false, true);
+        final boolean linkDht =
+            fromRouting.hasRouteFor(intoAddr, true, false);
+
+        final int intoIndex = Collections.binarySearch(
+            addrIndexes,
+            network.getEnv().indexOf(nodeInto.getAddress())
+        );
+
+        if (linkSeed || linkDht) {
+          lambdaLinksAll.set(fromIndex, intoIndex, 1);
+        }
+        if (linkDht) {
+          lambdaLinksDht.set(fromIndex, intoIndex, 1);
+        }
+        if (linkSeed) {
+          lambdaLinksSeed.set(fromIndex, intoIndex, 1);
+        }
+      }
+    }
+
     final MetricScalarEigenGap eigenGapMetric = new MetricScalarEigenGap();
 
-    eigenGapMetric.setSource(new RefObject<EdgeData>(linksAll));
+    eigenGapMetric.setSource(new RefObject<EdgeData>(lambdaLinksAll));
     lambdaAll = Metric.fetch(eigenGapMetric);
 
-    eigenGapMetric.setSource(new RefObject<EdgeData>(linksDht));
+    eigenGapMetric.setSource(new RefObject<EdgeData>(lambdaLinksDht));
     lambdaDht = Metric.fetch(eigenGapMetric);
 
-    eigenGapMetric.setSource(new RefObject<EdgeData>(linksSeed));
+    eigenGapMetric.setSource(new RefObject<EdgeData>(lambdaLinksSeed));
     lambdaSeed = Metric.fetch(eigenGapMetric);
+
+
 
   }
 
