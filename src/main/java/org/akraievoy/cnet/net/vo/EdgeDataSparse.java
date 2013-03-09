@@ -452,7 +452,7 @@ public class EdgeDataSparse implements EdgeData {
       for (int pos = fromIncl; pos < uptoExcl; pos++) {
         final int trail = trails.get(pos, 0);
         final double elem = data.get(pos, .0);
-
+        //  TODO this means that we have only one visit for symmetric EdgeDataSparse, HOUSTON?
         visitor.visit(lead, trail, elem);
       }
     }

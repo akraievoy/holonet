@@ -26,6 +26,7 @@ import com.google.common.base.Optional;
 import gnu.trove.TIntArrayList;
 import org.akraievoy.base.ref.Ref;
 import org.akraievoy.cnet.metrics.api.Metric;
+import org.akraievoy.cnet.metrics.domain.MetricVDataCycleOrdering;
 import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.WeightedEventModel;
@@ -38,6 +39,7 @@ import org.akraievoy.cnet.net.vo.VertexData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.*;
@@ -63,6 +65,7 @@ public class EnvCNet implements Env {
   protected final EnvMappings mappings = new EnvMappings();
 
   protected EnvSimple fallback = null;
+  private VertexData cycleOrdering;
 
   public void setDensity(Ref<VertexData> density) {
     this.density = density;
@@ -111,6 +114,10 @@ public class EnvCNet implements Env {
       return;
     }
 
+    final MetricVDataCycleOrdering metricCycleOrdering = new MetricVDataCycleOrdering();
+    metricCycleOrdering.setSource(overlay);
+    cycleOrdering = Metric.fetch(metricCycleOrdering);
+
     final MetricEDataRouteLen metricEDataRouteLen =
         new MetricEDataRouteLen(new MetricRoutesFloydWarshall());
     metricEDataRouteLen.getRoutes().setDistSource(dist);
@@ -132,6 +139,7 @@ public class EnvCNet implements Env {
     for (int i = 0; i < size; i++) {
       nodeModel.add(i, density.get(i));
     }
+
     renewRequestModel();
   }
 
@@ -328,6 +336,11 @@ public class EnvCNet implements Env {
     return nf;
   }
 
+  public static final int ORDER_BITS = 10;
+  public static final int KEY_BITS = Key.BITNESS - ORDER_BITS;
+  public static final BigInteger LOWER_ONES =
+      BigInteger.ONE.shiftLeft(22).subtract(BigInteger.ONE);
+
   protected class AddressCNet implements Address {
     protected final int nodeIdx;
     protected Key key = null;
@@ -356,7 +369,10 @@ public class EnvCNet implements Env {
 
     public synchronized Key getKey() {
       if (key == null) {
-        key = API.createKey(this);
+        final BigInteger baseKey = API.createKey(this).toNumber();
+        final int order = (int) cycleOrdering.get(nodeIdx);
+        BigInteger higherOrdering = BigInteger.valueOf(order).shiftLeft(KEY_BITS);
+        key = API.createKey(baseKey.and(LOWER_ONES).or(higherOrdering));
       }
       return key;
     }

@@ -150,7 +150,7 @@ object DhtSim {
       Param(p5Elems, "256"),
       Param(p5loops, "80"),
       Param(p5routingRedundancy, "1.0"),
-      Param(p5maxFingerFlavorNum, "0;1;2")
+      Param(p5maxFingerFlavorNum, "0")
     ),
     Config(
       "corrStudy-large-256",
@@ -160,7 +160,7 @@ object DhtSim {
       Param(p5Elems, "256"),
       Param(p5loops, "80"),
       Param(p5routingRedundancy, "1.0"),
-      Param(p5maxFingerFlavorNum, "2;4;6")
+      Param(p5maxFingerFlavorNum, "0")
     ),
     Config(
       "attackProf",
