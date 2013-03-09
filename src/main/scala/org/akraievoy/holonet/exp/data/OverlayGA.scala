@@ -573,7 +573,7 @@ object OverlayGA {
       "corrStudy-full",
       "Correlation study --- full",
       Param(p3minEff, "0.6"),
-      Param(p3seed, "42600--42603"),
+      Param(p3seed, "42600--42607"),
       Param(p3flags, "R"),
       Param(p3specimen, "0--21", Strategy.USE_FIRST, Strategy.USE_FIRST),
       Param(
