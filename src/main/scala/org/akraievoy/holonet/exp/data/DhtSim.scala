@@ -27,6 +27,7 @@ import algores.holonet.core.events._
 import org.akraievoy.cnet.metrics.domain.MetricVDataPowers
 import org.akraievoy.cnet.net.vo.{EdgeDataSparse, EdgeDataDense, VertexData}
 import org.akraievoy.holonet.exp.GraphvizExport.ColorScheme
+import algores.holonet.core.api.tier1.delivery.LookupService.Mode
 
 object DhtSim {
   import java.lang.{
@@ -187,7 +188,14 @@ object DhtSim {
                 math.ceil(rs.lens(p5nodes).get.get * rs.lens(p5attackProb).get.get).asInstanceOf[Long]
               )
             ),
-            new EventNetDiscover()
+            new EventCompositeLoop(
+              new EventNetDiscover().mode(Mode.FIXFINGERS)
+            ).withCountRef(
+              new RefObject[JLong](
+                math.ceil(rs.lens(p5nodes).get.get * (1 - rs.lens(p5attackProb).get.get)).asInstanceOf[Long]
+              )
+            ),
+            new EventNetDiscover().mode(Mode.GET)
 /*
             new EventCompositeLoop(
               new EventCompositeLoop(

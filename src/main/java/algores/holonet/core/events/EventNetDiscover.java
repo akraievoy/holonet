@@ -32,6 +32,13 @@ import java.util.List;
  * Forces pair-wise lookups across the network.
  */
 public class EventNetDiscover extends Event<EventNetDiscover> {
+  private LookupService.Mode mode = LookupService.Mode.GET;
+
+  public EventNetDiscover mode(LookupService.Mode newMode) {
+    this.mode = newMode;
+    return this;
+  }
+
   public Result executeInternal(Network targetNetwork, final EntropySource eSource) {
     Result result = Result.SUCCESS;
 
@@ -51,7 +58,7 @@ public class EventNetDiscover extends Event<EventNetDiscover> {
             nodeFrom.getServices().getLookup().lookup(
                 nodeInto.getKey(),
                 false,
-                LookupService.Mode.GET,
+                mode,
                 Optional.of(nodeInto.getAddress())
             );
             discoverSucceeded += 1;
