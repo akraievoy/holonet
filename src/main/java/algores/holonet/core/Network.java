@@ -21,13 +21,14 @@ package algores.holonet.core;
 import algores.holonet.core.api.API;
 import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
-import algores.holonet.core.api.tier0.routing.RoutingPackage;
 import algores.holonet.core.api.tier0.routing.RoutingService;
 import algores.holonet.core.api.tier0.rpc.NetworkRpc;
 import algores.holonet.core.api.tier0.rpc.NetworkRpcBase;
 import algores.holonet.core.api.tier1.delivery.LookupService;
 import com.google.common.base.Optional;
 import org.akraievoy.cnet.gen.vo.EntropySource;
+import org.akraievoy.cnet.net.vo.EdgeData;
+import org.akraievoy.cnet.net.vo.EdgeDataFactory;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -245,23 +246,55 @@ public class Network {
   public void attackNodesRoutingRank(
       int count
   ) throws CommunicationException {
-    final List<Node> nodes = new ArrayList<Node>(getAllNodes());
-    Collections.sort(nodes, new Comparator<Node>() {
-      @Override
-      public int compare(Node o1, Node o2) {
-        final int o1routes =
-            o1.getServices().getRouting().routes().size();
-        final int o2routes =
-            o1.getServices().getRouting().routes().size();
+    final EdgeData links = buildLinks();
 
-        return new Integer(o1routes).compareTo(o2routes);
-      }
-    });
-    //  okay, but attacker would like to crash the widest masters first, so
-    Collections.reverse(nodes);
+    final List<Node> nodes = new ArrayList<Node>();
     for (int i = 0; i < count; i++) {
-      removeNode(nodes.get(i), true);
+      nodes.clear();
+      double maxPower = 0;
+      final Collection<Node> allNodesCurrent = getAllNodes();
+      for (Node node : allNodesCurrent) {
+        final double nodePower = links.power(env.indexOf(node.getAddress()));
+        if (nodePower > maxPower) {
+          nodes.clear();
+          nodes.add(node);
+          maxPower = nodePower;
+        } else if (nodePower == maxPower) {
+          nodes.add(node);
+        }
+      }
+
+      final Node nodeToRemove = nodes.get(i);
+      for (int n = 0; n < links.getSize(); n++) {
+        links.set(env.indexOf(nodeToRemove.getAddress()), n, 0);
+      }
+      removeNode(nodeToRemove, true);
     }
+  }
+
+  private EdgeData buildLinks() {
+    final Collection<Node> allNodes = getAllNodes();
+    int maxNodeIndex = 0;
+    for (Node node : allNodes) {
+      maxNodeIndex = Math.max(maxNodeIndex, env.indexOf(node.getAddress()));
+    }
+
+    final EdgeData links = EdgeDataFactory.dense(true, 0, maxNodeIndex + 1);
+    for (Node nodeFrom : allNodes) {
+      for (Node nodeInto: allNodes) {
+        final Address fromAddr = nodeFrom.getAddress();
+        final Address intoAddr = nodeInto.getAddress();
+        if (fromAddr.equals(intoAddr)) {
+          continue;
+        }
+        if (nodeFrom.getServices().getRouting().hasRouteFor(intoAddr, true, true)) {
+          links.set(
+              env.indexOf(fromAddr), env.indexOf(intoAddr), 1
+          );
+        }
+      }
+    }
+    return links;
   }
 
   public void putDataEntries(int n, final EntropySource eSource) throws SimulatorException {
