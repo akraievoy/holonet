@@ -244,8 +244,8 @@ public class Network {
   }
 
   public void attackNodesRoutingRank(
-      int count
-  ) throws CommunicationException {
+      int count,
+      EntropySource eSource) throws CommunicationException {
     final EdgeData links = buildLinks();
 
     final List<Node> nodes = new ArrayList<Node>();
@@ -264,9 +264,10 @@ public class Network {
         }
       }
 
-      final Node nodeToRemove = nodes.get(i);
+      final Node nodeToRemove = eSource.randomElement(nodes);
+      final int nodeToRemoveIndex = env.indexOf(nodeToRemove.getAddress());
       for (int n = 0; n < links.getSize(); n++) {
-        links.set(env.indexOf(nodeToRemove.getAddress()), n, 0);
+        links.set(nodeToRemoveIndex, n, 0);
       }
       removeNode(nodeToRemove, true);
     }

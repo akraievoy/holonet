@@ -51,7 +51,7 @@ public class EventNodeAttackRoutingRank extends Event<EventNodeAttackRoutingRank
 
     if (targetNetwork.getAllNodes().size() > countInt) {
       try {
-        targetNetwork.attackNodesRoutingRank(countInt);
+        targetNetwork.attackNodesRoutingRank(countInt, eSource);
       } catch (CommunicationException e) {
         return handleEventFailure(e, null);
       }
