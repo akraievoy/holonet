@@ -336,11 +336,6 @@ public class EnvCNet implements Env {
     return nf;
   }
 
-  public static final int ORDER_BITS = 10;
-  public static final int KEY_BITS = Key.BITNESS - ORDER_BITS;
-  public static final BigInteger LOWER_ONES =
-      BigInteger.ONE.shiftLeft(22).subtract(BigInteger.ONE);
-
   protected class AddressCNet implements Address {
     protected final int nodeIdx;
     protected Key key = null;
@@ -369,10 +364,22 @@ public class EnvCNet implements Env {
 
     public synchronized Key getKey() {
       if (key == null) {
+        final int maxNodeNum = overlayDist.getValue().getSize();
+        int orderBits = 1;
+        int orderVal = 1;
+        while (orderVal < maxNodeNum) {
+          orderBits += 1;
+          orderVal *= 2;
+        }
+
         final BigInteger baseKey = API.createKey(this).toNumber();
         final int order = (int) cycleOrdering.get(nodeIdx);
-        BigInteger higherOrdering = BigInteger.valueOf(order).shiftLeft(KEY_BITS);
-        key = API.createKey(baseKey.and(LOWER_ONES).or(higherOrdering));
+        final int lowerBits = Key.BITNESS - orderBits;
+        final BigInteger higherOrdering =
+            BigInteger.valueOf(order).shiftLeft(lowerBits);
+        final BigInteger lowerKey =
+            BigInteger.ONE.shiftLeft(lowerBits).subtract(BigInteger.ONE);
+        key = API.createKey(baseKey.and(lowerKey).or(higherOrdering));
       }
       return key;
     }
