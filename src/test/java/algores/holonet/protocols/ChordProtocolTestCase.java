@@ -25,8 +25,8 @@ public class ChordProtocolTestCase extends DhtProtocolTestCase {
   @Override
   protected ContextMeta createContextMeta() {
     ChordRoutingServiceImpl routing = new ChordRoutingServiceImpl();
-    routing.setRedundancy(1.75);
-    routing.setMaxFingerFlavorNum(8);
+    routing.setRedundancy(2);
+    routing.setMaxFingerFlavorNum(9);
     return new ContextMeta()
         .withRouting(routing)
         .withOverlay(new ChordServiceBase());
@@ -46,6 +46,15 @@ public class ChordProtocolTestCase extends DhtProtocolTestCase {
     testHopCount0(135930, 256, 8);
     testHopCount0(238479, 256, 8);
     testHopCount0(983430, 512, 9);
+  }
+
+  public void testFail() throws Throwable {
+    testFail0(135930, 16);
+    testFail0(230474, 16);
+    testFail0(847598, 16);
+    testFail0(135930, 32);
+    testFail0(874934, 32);
+    testFail0(129874, 32);
   }
 
   public void testJoinLeave() throws Throwable {

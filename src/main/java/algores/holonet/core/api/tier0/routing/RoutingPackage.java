@@ -249,8 +249,8 @@ public class RoutingPackage {
         //	recover/improve linearly
         newLiveness = curLiveness + 1;
       } else if (event == Event.CONNECTION_FAILED) {
-        //	penalize exponentially
-        newLiveness = curLiveness * LIVENESS_COMM_FAIL_PENALTY;
+        //	drop failing routes
+        newLiveness = LIVENESS_MIN * LIVENESS_COMM_FAIL_PENALTY;
       } else if (event == Event.JOINED) {
         //	reset
         newLiveness = LIVENESS_DEFAULT;

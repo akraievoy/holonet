@@ -368,17 +368,17 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
   }
 
   public void registerCommunicationFailure(Address calleeAddress) {
-    //  FIXME successor/predecessor may fail and should be failed-over accordingly
     final RoutingEntry route = routes.route(calleeAddress);
     if (route == null) {
       return;
     }
 
-    final RoutingEntry next = route.liveness(Event.CONNECTION_FAILED);
-    if (next.liveness() < RoutingEntry.LIVENESS_MIN) {
-      routes.remove(next.getAddress());
+    if (!flavorize(route).structural) {
+      //  LATER decrease liveness before removal (tolerate transient link failures)
+      routes.remove(route.getAddress());
     } else {
-      routes.update(next);
+      //  FIXME successor/predecessor may fail and should be failed-over accordingly
+      routes.update(route.liveness(Event.CONNECTION_FAILED));
     }
   }
 

@@ -122,7 +122,7 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     final List<RoutingEntry> localRoutes =
         routing.replicaSet(key, Byte.MAX_VALUE);
     final List<RoutingEntry> fingers = routing.localLookup(
-        key, (int) Math.ceil(routing.getRedundancy()), true
+        key, 0, true
     );
     final List<RoutingEntry> neighbors = routing.neighborSet(0);
     fingers.removeAll(localRoutes);

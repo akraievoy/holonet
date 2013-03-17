@@ -25,9 +25,16 @@ import algores.holonet.core.api.Key;
 import algores.holonet.core.api.tier0.routing.RoutingServiceBase;
 import algores.holonet.core.api.tier0.storage.StorageService;
 import algores.holonet.core.api.tier1.delivery.LookupService;
+import algores.holonet.core.events.EventCompositeLoop;
+import algores.holonet.core.events.EventCompositeSequence;
+import algores.holonet.core.events.EventNetDiscover;
+import algores.holonet.core.events.EventNetStabilize;
 import algores.holonet.testbench.Metrics;
 import com.google.common.base.Optional;
 import junit.framework.TestCase;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 public abstract class DhtProtocolTestCase extends TestCase {
   protected abstract ContextMeta createContextMeta();
@@ -192,5 +199,72 @@ public abstract class DhtProtocolTestCase extends TestCase {
       System.err.println(String.format("route redundancy change (%d nodes) = %g", nodes, getMetrics.getRoutingServiceRedundancyChangeAvg()));
     }
     assertEquals(0, ctx.getNetFailCount().get());
+  }
+
+  protected void testFail0(final long seed, final int nodes) {
+    final Context ctx = createContextMeta().create(seed);
+    final Network net = ctx.net();
+
+    net.insertNodes(nodes, ctx.getNetFailCount(), ctx.getEntropy());
+    new EventNetDiscover().execute(net, ctx.getEntropy());
+
+    Node nodeFrom = null;
+    Node nodeInto = null;
+    final Collection<Node> allNodes = new ArrayList<Node>(net.getAllNodes());
+    for (Node nFrom : allNodes) {
+      for (Node nInto: allNodes) {
+        if (nFrom.getAddress().equals(nInto.getAddress())) {
+          continue;
+        }
+
+        if (
+            nFrom.getServices().getRouting().hasRouteFor(nInto.getAddress(), true, true) &&
+            !nInto.getServices().getRouting().hasRouteFor(nFrom.getAddress(), true, true)
+        ) {
+          nodeFrom = nFrom;
+          nodeInto = nInto;
+        }
+      }
+    }
+
+    if (nodeFrom == null) {
+      System.err.printf("no assymetric link for seed %d%n", seed);
+      return;
+    }
+
+    for (Node n : allNodes) {
+      if (nodeFrom.equals(n) || nodeInto.equals(n)) {
+        continue;
+      }
+      net.removeNode(n, true);
+    }
+
+    try {
+      nodeInto.getServices().getLookup().lookup(
+          nodeFrom.getAddress().getKey(),
+          false,
+          LookupService.Mode.GET,
+          Optional.<Address>absent()
+      );
+      fail("should have failed");
+    } catch (CommunicationException e) {
+      //  it should fail for the first time
+    }
+
+    final Address fromIntoRes = nodeFrom.getServices().getLookup().lookup(
+        nodeInto.getAddress().getKey(),
+        false,
+        LookupService.Mode.GET,
+        Optional.<Address>absent()
+    );
+    assertEquals(nodeInto.getAddress(), fromIntoRes);
+
+    final Address intoFromRes = nodeInto.getServices().getLookup().lookup(
+        nodeFrom.getAddress().getKey(),
+        false,
+        LookupService.Mode.GET,
+        Optional.<Address>absent()
+    );
+    assertEquals(nodeFrom.getAddress(), intoFromRes);
   }
 }
