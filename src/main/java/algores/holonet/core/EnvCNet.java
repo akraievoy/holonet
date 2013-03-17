@@ -36,6 +36,7 @@ import org.akraievoy.cnet.metrics.domain.MetricRoutesFloydWarshall;
 import org.akraievoy.cnet.net.vo.EdgeData;
 import org.akraievoy.cnet.net.vo.IndexCodec;
 import org.akraievoy.cnet.net.vo.VertexData;
+import org.akraievoy.util.Interpolate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -373,7 +374,15 @@ public class EnvCNet implements Env {
         }
 
         final BigInteger baseKey = API.createKey(this).toNumber();
-        final int order = (int) cycleOrdering.get(nodeIdx);
+        final int order = (int) Math.round(
+            Interpolate.norm(
+                0, maxNodeNum - 1,
+                0, orderVal - 1,
+                Interpolate.LINEAR
+            ).apply(
+                cycleOrdering.get(nodeIdx)
+            )
+        );
         final int lowerBits = Key.BITNESS - orderBits;
         final BigInteger higherOrdering =
             BigInteger.valueOf(order).shiftLeft(lowerBits);
