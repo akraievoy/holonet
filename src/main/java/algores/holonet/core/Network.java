@@ -39,7 +39,7 @@ import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
 public class Network {
 
   protected Env env = new EnvSimple();
-  protected ServiceFactorySpring factory = new ServiceFactorySpring();
+  protected ServiceFactory factory = new ServiceFactory();
   protected ProgressMeta progressMeta =
       ProgressMeta.DEFAULT;
 
@@ -193,11 +193,11 @@ public class Network {
   //	factory setup
   //	-------------
 
-  public void setFactory(ServiceFactorySpring factory) {
+  public void setFactory(ServiceFactory factory) {
     this.factory = factory;
   }
 
-  public ServiceFactorySpring getFactory() {
+  public ServiceFactory getFactory() {
     return factory;
   }
 

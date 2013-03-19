@@ -19,26 +19,38 @@
 package algores.holonet.protocols;
 
 import algores.holonet.core.Network;
-import algores.holonet.core.ServiceFactorySpring;
+import algores.holonet.core.ServiceFactory;
 import algores.holonet.core.api.tier0.routing.RoutingService;
 import algores.holonet.core.api.tier1.overlay.OverlayService;
 import org.akraievoy.cnet.gen.vo.EntropySourceRandom;
 
 public class ContextMeta {
-  private final ServiceFactorySpring services = new ServiceFactorySpring();
+  private final ServiceFactory services;
 
   public ContextMeta() {
-    //  nothing to do here
+    this(
+        new ServiceFactory()
+    );
   }
 
-  public ContextMeta withRouting(RoutingService routing) {
-    services.setRouting(routing);
-    return this;
+  private ContextMeta(final ServiceFactory services0) {
+    services = services0;
   }
 
-  public ContextMeta withOverlay(OverlayService overlay) {
-    services.setOverlay(overlay);
-    return this;
+  public ContextMeta routing(RoutingService routing) {
+    return new ContextMeta(services.setRouting(routing));
+  }
+
+  public ContextMeta overlay(OverlayService overlay) {
+    return new ContextMeta(services.overlay(overlay));
+  }
+
+  public ContextMeta routingRedundancy(final double routingRedundancy) {
+    return new ContextMeta(services.routingRedundancy(routingRedundancy));
+  }
+
+  public ContextMeta maxFingerFlavorNum(final int maxFingerFlavorNum) {
+    return new ContextMeta(services.maxFingerFlavorNum(maxFingerFlavorNum));
   }
 
   public Context create(final long seed) {

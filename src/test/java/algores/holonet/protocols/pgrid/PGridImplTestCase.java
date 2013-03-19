@@ -25,8 +25,8 @@ public abstract class PGridImplTestCase extends DhtProtocolTestCase {
   @Override
   protected ContextMeta createContextMeta() {
     return new ContextMeta()
-        .withRouting(new PGridRouting())
-        .withOverlay(new PGridImpl());
+        .routing(new PGridRouting())
+        .overlay(new PGridImpl());
   }
 
   //  P-Grid is now badly broken, so switching the tests offline

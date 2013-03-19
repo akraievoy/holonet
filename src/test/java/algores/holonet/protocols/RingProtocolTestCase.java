@@ -35,8 +35,8 @@ public class RingProtocolTestCase extends DhtProtocolTestCase {
   @Override
   protected ContextMeta createContextMeta() {
     return new ContextMeta()
-        .withRouting(new RingRoutingServiceImpl())
-        .withOverlay(new RingService());
+        .routing(new RingRoutingServiceImpl())
+        .overlay(new RingService());
   }
 
   public void testGeneric() throws Throwable {

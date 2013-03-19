@@ -18,18 +18,19 @@
 
 package algores.holonet.protocols;
 
+import algores.holonet.core.Progress;
+import algores.holonet.core.ProgressMeta;
 import algores.holonet.protocols.chord.ChordRoutingServiceImpl;
 import algores.holonet.protocols.chord.ChordServiceBase;
 
 public class ChordProtocolTestCase extends DhtProtocolTestCase {
   @Override
   protected ContextMeta createContextMeta() {
-    ChordRoutingServiceImpl routing = new ChordRoutingServiceImpl();
-    routing.setRedundancy(2);
-    routing.setMaxFingerFlavorNum(9);
     return new ContextMeta()
-        .withRouting(routing)
-        .withOverlay(new ChordServiceBase());
+        .routing(new ChordRoutingServiceImpl())
+        .routingRedundancy(2)
+        .maxFingerFlavorNum(9)
+        .overlay(new ChordServiceBase());
   }
 
   public void testHopCount() throws Throwable {
@@ -55,6 +56,31 @@ public class ChordProtocolTestCase extends DhtProtocolTestCase {
     testFail0(135930, 32);
     testFail0(874934, 32);
     testFail0(129874, 32);
+  }
+
+  public void testFailStabilize() throws Throwable {
+//    final int width = 100000;
+//    final Progress probing =
+//        ProgressMeta.DEFAULT.progress("probing seeds", width).start();
+//    for (int seedOffs = 0; seedOffs < width; seedOffs++) {
+//      try {
+//        testFailStabilize0(136279 + seedOffs, 8);
+//        probing.iter(seedOffs);
+//      } catch (Throwable t) {
+//        System.err.println("seed = " + (seedOffs + 136279) + ": " + t.getMessage());
+//        probing.iter(seedOffs, false);
+//      }
+//    }
+//    probing.stop();
+
+/*
+    //  FIXME those (new) tests are not passing
+    testFailStabilize0(136350, 5);
+    testFailStabilize0(136348, 5);
+    testFailStabilize0(136290, 5);
+    testFailStabilize0(136380, 5);
+*/
+
   }
 
   public void testJoinLeave() throws Throwable {

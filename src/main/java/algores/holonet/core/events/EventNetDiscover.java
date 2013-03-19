@@ -33,10 +33,15 @@ import java.util.List;
  */
 public class EventNetDiscover extends Event<EventNetDiscover> {
   private LookupService.Mode mode = LookupService.Mode.GET;
+  private float successRatio;
 
   public EventNetDiscover mode(LookupService.Mode newMode) {
     this.mode = newMode;
     return this;
+  }
+
+  public float successRatio() {
+    return successRatio;
   }
 
   public Result executeInternal(Network targetNetwork, final EntropySource eSource) {
@@ -77,11 +82,13 @@ public class EventNetDiscover extends Event<EventNetDiscover> {
       }
     }
 
+    successRatio = (float) discoverSucceeded / discoverTotal;
+
     if (discoverSucceeded != discoverTotal) {
       log.warn(
           String.format(
               "discover success ratio: %.6g",
-              (float) discoverSucceeded / discoverTotal
+              successRatio
           )
       );
     }

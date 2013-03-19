@@ -437,11 +437,12 @@ object DhtSim {
 
     val network = new Network()
     network.setEnv(env)
-    network.getFactory.setRoutingRedundancy(
-      rs.lens(p5routingRedundancy).get.get
-    )
-    network.getFactory.setMaxFingerFlavorNum(
-      rs.lens(p5maxFingerFlavorNum).get.get
+    network.setFactory(
+      network.getFactory.routingRedundancy(
+        rs.lens(p5routingRedundancy).get.get
+      ).maxFingerFlavorNum(
+        rs.lens(p5maxFingerFlavorNum).get.get
+      )
     )
 
     val testBench = new Testbench()

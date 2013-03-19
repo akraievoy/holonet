@@ -267,4 +267,31 @@ public abstract class DhtProtocolTestCase extends TestCase {
     );
     assertEquals(nodeFrom.getAddress(), intoFromRes);
   }
+
+  protected void testFailStabilize0(final long seed, final int nodes) {
+    final Context ctx = createContextMeta().routingRedundancy(1).maxFingerFlavorNum(1).create(seed);
+    final Network net = ctx.net();
+
+    net.insertNodes(nodes, ctx.getNetFailCount(), ctx.getEntropy());
+    new EventNetDiscover().execute(net, ctx.getEntropy());
+
+    final double failRatio = 0.125;
+    final Collection<Node> allNodes = new ArrayList<Node>(net.getAllNodes());
+    int failedCount = 0;
+    for (Node n : allNodes) {
+      if (ctx.getEntropy().nextDouble() > failRatio || failedCount > allNodes.size() * failRatio) {
+        continue;
+      }
+
+      net.removeNode(n, true);
+      failedCount++;
+    }
+
+    new EventNetDiscover().execute(net, ctx.getEntropy());
+
+    final EventNetDiscover secondDiscover = new EventNetDiscover();
+    secondDiscover.execute(net, ctx.getEntropy());
+    assertEquals(1.0f, secondDiscover.successRatio());
+  }
+
 }
