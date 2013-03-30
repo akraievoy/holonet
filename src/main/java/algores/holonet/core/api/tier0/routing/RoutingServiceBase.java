@@ -21,7 +21,13 @@ package algores.holonet.core.api.tier0.routing;
 import algores.holonet.capi.Event;
 import algores.holonet.core.Env;
 import algores.holonet.core.api.*;
+import algores.holonet.core.api.tier0.rpc.RpcService;
+import algores.holonet.protocols.ring.RingRoutingService;
+import algores.holonet.protocols.ring.RingRoutingServiceImpl;
+import com.google.common.base.Optional;
 import org.akraievoy.base.Die;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,6 +42,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
    * trigger maintenance after some portion of redundant routes is gathered
    */
   public static final double MAINTENANCE_THRESHOLD = 1.2;
+  protected static final Logger log = LoggerFactory.getLogger(RingRoutingServiceImpl.class);
 
   protected final RouteTable routes = new RouteTable();
 
@@ -270,20 +277,36 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
       return UPDATE_NOOP;
     }
 
+    byte result = UPDATE_NOOP;
     final Flavor flavor = flavorize(foreign);
     final RoutingEntry prev = routes.route(foreign.getAddress());
+    final Flavor oldFlavor;
     if (prev != null) {
-      if (flavor.equals(routes.flavor(prev.getAddress()))) {
+      oldFlavor = routes.flavor(prev.getAddress());
+      if (flavor.equals(oldFlavor)) {
         final RoutingEntry next = prev.update(foreign).liveness(event);
         if (next.liveness >= RoutingEntry.LIVENESS_MIN) {
           routes.update(next);
+          return UPDATE_CHANGED;
         } else {
+          if (oldFlavor.structural || flavor.structural) {
+/*
+            System.out.printf(
+                "HOUSTON: DROP DEAD ROUTE: %s -> %s (%s) %n",
+                ownRoute.getAddress().getKey(),
+                foreign.getAddress().getKey(),
+                flavor
+            );
+*/
+          }
           routes.remove(foreign.getAddress());
+          return updateOf(flavor);
         }
-        return UPDATE_CHANGED;
       } else {
         routes.remove(foreign.getAddress());
       }
+    } else {
+      oldFlavor = null;
     }
 
     final boolean isSeed = owner.getNetwork().getEnv().seedLink(ownRoute.getAddress(), foreign.getAddress());
@@ -294,11 +317,30 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
         //  or any stale
         next.liveness() < routes.minLiveness()
     ) {
-      return UPDATE_NOOP;
+      if (oldFlavor != null && oldFlavor.structural || flavor.structural) {
+/*
+        System.out.printf(
+            "HOUSTON: DROP ROUTE ON FLAVOR CHANGE: %s -> %s (%s => %s) %n",
+            ownRoute.getAddress().getKey(),
+            foreign.getAddress().getKey(),
+            oldFlavor,
+            flavor
+        );
+*/
+      }
+      return result;
     }
     routes.add(flavor, next);
 
-    return flavor.structural ? UPDATE_REFLAVOR | UPDATE_CHANGED : UPDATE_CHANGED;
+    return (byte) (result | updateOf(flavor));
+  }
+
+  private static byte updateOf(final Flavor ... flavors) {
+    boolean structural = false;
+    for (int i = 0, length = flavors.length; !structural && i < length; i++) {
+      structural = flavors[i].structural;
+    }
+    return structural ? UPDATE_REFLAVOR | UPDATE_CHANGED : UPDATE_CHANGED;
   }
 
   @Override
@@ -367,19 +409,36 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     return new RoutingStatsTuple(routeCount, routeRedundancy);
   }
 
-  public void registerCommunicationFailure(Address calleeAddress) {
+  public Optional<RoutingEntry> registerCommunicationFailure(Address calleeAddress, final boolean recover) {
     final RoutingEntry route = routes.route(calleeAddress);
     if (route == null) {
-      return;
+      final Flavor flavorDropped = flavorize(RoutingEntry.stub(calleeAddress.getKey(), calleeAddress));
+      if (flavorDropped.structural) {
+        return recoverRef(flavorDropped, calleeAddress.getKey());
+      }
+      return Optional.absent();
     }
 
-    if (!flavorize(route).structural) {
+    final Flavor flavor = flavorize(route);
+    if (!flavor.structural) {
       //  LATER decrease liveness before removal (tolerate transient link failures)
       routes.remove(route.getAddress());
     } else {
-      //  FIXME successor/predecessor may fail and should be failed-over accordingly
       routes.update(route.liveness(Event.CONNECTION_FAILED));
+      if (recover) {
+        return recoverRef(flavor, route.getAddress().getKey());
+      } else {
+/*
+        System.out.printf(
+            "HOUSTON: NOT RECOVERING ROUTE: %s -> %s (%s) %n",
+            ownRoute().getAddress().getKey(),
+            calleeAddress.getKey(),
+            flavor
+        );
+*/
+      }
     }
+    return Optional.absent();
   }
 
   protected Comparator<RoutingEntry> preferenceComparator(final Key key) {
@@ -435,6 +494,62 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
     return false;
   }
+
+  public Optional<RoutingEntry> recoverRef(
+      final Flavor refFlavor,
+      final Key targetKey
+  ) {
+    final RpcService rpc = owner.getServices().getRpc();
+
+    final List<RoutingEntry> routes = new ArrayList<RoutingEntry>(routes().routes());
+    Collections.sort(routes, distanceOrder(targetKey));
+    int triedRoutes = 0;
+    for (RoutingEntry route : routes) {
+      if (route.equals(ownRoute())) {
+        continue;
+      }
+
+      triedRoutes++;
+      final Optional<RingRoutingService> routingOpt =
+          rpc.rpcTo(route.getAddress(), RingRoutingService.class);
+
+      if (routingOpt.isPresent()) {
+        final RoutingEntry recoveredRoute = routingOpt.get().ownRoute(true);
+/*
+        System.out.printf(
+            "HOUSTON: RECOVER ROUTE ON COMMFAIL: %s -> (%s=>%s) (%s) SUCCESS %n",
+            ownRoute().getAddress().getKey(),
+            targetKey,
+            recoveredRoute.getAddress().getKey(),
+            refFlavor
+        );
+*/
+        updateOnRecover(refFlavor, recoveredRoute);
+        return Optional.of(recoveredRoute);
+      }
+
+      registerCommunicationFailure(route.getAddress(), false);
+    }
+
+    log.debug(
+        "unable to recover any {} after peer failure, tried {} routes",
+        refFlavor,
+        triedRoutes
+    );
+
+/*
+    System.out.printf(
+        "HOUSTON: RECOVER ROUTE ON COMMFAIL: %s -> %s (%s) FAILED %n",
+        ownRoute().getAddress().getKey(),
+        targetKey,
+        refFlavor
+    );
+*/
+
+    return Optional.absent();
+  }
+
+  protected abstract void updateOnRecover(Flavor refFlavor, RoutingEntry recoveredRoute);
 
   protected static class LivenessComparator implements Comparator<RoutingEntry> {
     public int compare(RoutingEntry o1, RoutingEntry o2) {

@@ -42,7 +42,7 @@ public abstract class OverlayServiceBase extends LocalServiceBase implements Ove
     if (storageOpt.isPresent()) {
       return storageOpt.get();
     } else {
-      getRouting().registerCommunicationFailure(server.getAddress());
+      getRouting().registerCommunicationFailure(server.getAddress(), true);
       throw new CommunicationException(
           String.format("%s is offline", server)
       );
@@ -59,7 +59,7 @@ public abstract class OverlayServiceBase extends LocalServiceBase implements Ove
     if (lsOpt.isPresent()) {
       return lsOpt.get();
     } else {
-      getRouting().registerCommunicationFailure(server.getAddress());
+      getRouting().registerCommunicationFailure(server.getAddress(), true);
       throw new CommunicationException(
           String.format("%s is offline", server)
       );

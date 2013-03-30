@@ -73,14 +73,10 @@ public class ChordProtocolTestCase extends DhtProtocolTestCase {
 //    }
 //    probing.stop();
 
-/*
-    //  FIXME those (new) tests are not passing
-    testFailStabilize0(136350, 5);
-    testFailStabilize0(136348, 5);
-    testFailStabilize0(136290, 5);
-    testFailStabilize0(136380, 5);
-*/
-
+    testFailStabilize0(136350, 8);
+    testFailStabilize0(136348, 8);
+    testFailStabilize0(136290, 8);
+    testFailStabilize0(136380, 8);
   }
 
   public void testJoinLeave() throws Throwable {

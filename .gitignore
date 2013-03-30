@@ -7,3 +7,4 @@ target
 *.iws
 atlassian-ide-plugin.xml
 data*.7z
+log4j.log

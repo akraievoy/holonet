@@ -25,6 +25,7 @@ import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.NodeHandle;
 import algores.holonet.core.api.Range;
+import com.google.common.base.Optional;
 
 import java.util.Comparator;
 import java.util.List;
@@ -85,7 +86,7 @@ public interface RoutingService extends RoutingState<RoutingEntry, Key> {
 
   List<RoutingEntry> replicaSet(Key key, byte maxRank);
 
-  void registerCommunicationFailure(Address calleeAddress);
+  Optional<RoutingEntry> registerCommunicationFailure(Address calleeAddress, final boolean recover);
 
   double getRedundancy();
 

@@ -82,13 +82,12 @@ public class ChordServiceBase extends RingService implements ChordService {
     Optional<RingRoutingService> succRoutingOpt =
         rpc.rpcTo(succAddr, RingRoutingService.class);
     if (!succRoutingOpt.isPresent()) {
-      ownRouting.registerCommunicationFailure(succAddr);
-
-      final RingRoutingServiceImpl.RecoverRefTuple tuple =
-          ownRouting.recoverRef("successor", owner.getKey().next());
-
-      ownRouting.setSuccessor(tuple.recovered);
-      succRoutingOpt = tuple.remoteRoutingOpt;
+      final Optional<RoutingEntry> succOpt = ownRouting.registerCommunicationFailure(succAddr, true);
+      if (succOpt.isPresent()) {
+        succRoutingOpt = rpc.rpcTo(succOpt.get(), RingRoutingService.class);
+      } else {
+        throw new CommunicationException("unable to recover successor");
+      }
     }
 
     final RoutingEntry succPred = succRoutingOpt.get().getPredecessorSafe();
@@ -99,7 +98,7 @@ public class ChordServiceBase extends RingService implements ChordService {
       if (rsOpt.isPresent()) {
         rsOpt.get().setSuccessor(ownRouting.ownRoute());
       } else {
-        ownRouting.registerCommunicationFailure(succPred.getAddress());
+        ownRouting.registerCommunicationFailure(succPred.getAddress(), false);
         throw new CommunicationException("predecessor just was alive?");
       }
     } else if (KeySpace.isInOpenLeftRange(owner, ownRouting.getSuccessor(), succPred)) {

@@ -390,7 +390,7 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
     if (pgOpt.isPresent()) {
       return pgOpt.get();
     } else {
-      getRouting().registerCommunicationFailure(getCaller());
+      getRouting().registerCommunicationFailure(getCaller(), false);
       throw new CommunicationException(
           String.format("%s is offline", target)
       );

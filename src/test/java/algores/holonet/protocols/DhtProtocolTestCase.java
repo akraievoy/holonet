@@ -287,7 +287,29 @@ public abstract class DhtProtocolTestCase extends TestCase {
       failedCount++;
     }
 
+/*
+    System.out.println("HOUSTON: STABILIZE 1 STARTED");
+*/
+    new EventNetStabilize().execute(net, ctx.getEntropy());
+/*
+    System.out.println("HOUSTON: STABILIZE 1 COMPLETED");
+*/
+
+/*
+    System.out.println("HOUSTON: DISCOVER 1 STARTED");
     new EventNetDiscover().execute(net, ctx.getEntropy());
+    System.out.println("HOUSTON: DISCOVER 1 COMPLETED");
+*/
+
+/*
+    System.out.println("HOUSTON: STABILIZE 2 STARTED");
+    new EventNetStabilize().execute(net, ctx.getEntropy());
+    System.out.println("HOUSTON: STABILIZE 2 COMPLETED");
+
+    System.out.println("HOUSTON: DISCOVER 2 STARTED");
+    new EventNetDiscover().execute(net, ctx.getEntropy());
+    System.out.println("HOUSTON: DISCOVER 2 COMPLETED");
+*/
 
     final EventNetDiscover secondDiscover = new EventNetDiscover();
     secondDiscover.execute(net, ctx.getEntropy());

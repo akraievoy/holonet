@@ -22,6 +22,7 @@ import algores.holonet.core.Node;
 import algores.holonet.core.api.Range;
 import algores.holonet.core.api.RangeBase;
 import algores.holonet.core.api.tier0.routing.RoutingDistance;
+import algores.holonet.core.api.tier0.routing.RoutingPackage;
 import algores.holonet.core.api.tier0.routing.RoutingServiceBase;
 
 import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
@@ -89,5 +90,10 @@ class PGridRouting extends RoutingServiceBase {
 
   public String toString() {
     return getPath().toString();
+  }
+
+  @Override
+  protected void updateOnRecover(final Flavor refFlavor, final RoutingEntry recoveredRoute) {
+    //  do nothing for now: the algo is broken and not covered with tests anyway
   }
 }

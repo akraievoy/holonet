@@ -39,7 +39,6 @@ public class EventNetStabilize extends Event<EventNetStabilize> {
         stabilizeSucceeded += 1;
       } catch (CommunicationException e) {
         result = handleEventFailure(e, null);
-/*
         log.debug(
             String.format(
                 "stabilize failed: %s",
@@ -47,7 +46,6 @@ public class EventNetStabilize extends Event<EventNetStabilize> {
             ),
             e
         );
-*/
       }
     }
 

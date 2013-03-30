@@ -100,7 +100,7 @@ public class RingService extends OverlayServiceBase {
     if (rsOpt.isPresent()) {
       return rsOpt.get();
     } else {
-      getRouting().registerCommunicationFailure(target.getAddress());
+      getRouting().registerCommunicationFailure(target.getAddress(), false);
       throw new CommunicationException(
           String.format("%s is offline", target)
       );
