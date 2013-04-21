@@ -25,12 +25,11 @@ import algores.holonet.core.api.Key;
 import algores.holonet.core.api.tier0.routing.RoutingServiceBase;
 import algores.holonet.core.api.tier0.storage.StorageService;
 import algores.holonet.core.api.tier1.delivery.LookupService;
-import algores.holonet.core.events.EventCompositeLoop;
-import algores.holonet.core.events.EventCompositeSequence;
 import algores.holonet.core.events.EventNetDiscover;
 import algores.holonet.core.events.EventNetStabilize;
 import algores.holonet.testbench.Metrics;
 import com.google.common.base.Optional;
+import com.google.common.base.Stopwatch;
 import junit.framework.TestCase;
 
 import java.util.ArrayList;
@@ -287,33 +286,50 @@ public abstract class DhtProtocolTestCase extends TestCase {
       failedCount++;
     }
 
-/*
-    System.out.println("HOUSTON: STABILIZE 1 STARTED");
-*/
     new EventNetStabilize().execute(net, ctx.getEntropy());
-/*
-    System.out.println("HOUSTON: STABILIZE 1 COMPLETED");
-*/
-
-/*
-    System.out.println("HOUSTON: DISCOVER 1 STARTED");
-    new EventNetDiscover().execute(net, ctx.getEntropy());
-    System.out.println("HOUSTON: DISCOVER 1 COMPLETED");
-*/
-
-/*
-    System.out.println("HOUSTON: STABILIZE 2 STARTED");
-    new EventNetStabilize().execute(net, ctx.getEntropy());
-    System.out.println("HOUSTON: STABILIZE 2 COMPLETED");
-
-    System.out.println("HOUSTON: DISCOVER 2 STARTED");
-    new EventNetDiscover().execute(net, ctx.getEntropy());
-    System.out.println("HOUSTON: DISCOVER 2 COMPLETED");
-*/
 
     final EventNetDiscover secondDiscover = new EventNetDiscover();
     secondDiscover.execute(net, ctx.getEntropy());
     assertEquals(1.0f, secondDiscover.successRatio());
+  }
+
+  protected void testFailStabilizePerf0(final long seed, final int nodes, final int dataElems, final double failRatio) {
+    final Context ctx = createContextMeta().routingRedundancy(1).maxFingerFlavorNum(1).create(seed);
+    final Network net = ctx.net();
+
+    Stopwatch sw = new Stopwatch(); sw.start();
+    net.insertNodes(nodes, ctx.getNetFailCount(), ctx.getEntropy());
+    System.out.println("insert nodes: " + sw.toString()); sw.reset(); sw.start();
+
+    for (int node = 0; node < nodes; node++) {
+      net.putDataEntries(dataElems, ctx.getEntropy());
+    }
+    System.out.println("put data entries: " + sw.toString()); sw.reset(); sw.start();
+
+    new EventNetDiscover().execute(net, ctx.getEntropy());
+    System.out.println("global discover: " + sw.toString()); sw.reset(); sw.start();
+
+    final Collection<Node> allNodes = new ArrayList<Node>(net.getAllNodes());
+    int failedCount = 0;
+    for (Node n : allNodes) {
+      if (ctx.getEntropy().nextDouble() > failRatio || failedCount > allNodes.size() * failRatio) {
+        continue;
+      }
+
+      net.removeNode(n, true);
+      failedCount++;
+    }
+    System.out.println("fail: " + sw.toString()); sw.reset(); sw.start();
+
+    new EventNetStabilize().execute(net, ctx.getEntropy());
+    System.out.println("stabilize: " + sw.toString()); sw.reset(); sw.start();
+
+    new EventNetDiscover().mode(LookupService.Mode.FIXFINGERS).execute(net, ctx.getEntropy());
+    System.out.println("fix@discover: " + sw.toString()); sw.reset(); sw.start();
+
+    final EventNetDiscover secondDiscover = new EventNetDiscover();
+    secondDiscover.execute(net, ctx.getEntropy());
+    System.out.println("get@discover: " + sw.toString()); sw.reset(); sw.start();
   }
 
 }

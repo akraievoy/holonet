@@ -79,6 +79,10 @@ public class ChordProtocolTestCase extends DhtProtocolTestCase {
     testFailStabilize0(136380, 8);
   }
 
+  public void testFailStabilizePerformance() throws Throwable {
+    testFailStabilizePerf0(136350, 256, 256, 0.5);
+  }
+
   public void testJoinLeave() throws Throwable {
 /*
     if (true) {
