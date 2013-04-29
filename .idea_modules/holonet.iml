@@ -5,7 +5,11 @@
       <configuration>
         <option name="compilerLibraryLevel" value="Project" />
         <option name="compilerLibraryName" value="SBT: scala:2.9.2" />
+        <option name="deprecationWarnings" value="true" />
+        <option name="explainTypeErrors" value="true" />
         <option name="fsc" value="true" />
+        <option name="languageLevel" value="Scala 2.9" />
+        <option name="uncheckedWarnings" value="true" />
       </configuration>
     </facet>
   </component>
@@ -25,24 +29,15 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="SBT: org.scala-lang:scala-library:2.9.2" level="project" />
-    <orderEntry type="library" name="SBT: org.akraievoy:couch:1.3.11" level="project" />
-    <orderEntry type="library" name="SBT: com.google.code.findbugs:jsr305:1.3.9" level="project" />
-    <orderEntry type="library" name="SBT: org.slf4j:slf4j-api:1.4.3" level="project" />
-    <orderEntry type="library" name="SBT: org.codehaus.jackson:jackson-mapper-asl:1.8.8" level="project" />
-    <orderEntry type="library" name="SBT: org.codehaus.jackson:jackson-core-asl:1.8.8" level="project" />
     <orderEntry type="library" name="SBT: org.slf4j:jcl104-over-slf4j:1.4.3" level="project" />
     <orderEntry type="library" name="SBT: org.slf4j:slf4j-log4j12:1.4.3" level="project" />
+    <orderEntry type="library" name="SBT: org.slf4j:slf4j-api:1.4.3" level="project" />
     <orderEntry type="library" name="SBT: log4j:log4j:1.2.13" level="project" />
     <orderEntry type="library" name="SBT: com.google.guava:guava:11.0.2" level="project" />
-    <orderEntry type="library" name="SBT: commons-dbutils:commons-dbutils:1.1" level="project" />
-    <orderEntry type="library" name="SBT: com.h2database:h2:1.1.117" level="project" />
-    <orderEntry type="library" name="SBT: org.akraievoy:base-runner-spring:1.3.3" level="project" />
-    <orderEntry type="library" name="SBT: org.springframework:spring-context:2.5.6" level="project" />
-    <orderEntry type="library" name="SBT: aopalliance:aopalliance:1.0" level="project" />
-    <orderEntry type="library" name="SBT: commons-logging:commons-logging:1.1.1" level="project" />
-    <orderEntry type="library" name="SBT: org.springframework:spring-beans:2.5.6" level="project" />
-    <orderEntry type="library" name="SBT: org.springframework:spring-core:2.5.6" level="project" />
+    <orderEntry type="library" name="SBT: com.google.code.findbugs:jsr305:1.3.9" level="project" />
     <orderEntry type="library" name="SBT: org.akraievoy:base:1.3.1" level="project" />
+    <orderEntry type="library" name="SBT: org.codehaus.jackson:jackson-mapper-asl:1.4.3" level="project" />
+    <orderEntry type="library" name="SBT: org.codehaus.jackson:jackson-core-asl:1.4.3" level="project" />
     <orderEntry type="library" name="SBT: net.sf.trove4j:trove4j:2.0.2" level="project" />
     <orderEntry type="library" name="SBT: org.netlib:netlib-java:0.9.1" level="project" />
     <orderEntry type="library" name="SBT: org.netlib:arpack-combo:0.1" level="project" />

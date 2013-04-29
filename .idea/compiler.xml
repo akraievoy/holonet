@@ -38,5 +38,8 @@
       </profile>
     </annotationProcessing>
   </component>
+  <component name="SbtSettings">
+    <option name="sbtLauncherJarPath" value="/usr/share/sbt/0.11.3/sbt-launch.jar" />
+  </component>
 </project>
 
