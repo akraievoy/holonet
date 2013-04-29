@@ -35,6 +35,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
+import static algores.holonet.core.api.tier1.delivery.DeliveryPackage.*;
 
 public class Network {
 
@@ -344,7 +345,7 @@ public class Network {
       final List<RoutingEntry> route,
       final Key key,
       final Optional<Address> actualTarget,
-      final LookupService.RecursiveLookupState.StatsTuple stats,
+      final StatsTuple stats,
       final boolean success
   ) {
     final double latency = getElapsedTime() - lookupStartTime;

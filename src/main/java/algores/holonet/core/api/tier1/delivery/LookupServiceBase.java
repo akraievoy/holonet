@@ -30,6 +30,7 @@ import com.google.common.base.Optional;
 import java.util.*;
 
 import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
+import static algores.holonet.core.api.tier1.delivery.DeliveryPackage.*;
 
 public class LookupServiceBase extends LocalServiceBase implements LookupService {
   public LookupServiceBase() {
@@ -117,6 +118,8 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
 
     final SortedMap<Address, Traversal> localTraversed =
         new TreeMap<Address, Traversal>(state.traversed);
+    final SortedMap<Address, Traversal> localFailed =
+        new TreeMap<Address, Traversal>(state.failed);
     final SortedMap<Address, Traversal> localPending =
         new TreeMap<Address, Traversal>(state.pending);
     final List<RoutingEntry> localRoutes =
@@ -140,7 +143,7 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     for (RoutingEntry re : localRoutes) {
       localPending.put(
           re.getAddress(),
-          new Traversal(re, state.hopCount, -1, Event.DISCOVERED)
+          new Traversal(re, state.hopCount, -1)
       );
     }
     int liftCount = 0;
@@ -183,12 +186,14 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
                       replicaOpt,
                       remoteReplicaPath,
                       localTraversed,
+                      localFailed,
                       localPending,
                       state.hopCount + 1,
                       routing.routingDistance(route, key)
                   )
               );
           localTraversed.putAll(remoteState.traversed);
+          localFailed.putAll(remoteState.failed);
           //  remote may invoke some fraction of our local queue,
           //    so we have to renew localPending completely
           localPending.clear();
@@ -202,16 +207,16 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
             //    so we also have to analyse the localRoutes
             for (Iterator<RoutingEntry> rIt = localRoutes.iterator(); rIt.hasNext(); ) {
               final Address address = rIt.next().getAddress();
-              if (localTraversed.containsKey(address)) {
+              if (localTraversed.containsKey(address) || localFailed.containsKey(address)) {
                 rIt.remove();
               }
             }
           }
         } else {
           //  mark failed
-          localTraversed.put(
+          localFailed.put(
               route.getAddress(),
-              localPending.remove(route.getAddress()).failedAtHop(state.hopCount)
+              localPending.remove(route.getAddress()).calledAtHop(state.hopCount)
           );
         }
       } catch (StackOverflowError soe) {
@@ -225,6 +230,7 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
             replicaOpt,
             replicaPath,
             localTraversed,
+            localFailed,
             localPending,
             state.hopCount,
             state.hopDistance
@@ -248,12 +254,14 @@ public class LookupServiceBase extends LocalServiceBase implements LookupService
     final RoutingService.RoutingStatsTuple statsBefore =
         routing.getStats();
 
-    for (Traversal t : state.traversed.values()) {
-        routing.update(t.event, t.re);
-    }
-    for (Traversal t : state.pending.values()) {
-        routing.update(t.event, t.re);
-    }
+    final Map<Event, Iterable<RoutingEntry>> eventToHandles =
+        new TreeMap<Event, Iterable<RoutingEntry>>();
+    eventToHandles.put(Event.HEART_BEAT, mapToRoutes(state.traversed.values()));
+    eventToHandles.put(Event.CONNECTION_FAILED, mapToRoutes(state.failed.values()));
+    eventToHandles.put(Event.DISCOVERED, mapToRoutes(state.pending.values()));
+
+    routing.update(eventToHandles);
+
     final RoutingService.RoutingStatsTuple statsAfter =
         routing.getStats();
     getOwner().getNetwork().getInterceptor().modeToLookups(mode).registerRoutingStats(

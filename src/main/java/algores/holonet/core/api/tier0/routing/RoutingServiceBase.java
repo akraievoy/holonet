@@ -42,6 +42,16 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
    * trigger maintenance after some portion of redundant routes is gathered
    */
   public static final double MAINTENANCE_THRESHOLD = 1.2;
+
+  public static final Event[] EVENT_PROCESS_PRIRORITY =
+      new Event[]{
+          Event.CONNECTION_FAILED,
+          Event.LEFT,
+          Event.HEART_BEAT,
+          Event.JOINED,
+          Event.DISCOVERED
+      };
+
   protected static final Logger log = LoggerFactory.getLogger(RingRoutingServiceImpl.class);
 
   protected final RouteTable routes = new RouteTable();
@@ -220,7 +230,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
 
   @Deprecated
   public void update(RoutingEntry handle, boolean joined) {
-    update(joined ? Event.JOINED : Event.LEFT, handle);
+    update(eventToRoute(joined ? Event.JOINED : Event.LEFT, handle));
   }
 
   @Deprecated
@@ -255,10 +265,16 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     return range;
   }
 
-  public void update(Event event, RoutingEntry... entries) {
+  public void update(Map<Event, Iterable<RoutingEntry>> eventToRoutes) {
     byte updateStatus = UPDATE_NOOP;
-    for (RoutingEntry entry : entries) {
-      updateStatus |= update0(entry, event);
+    for (Event e : EVENT_PROCESS_PRIRORITY) {
+      final Iterable<RoutingEntry> routes = eventToRoutes.get(e);
+      if (routes == null) {
+        continue;
+      }
+      for (RoutingEntry entry : routes) {
+        updateStatus |= update0(entry, e);
+      }
     }
 
     if ((updateStatus & UPDATE_REFLAVOR) > 0 || requiresCleanup()) {
@@ -383,12 +399,12 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     }
 
     final boolean newFlavor = sameFlavorRoutes == 0;
-    if (routes.flavorCount(true, true, false) + (newFlavor && !addedFlavor.structural ? 0 : 1) > maxFingerFlavorNum) {
+    if (routes.flavorCount(true, true, false) + (newFlavor && !addedFlavor.structural ? 1 : 0) > maxFingerFlavorNum) {
       return true;
     }
 
     final double trigger = (routes.flavorCount() + (newFlavor ? 1 : 0)) * redundancy * MAINTENANCE_THRESHOLD;
-    return routes.size() > trigger;
+    return (routes.size() + 1) > trigger;
   }
 
   protected boolean requiresCleanup() {

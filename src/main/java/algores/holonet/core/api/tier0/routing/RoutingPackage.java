@@ -25,7 +25,23 @@ import org.akraievoy.base.Die;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class RoutingPackage {
+public final class RoutingPackage {
+
+  private RoutingPackage() { /* sealed */ }
+
+  public static Map<Event, Iterable<RoutingEntry>> eventToRoute(
+      final Event event,
+      final RoutingEntry route
+  ) {
+    return eventToRoutes(event, Collections.singletonList(route));
+  }
+
+  public static Map<Event, Iterable<RoutingEntry>> eventToRoutes(
+      final Event event,
+      final Iterable<RoutingEntry> routes
+  ) {
+    return Collections.singletonMap(event, routes);
+  }
 
   public static final class Flavor implements Comparable<Flavor> {
     public final String name;

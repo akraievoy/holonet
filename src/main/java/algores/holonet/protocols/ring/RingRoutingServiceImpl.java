@@ -86,7 +86,7 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
     Die.ifNull("successor", successor);
     this.successor = successor;
 
-    update(Event.DISCOVERED, successor);
+    update(eventToRoute(Event.DISCOVERED, successor));
   }
 
   public RoutingEntry getPredecessor() {
@@ -101,7 +101,7 @@ public class RingRoutingServiceImpl extends RoutingServiceBase implements RingRo
     final Range newRange = new RangeBase(predecessor.getKey().next(), ownRoute.getKey().next());
     final RoutingEntry newOwnRoute = ownRoute.ranges(newRange);
 
-    update(Event.DISCOVERED, predecessor);
+    update(eventToRoute(Event.DISCOVERED, predecessor));
     routes.update(newOwnRoute);
     return newOwnRoute;
   }

@@ -139,7 +139,7 @@ public class ChordServiceBase extends RingService implements ChordService {
         }
 
         final RoutingEntry entry = rpcToRouting(address).ownRoute();
-        getRouting().update(Event.HEART_BEAT, entry);
+        getRouting().update(eventToRoute(Event.HEART_BEAT, entry));
       } catch (CommunicationException nfe) {
         //	should be ignored...
       }

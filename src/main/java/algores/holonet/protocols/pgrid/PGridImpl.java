@@ -70,7 +70,8 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
       InviteResponse response = rpc.invite(path, keys);
 
       PGridRouting result = getRouting();
-      result.update(Event.HEART_BEAT, response.getOwnRoute());
+
+      result.update(eventToRoute(Event.HEART_BEAT, response.getOwnRoute()));
 
       if (response.getDelegated() == null || replicas.contains(response.getDelegated().getAddress())) {
         break;
@@ -284,7 +285,7 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
     storage.putAll(rData.getData());
     //	TODO discern caller own route from the table-stored routes (live rpc and indirect discovery)
     final Collection<RoutingEntry> routes = rData.getRoutes();
-    routingLocal.update(Event.DISCOVERED, routes.toArray(new RoutingEntry[routes.size()]));
+    routingLocal.update(eventToRoutes(Event.DISCOVERED, routes));
   }
 
   /**
@@ -300,7 +301,7 @@ public class PGridImpl extends OverlayServiceBase implements PGrid {
     PGridRouting routingLocal = getRouting();
     routingLocal.setPath(newLocalPath);
     final Collection<RoutingEntry> sDataRoutes = sData.getRoutes();
-    routingLocal.update(Event.DISCOVERED, sDataRoutes.toArray(new RoutingEntry[sDataRoutes.size()]));
+    routingLocal.update(eventToRoutes(Event.DISCOVERED, sDataRoutes));
 
     sData.getData().clear();
     sData.getRoutes().clear();

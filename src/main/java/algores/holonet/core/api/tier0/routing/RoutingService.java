@@ -29,6 +29,7 @@ import com.google.common.base.Optional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
@@ -39,7 +40,7 @@ import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
 public interface RoutingService extends RoutingState<RoutingEntry, Key> {
   Flavor FLAVOR_OWNER = new Flavor("ownroute", true);
 
-  void update(Event event, RoutingEntry... routingData);
+  void update(Map<Event, Iterable<RoutingEntry>> eventToRoutes);
 
   RoutingPackage.RoutingEntry ownRoute() throws CommunicationException;
 

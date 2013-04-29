@@ -21,6 +21,7 @@ package algores.holonet.capi;
 import algores.holonet.core.api.NodeHandle;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -88,18 +89,17 @@ public interface RoutingState<NH extends NodeHandle, K extends Key> {
    *
    * @param handle node in question
    * @param joined if <code>true</code> - node joined the net, or left if <code>false</code>
-   * @deprecated in favor of {@link RoutingState#update(algores.holonet.core.api.NodeHandle, Event)}
+   * @deprecated in favor of {@link RoutingState#update(java.util.Map)}
    */
   void update(NH handle, boolean joined);
 
   /**
-   * Invoked to inform the application that node handles has either joined or left the neighbor set of the local
+   * Invoked to inform the application that node handles have either joined or left the neighbor set of the local
    * node as that set would be returned by the neighborSet call.
    *
-   * @param event   respective event related to this node
-   * @param handles nodes in question
+   * @param eventToHandles   mapping respective event to a set of related NodeHandles.
    */
-  void update(Event event, NH... handles);
+  void update(Map<Event, Iterable<NH>> eventToHandles);
 
   /**
    * Provides information about ranges of keys for which the node <code>handle</code> is currently a <i>r</i>-root.
