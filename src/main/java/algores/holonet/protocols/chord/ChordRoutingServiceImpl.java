@@ -19,6 +19,7 @@
 package algores.holonet.protocols.chord;
 
 import algores.holonet.core.api.Key;
+import algores.holonet.core.api.KeySpace;
 import algores.holonet.protocols.ring.RingRoutingServiceImpl;
 
 import java.math.BigInteger;
@@ -64,8 +65,7 @@ public class ChordRoutingServiceImpl extends RingRoutingServiceImpl implements C
 
     final Key fromKey = getOwner().getKey();
     final Key toKey = entry.getNodeId();
-    final BigInteger distance = fromKey.distance(toKey);
-    final Flavor flavor = FLAVOR_FINGER.get(distance.bitLength());
+    final Flavor flavor = FLAVOR_FINGER.get(Key.BITNESS - KeySpace.getCommonPrefixLen(fromKey, toKey, Key.BITNESS));
 
     return flavor;
   }

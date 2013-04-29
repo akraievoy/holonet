@@ -48,14 +48,12 @@ public class RangeBase implements Range {
     this.lKey = lKey;
     this.rKey = rKey;
     this.rank = rank;
-    this.width = lKey.distance(rKey).abs();
   }
 
   public RangeBase(Key lKey, int prefixBits) {
     final BigInteger mask = BigInteger.ONE.shiftLeft(KeySpace.prefix2regular(prefixBits) + 1).subtract(BigInteger.ONE);
     this.lKey = new KeyBase(lKey.toNumber().andNot(mask));
     this.rKey = this.lKey.next(Key.BITNESS - prefixBits);
-    this.width = lKey.distance(rKey).abs();
   }
 
   /**
@@ -224,7 +222,10 @@ public class RangeBase implements Range {
   }
 
   @Override
-  public BigInteger width() {
+  public synchronized BigInteger width() {
+    if (width == null) {
+      width = lKey.distance(rKey).abs();
+    }
     return width;
   }
 }
