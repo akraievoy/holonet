@@ -313,7 +313,7 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
     final RoutingEntry next = foreign.liveness(event);
     if (
         //  filtering out redundant non-seed fingers
-        !flavor.structural && !isSeed && routes.size(flavor) > Math.floor(redundancy) ||
+        !flavor.structural && !isSeed && requiresCleanup(flavor) ||
         //  or any stale
         next.liveness() < routes.minLiveness()
     ) {
@@ -374,6 +374,21 @@ public abstract class RoutingServiceBase extends LocalServiceBase implements Rou
         }
       }
     }
+  }
+
+  protected boolean requiresCleanup(final Flavor addedFlavor) {
+    final int sameFlavorRoutes = routes.size(addedFlavor);
+    if (sameFlavorRoutes > Math.floor(redundancy)) {
+      return true;
+    }
+
+    final boolean newFlavor = sameFlavorRoutes == 0;
+    if (routes.flavorCount(true, true, false) + (newFlavor && !addedFlavor.structural ? 0 : 1) > maxFingerFlavorNum) {
+      return true;
+    }
+
+    final double trigger = (routes.flavorCount() + (newFlavor ? 1 : 0)) * redundancy * MAINTENANCE_THRESHOLD;
+    return routes.size() > trigger;
   }
 
   protected boolean requiresCleanup() {

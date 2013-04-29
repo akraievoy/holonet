@@ -18,8 +18,6 @@
 
 package algores.holonet.protocols;
 
-import algores.holonet.core.Progress;
-import algores.holonet.core.ProgressMeta;
 import algores.holonet.protocols.chord.ChordRoutingServiceImpl;
 import algores.holonet.protocols.chord.ChordServiceBase;
 
@@ -80,7 +78,8 @@ public class ChordProtocolTestCase extends DhtProtocolTestCase {
   }
 
   public void testFailStabilizePerformance() throws Throwable {
-    testFailStabilizePerf0(136350, 256, 256, 0.5);
+    Thread.sleep(20000);
+    testFailStabilizePerf0(136350, 32, 32, 0.5);
   }
 
   public void testJoinLeave() throws Throwable {
