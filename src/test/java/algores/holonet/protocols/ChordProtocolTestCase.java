@@ -78,7 +78,9 @@ public class ChordProtocolTestCase extends DhtProtocolTestCase {
   }
 
   public void testFailStabilizePerformance() throws Throwable {
+/*
     Thread.sleep(20000);
+*/
     testFailStabilizePerf0(136350, 256, 256, 0.5);
   }
 

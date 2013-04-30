@@ -80,7 +80,7 @@ public abstract class Event<SelfType extends Event<?>> {
 
     if (reporting) {
       if (anException != null) {
-        log.info(aMessage, anException);
+        log.debug(aMessage, anException);
       } else {
         log.info("{}", aMessage);
       }

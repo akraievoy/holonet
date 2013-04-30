@@ -20,6 +20,8 @@ package algores.holonet.core.api.tier0.rpc;
 
 import algores.holonet.core.Node;
 import org.akraievoy.base.Die;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -33,6 +35,8 @@ import java.lang.reflect.UndeclaredThrowableException;
  * Main idea is to generate a dynamic proxy that will redirect method calls to an instance of this class.
  */
 public class RemotingHandler implements InvocationHandler {
+  private static final Logger log = LoggerFactory.getLogger(RemotingHandler.class);
+
   final Context ctx;
 
   public RemotingHandler(Context ctx) {
@@ -65,7 +69,7 @@ public class RemotingHandler implements InvocationHandler {
       try {
         ctx.onCallCompleted();
       } catch (Exception e) {
-        e.printStackTrace();
+        log.debug("unusual exception on ctx.onCallCompleted()", e);
       }
     }
   }

@@ -210,7 +210,7 @@ public class EnumExperiment implements Runnable {
         mseg.run();
         eg = mseg.getTarget().getValue();
       } catch (Throwable throwable) {
-        throwable.printStackTrace();
+        log.debug("eigenValue solver thrown", throwable);
         eg = 0;
       }
       for (int ei = 0; ei < lambdas.length; ei++) {

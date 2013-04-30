@@ -24,6 +24,7 @@ import java.io.{ByteArrayInputStream, StringWriter, PrintWriter, File}
 import org.slf4j.LoggerFactory
 import org.akraievoy.cnet.net.vo.{EdgeData, VertexData}
 import java.text.{NumberFormat, DecimalFormat}
+import org.akraievoy.holonet.exp.space.ParamSpaceNav
 
 object Registry extends RegistryData with Exports with ParamSpaceNav {
   private val log = LoggerFactory.getLogger(classOf[RegistryData])
@@ -156,7 +157,7 @@ object Registry extends RegistryData with Exports with ParamSpaceNav {
           expStore,
           {
             runStore =>
-              log.debug(
+              log.info(
                 "spacePos = {}",
                 ParamPos.seqToString(runStore.spacePos, requiredIndexes)
               )

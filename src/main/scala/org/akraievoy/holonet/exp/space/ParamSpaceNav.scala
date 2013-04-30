@@ -16,15 +16,15 @@
  along with Holonet. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.akraievoy.holonet.exp
+package org.akraievoy.holonet.exp.space
 
-import store.{RunStore, ExperimentStore}
+import org.akraievoy.holonet.exp.{ParamPos, Param, Registry}
+import org.akraievoy.holonet.exp.store.{RunStore, ExperimentStore}
+import org.slf4j.LoggerFactory
+import java.util.Date
 
 trait ParamSpaceNav {
-  private val emptyAxis = Map(
-    false -> Seq.empty[Param],
-    true -> Seq.empty[Param]
-  )
+  private val log = LoggerFactory.getLogger(classOf[ParamSpaceNav])
 
   def spaceAxis(
     subchain: Seq[Registry.ExpConfPair],
@@ -33,22 +33,16 @@ trait ParamSpaceNav {
     val axisMap = subchain.zipWithIndex.filter {
       case (expPair, index) =>
         requiredIndexes.contains(index)
-    }.foldLeft(emptyAxis) {
-      case (axisMap, ((exp, conf), index)) =>
+    }.foldLeft(PAR_AXIS_EMPTY) {
+      case (axisMap0, ((exp, conf), index)) =>
         val curMap = conf.spacePosAxis(index < subchain.length - 1)
-        axisMap.map {
+        axisMap0.map {
           case (key, valueSeq) =>
             (key, valueSeq ++ curMap.getOrElse(key, Seq.empty))
         }
     }
     axisMap(false) ++ axisMap(true)
   }
-
-
-  private val emptyParamSpace = Map(
-    true -> Config.EMPTY_SPACE,
-    false -> Config.EMPTY_SPACE
-  )
 
   private def spacePosStreams(
     subchain: Seq[Registry.ExpConfPair],
@@ -63,7 +57,7 @@ trait ParamSpaceNav {
           index < subchain.length - 1,
           index
         )
-    }.foldLeft(emptyParamSpace) {
+    }.foldLeft(PAR_SPACE_EMPTY) {
       case (mapChained, mapCurrent) =>
         mapChained.map {
           case (parallelFlag, paramPosSeq) =>
@@ -73,7 +67,7 @@ trait ParamSpaceNav {
                   chainedPoses <- paramPosSeq;
                   currentPoses <- mapCurrent.getOrElse(
                     parallelFlag,
-                    Config.EMPTY_SPACE
+                    SPACE_EMPTY
                   )
                 ) yield {
                   val posSeq = chainedPoses ++ currentPoses
@@ -84,6 +78,19 @@ trait ParamSpaceNav {
     }
   }
 
+  private def spacePosCount(
+    subchain: Seq[Registry.ExpConfPair],
+    requiredIndexes: Set[Int]
+  ): Long = {
+    subchain.zipWithIndex.filter {
+      case (expPair, index) =>
+        requiredIndexes.contains(index)
+    }.map {
+      case ((exp, conf), index) =>
+        conf.spacePosCount(index < subchain.length - 1, index)
+    }.product
+  }
+
   def spacePosMap[T](
     subchain: Seq[Registry.ExpConfPair],
     requiredIndexes: Set[Int],
@@ -91,15 +98,31 @@ trait ParamSpaceNav {
     visitFun: RunStore => T,
     parallel: Boolean = true
   ): IndexedSeq[T] = {
+    val posCount = spacePosCount(subchain, requiredIndexes)
     val posStreams = spacePosStreams(subchain, requiredIndexes)
+    val mapStart = System.currentTimeMillis
+    var posMapped = 0L
     posStreams.getOrElse(
       false,
-      Config.EMPTY_SPACE
+      SPACE_EMPTY
     ).flatMap {
       sequentialPos =>
-        val stream = posStreams.getOrElse(true, Config.EMPTY_SPACE)
+        val stream = posStreams.getOrElse(true, SPACE_EMPTY)
         def visitFun0(parallelPos: Seq[ParamPos]) = {
-          visitFun(RunStore(expStore, sequentialPos ++ parallelPos))
+          try {
+            visitFun(RunStore(expStore, sequentialPos ++ parallelPos))
+          } finally {
+            posMapped += 1
+            val mapNow = System.currentTimeMillis
+            val progress = (0.0 + posMapped) / posCount
+            val spent = mapNow - mapStart
+            val left = math.ceil(spent / progress).toLong
+            if (math.max(spent, left) > 30 * 1000) {
+              val eta = mapStart + left
+              log.warn("%.6g complete --- ETA %s".format(progress, new Date(eta)))
+            }
+
+          }
         }
         if (parallel) {
           stream.par.map(visitFun0)

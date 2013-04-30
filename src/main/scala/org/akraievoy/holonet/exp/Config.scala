@@ -18,6 +18,8 @@
 
 package org.akraievoy.holonet.exp
 
+import org.akraievoy.holonet.exp.space._
+
 case class Config(
   name: String,
   desc: String = "",
@@ -43,7 +45,7 @@ case class Config(
     }
 
     posSeqMap.mapValues{
-      posSeq => posSeq.foldLeft(Config.EMPTY_SPACE) {
+      posSeq => posSeq.foldLeft(SPACE_EMPTY) {
       (seqSeq, seq) =>
         for (
           posSeq <- seqSeq.toStream;
@@ -52,8 +54,17 @@ case class Config(
           posSeq :+ pos
         }
       }
-    }.withDefaultValue(Config.EMPTY_SPACE)
+    }.withDefaultValue(SPACE_EMPTY)
 
+  }
+
+  def spacePosCount(
+    chained: Boolean,
+    expIndex: Int
+  ): Long = {
+    params.values.map{
+      _.toPosSeq(chained, expIndex).size.asInstanceOf[Long]
+    }.product
   }
 
   def withDefault(dflt: Config) = {
@@ -121,6 +132,4 @@ object Config {
       )
     )
   }
-
-  val EMPTY_SPACE = Seq(Seq.empty[ParamPos]).toStream
 }

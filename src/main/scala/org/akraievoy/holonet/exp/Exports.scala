@@ -7,6 +7,7 @@ import java.io._
 import com.google.common.io.ByteStreams
 import scala.Some
 import org.slf4j.LoggerFactory
+import org.akraievoy.holonet.exp.space.ParamSpaceNav
 
 trait Exports extends ParamSpaceNav {
   private val log = LoggerFactory.getLogger(classOf[RegistryData])
