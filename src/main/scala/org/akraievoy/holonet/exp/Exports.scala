@@ -8,6 +8,7 @@ import com.google.common.io.ByteStreams
 import scala.Some
 import org.slf4j.LoggerFactory
 import org.akraievoy.holonet.exp.space.ParamSpaceNav
+import scala.collection.BitSet
 
 trait Exports extends ParamSpaceNav {
   private val log = LoggerFactory.getLogger(classOf[RegistryData])
@@ -15,7 +16,7 @@ trait Exports extends ParamSpaceNav {
   def exportPrimitives(
     expStore: ExperimentStore,
     subchain: Seq[Registry.ExpConfPair],
-    requiredIndexes: Set[Int],
+    requiredIndexes: BitSet,
     fs: FileSystem,
     primitives: Seq[ParamName[_]],
     exportName: String = "primitives"
@@ -108,7 +109,7 @@ trait Exports extends ParamSpaceNav {
   def exportGraphvis(
     expStore: ExperimentStore,
     subchain: Seq[Registry.ExpConfPair],
-    requiredIndexes: Set[Int],
+    requiredIndexes: BitSet,
     fs: FileSystem
   ) {
     val graphvisExecutable = new File(fullPathToDot).isFile
@@ -347,7 +348,7 @@ trait Exports extends ParamSpaceNav {
   def exportStore(
     expStore: ExperimentStore,
     subchain: Seq[Registry.ExpConfPair],
-    requiredIndexes: Set[Int],
+    requiredIndexes: BitSet,
     fs: FileSystem
   ) = {
     expStore.experiment.storeExports.foreach{

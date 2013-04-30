@@ -18,6 +18,8 @@
 
 package org.akraievoy.holonet.exp
 
+import scala.collection.BitSet
+
 /**
  * Parameter position within an experiment space.
  *
@@ -67,7 +69,12 @@ case class ParamPos(
 }
 
 object ParamPos {
-  def pos(spacePos: Seq[ParamPos], requiredExpIndexes: Set[Int]): Int = {
+  /**
+   * @param spacePos
+   * @param requiredExpIndexes
+   * @return
+   */
+  def pos(spacePos: Seq[ParamPos], requiredExpIndexes: BitSet): Int = {
     spacePos.filter {
       pPos => requiredExpIndexes.contains(pPos.expIndex)
     }.sorted.foldRight((0, 1)){
@@ -90,7 +97,7 @@ object ParamPos {
 
   def seqToString(
     spacePos: Seq[ParamPos],
-    requiredIndexes: Set[Int],
+    requiredIndexes: BitSet,
     filterFixed: Boolean = true
   ) = {
     val spacePosFiltered = if (filterFixed) {

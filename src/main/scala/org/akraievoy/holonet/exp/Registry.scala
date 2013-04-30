@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory
 import org.akraievoy.cnet.net.vo.{EdgeData, VertexData}
 import java.text.{NumberFormat, DecimalFormat}
 import org.akraievoy.holonet.exp.space.ParamSpaceNav
+import scala.collection.BitSet
 
 object Registry extends RegistryData with Exports with ParamSpaceNav {
   private val log = LoggerFactory.getLogger(classOf[RegistryData])
@@ -96,10 +97,10 @@ object Registry extends RegistryData with Exports with ParamSpaceNav {
     )
   }
 
-  private def indexesOfRequired(pairs: Seq[ExpConfPair]): Set[Int] = {
+  private def indexesOfRequired(pairs: Seq[ExpConfPair]): BitSet = {
     val pairsIndexed = pairs.zipWithIndex
 
-    def require(queue: Set[Int], required: Set[Int]): Set[Int] = {
+    def require(queue: BitSet, required: BitSet): BitSet = {
       val newQueue = queue.flatMap{
         qElem =>
           val pairQ = pairs(qElem)
@@ -117,7 +118,7 @@ object Registry extends RegistryData with Exports with ParamSpaceNav {
       }
     }
 
-    require(Set(pairs.size - 1), Set.empty[Int])
+    require(BitSet(pairs.size - 1), BitSet.empty)
   }
 
   private def execute(expPairSeq: Seq[ExpConfPair]) = {

@@ -22,13 +22,14 @@ import org.akraievoy.holonet.exp.{ParamPos, Param, Registry}
 import org.akraievoy.holonet.exp.store.{RunStore, ExperimentStore}
 import org.slf4j.LoggerFactory
 import java.util.Date
+import scala.collection.BitSet
 
 trait ParamSpaceNav {
   private val log = LoggerFactory.getLogger(classOf[ParamSpaceNav])
 
   def spaceAxis(
     subchain: Seq[Registry.ExpConfPair],
-    requiredIndexes: Set[Int]
+    requiredIndexes: BitSet
   ): Seq[Param] = {
     val axisMap = subchain.zipWithIndex.filter {
       case (expPair, index) =>
@@ -46,7 +47,7 @@ trait ParamSpaceNav {
 
   private def spacePosStreams(
     subchain: Seq[Registry.ExpConfPair],
-    requiredIndexes: Set[Int]
+    requiredIndexes: BitSet
   ): Map[Boolean, Stream[Seq[ParamPos]]] = {
     subchain.zipWithIndex.filter {
       case (expPair, index) =>
@@ -80,7 +81,7 @@ trait ParamSpaceNav {
 
   private def spacePosCount(
     subchain: Seq[Registry.ExpConfPair],
-    requiredIndexes: Set[Int]
+    requiredIndexes: BitSet
   ): Long = {
     subchain.zipWithIndex.filter {
       case (expPair, index) =>
@@ -93,7 +94,7 @@ trait ParamSpaceNav {
 
   def spacePosMap[T](
     subchain: Seq[Registry.ExpConfPair],
-    requiredIndexes: Set[Int],
+    requiredIndexes: BitSet,
     expStore: ExperimentStore,
     visitFun: RunStore => T,
     parallel: Boolean = true

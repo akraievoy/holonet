@@ -24,6 +24,7 @@ import org.akraievoy.cnet.net.vo._
 import org.akraievoy.cnet.net.vo.EdgeDataFactory.EdgeDataConstant
 import org.akraievoy.holonet.exp.{ParamName, Experiment, Config, ParamPos}
 import java.util.concurrent.atomic.AtomicBoolean
+import scala.collection.BitSet
 
 class ExperimentStore(
   val fs: FileSystem,
@@ -31,7 +32,7 @@ class ExperimentStore(
   val experiment: Experiment,
   val config: Config,
   val chain: Seq[ExperimentStore],
-  val requiredIndexes: Set[Int]
+  val requiredIndexes: BitSet
 ) {
 
   private val schemaMonitor = new Object()
