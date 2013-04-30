@@ -70,8 +70,8 @@ object ParamPos {
   def pos(spacePos: Seq[ParamPos], requiredExpIndexes: Set[Int]): Int = {
     spacePos.filter {
       pPos => requiredExpIndexes.contains(pPos.expIndex)
-    }.sorted.reverse.foldLeft((0, 1)){
-      case ((expPrevPos, expPrevTotal), paramPos) =>
+    }.sorted.foldRight((0, 1)){
+      case (paramPos, (expPrevPos, expPrevTotal)) =>
         combine(expPrevPos, expPrevTotal, paramPos.pos, paramPos.total)
     }._1
   }

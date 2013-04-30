@@ -23,6 +23,7 @@ import scalaz.Lens
 import org.akraievoy.cnet.net.vo._
 import org.akraievoy.cnet.net.vo.EdgeDataFactory.EdgeDataConstant
 import org.akraievoy.holonet.exp.{ParamName, Experiment, Config, ParamPos}
+import java.util.concurrent.atomic.AtomicBoolean
 
 class ExperimentStore(
   val fs: FileSystem,
@@ -32,16 +33,24 @@ class ExperimentStore(
   val chain: Seq[ExperimentStore],
   val requiredIndexes: Set[Int]
 ) {
-  private var schema: Map[String, String] = Map.empty
-  private var openStreams: Map[File, Closeable] = Map.empty
-  //  TODO in-memory format should be simplified
-  private var cachedCSV: Map[String, Map[String, Seq[Seq[String]]]] = Map.empty
-  private var cachedBinaries: Map[String, Streamable] = Map.empty
-  private var writeLocked = false
 
-  fs.readCSV(uid, "schema.csv").map{
+  private val schemaMonitor = new Object()
+  private var schema: Map[String, String] = Map.empty
+
+  private val openStreamsMonitor = new Object()
+  private var openStreams: Map[File, Closeable] = Map.empty
+
+  private val cachedCSVMoninor = new Object()
+  private var cachedCSV: Map[String, Map[String, String]] = Map.empty
+
+  private val cachedBinariesMoninor = new Object()
+  private var cachedBinaries: Map[String, Streamable] = Map.empty
+
+  private val writeLocked = new AtomicBoolean(false)
+
+  fs.readCSV(uid, "schema.csv").map {
     lineSeq =>
-      lineSeq.foreach{
+      lineSeq.foreach {
         line =>
           schema = schema.updated(line(0), line(1))
       }
@@ -81,12 +90,7 @@ class ExperimentStore(
         )
     }
 
-    val writeLockedLocal =
-      synchronized {
-        writeLocked
-      }
-
-    if (writeLockedLocal) {
+    if (writeLocked.get) {
       throw new IllegalStateException(
         "%s is located in read-only/completed experiment %s".format(
           paramName,
@@ -99,32 +103,35 @@ class ExperimentStore(
     val posStr = java.lang.Long.toString(pos, 16)
     val paramFName = paramKey(paramName, mt, true).get
     if (ExperimentStore.primitiveSerializers.contains(mt)) {
-      synchronized{
         val lens = ExperimentStore.primitiveSerializers(mt).lens
         val serialized = lens.asInstanceOf[Lens[String, T]].set("", value)
-        fs.appendCSV(
-          uid,
-          paramFName,
-          openStreams
-        )(
-          Seq(Seq(posStr, serialized)).toStream
-        ).map {
-          case (file, closeable) =>
-            openStreams = openStreams.updated(file, closeable)
-        }
-        if (cachedCSV.contains(paramFName)) {
-          val cachedParamData = cachedCSV(paramFName)
-          cachedCSV = cachedCSV.updated(
+        openStreamsMonitor.synchronized {
+          fs.appendCSV(
+            uid,
             paramFName,
-            cachedParamData.updated(
-              posStr,
-              cachedParamData.getOrElse(posStr, Seq.empty) :+ Seq(posStr, serialized)
-            )
-          )
+            openStreams
+          )(
+            Seq(Seq(posStr, serialized)).toStream
+          ).map {
+            case (file, closeable) =>
+              openStreams = openStreams.updated(file, closeable)
+          }
         }
-      }
+        cachedCSVMoninor.synchronized{
+          if (cachedCSV.contains(paramFName)) {
+            val cachedParamData = cachedCSV(paramFName)
+            cachedCSV = cachedCSV.updated(
+              paramFName,
+              cachedParamData.updated(
+                posStr,
+                serialized
+              )
+            )
+          }
+        }
     } else if (ExperimentStore.streamableSerializers.contains(mt.asInstanceOf[Manifest[_ <: Streamable]])) {
       val binaryParamFName = "%s/%s".format(paramFName, posStr)
+      openStreamsMonitor.synchronized {
         fs.appendBinary(
           uid,
           binaryParamFName,
@@ -132,7 +139,11 @@ class ExperimentStore(
           value.isInstanceOf[Store]
         )(
           value.asInstanceOf[Streamable].createStream()
-        )
+        ).map {
+          case (file, closeable) =>
+            openStreams = openStreams.updated(file, closeable)
+        }
+      }
     } else {
       typeNotSupported(mt)
     }
@@ -179,34 +190,31 @@ class ExperimentStore(
     paramKey(paramName, mt, false).flatMap {
       paramFName =>
         if (ExperimentStore.primitiveSerializers.contains(mt)) {
-          synchronized {
+          cachedCSVMoninor.synchronized {
             cachedCSV.get(paramFName).orElse {
               fs.readCSV(uid, paramFName).map {
                 lineSeq =>
-                  val groupedLines = lineSeq groupBy {
+                  val groupedLines = lineSeq.groupBy {
                     _.head
+                  }.mapValues {
+                    _.last.last
                   }
                   cachedCSV = cachedCSV.updated(paramFName, groupedLines)
                   groupedLines
               }
-            }.flatMap {
-              groupedLines =>
-                groupedLines.getOrElse(posStr, Nil).lastOption
-            }.map {
-              entry =>
-                val lens = ExperimentStore.primitiveSerializers(mt).lens
-                lens.get(entry.last).asInstanceOf[T]
             }
+          }.flatMap {
+            _.get(posStr)
+          }.map {
+            str =>
+              val lens = ExperimentStore.primitiveSerializers(mt).lens
+              lens.get(str).asInstanceOf[T]
           }
-        } else if (mt <:< manifest[Streamable]) {
+        } else if (classOf[Streamable].isAssignableFrom(mt.erasure)) {
           val serializer =
             ExperimentStore.streamableSerializers(
               mt.asInstanceOf[Manifest[T with Streamable]]
             )
-          val writeLockedLocal =
-            synchronized {
-              writeLocked
-            }
 
           val binaryFName = "%s/%s".format(paramFName, posStr)
           val fetchOp: (String) => Option[T] = {
@@ -226,8 +234,8 @@ class ExperimentStore(
               }
           }
 
-          if (writeLockedLocal) {
-            synchronized{
+          if (writeLocked.get) {
+            cachedBinariesMoninor.synchronized {
               cachedBinaries.get(binaryFName).map {
                 _.asInstanceOf[T]
               }.orElse {
@@ -251,7 +259,9 @@ class ExperimentStore(
   }
 
   def listParams: Map[String, Class[_]] = {
-    schema.mapValues {
+    schemaMonitor.synchronized{
+      schema
+    }.mapValues {
       typeAlias =>
         ExperimentStore.allSerializers.find {
           case (tManifest, serializer) =>
@@ -279,7 +289,7 @@ class ExperimentStore(
       }
     val alias = serializer.alias
 
-    this.synchronized{
+    schemaMonitor.synchronized {
       val aliasStored = schema.get(paramName).map {
         aliasPrev =>
           if (aliasPrev != alias) {
@@ -297,6 +307,9 @@ class ExperimentStore(
         None
       } else {
         if (!aliasStored && extendSchema) {
+          if (writeLocked.get) {
+            throw new IllegalStateException("attempting to add param %s after write shutdown".format(paramName))
+          }
           schema = schema.updated(paramName, alias)
         }
         Some("raw/%s--%s".format(paramName, alias))
@@ -321,24 +334,30 @@ class ExperimentStore(
   }
 
   def readShutdown() {
-    cachedCSV = Map.empty
+    cachedCSVMoninor.synchronized{
+      cachedCSV = Map.empty
+    }
   }
 
   def writeShutdown() {
-    synchronized{
-      fs.dumpCSV(uid, "chain.csv", Map.empty)(
-        chain.toStream.map(
-          store => Seq(store.uid.expName, store.uid.confName, store.uid.stamp)
-        )
-      )
+    writeLocked.set(true)
 
+    fs.dumpCSV(uid, "chain.csv", Map.empty)(
+      chain.toStream.map(
+        store => Seq(store.uid.expName, store.uid.confName, store.uid.stamp)
+      )
+    )
+
+    schemaMonitor.synchronized{
       fs.dumpCSV(uid, "schema.csv", Map.empty)(
         schema.map {
           case (pName, pAlias) =>
             Seq(pName, pAlias)
         }.toStream
       )
+    }
 
+    openStreamsMonitor.synchronized {
       openStreams.values.foreach {
         closeable =>
           try {
@@ -356,22 +375,22 @@ class ExperimentStore(
       }
 
       openStreams = Map.empty
-
-      writeLocked = true
     }
   }
 
   def primitives: Seq[ParamName[_]] = {
-    schema.filter {
+    schemaMonitor.synchronized {
+      schema
+    }.filter {
       case (name, alias) =>
         ExperimentStore.primitiveAliases.contains(alias)
-    }.map {
+    }.toSeq.map{
       case (name, alias) =>
         new ParamName(
           ExperimentStore.primitiveAliasToSerializer(alias).mt.asInstanceOf[Manifest[_]],
           name
         )
-    }.toSeq
+    }
   }
 }
 
