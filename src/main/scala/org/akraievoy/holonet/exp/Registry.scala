@@ -20,10 +20,8 @@ package org.akraievoy.holonet.exp
 
 import annotation.tailrec
 import store.{ExperimentStore, RegistryStore, FileSystem}
-import java.io.{ByteArrayInputStream, StringWriter, PrintWriter, File}
+import java.io.File
 import org.slf4j.LoggerFactory
-import org.akraievoy.cnet.net.vo.{EdgeData, VertexData}
-import java.text.{NumberFormat, DecimalFormat}
 import org.akraievoy.holonet.exp.space.ParamSpaceNav
 import scala.collection.BitSet
 

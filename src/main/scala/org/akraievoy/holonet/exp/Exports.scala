@@ -31,12 +31,11 @@ trait Exports extends ParamSpaceNav {
       ) ++ spacePosMap(
         subchain, requiredIndexes, expStore, {
           runStore =>
-            val posInt = ParamPos.pos(runStore.spacePos, requiredIndexes)
-            val rowSeq = Seq[Option[Any]](Some(posInt)) ++
-                axisSorted.map(p => expStore.get(p.name, runStore.spacePos)(p.mt)) ++
+            val rowSeq = Seq[Option[Any]](Some(runStore.posNumber)) ++
+                axisSorted.map(p => expStore.get(p.name, runStore.spacePos, runStore.posNumbers)(p.mt)) ++
                 primitivesSorted.map{
                   pn =>
-                    expStore.get(pn.name, runStore.spacePos)(pn.mt)
+                    expStore.get(pn.name, runStore.spacePos, runStore.posNumbers)(pn.mt)
                 }
             rowSeq.map(elem => elem.map(String.valueOf).getOrElse(""))
         }, false
@@ -132,7 +131,6 @@ trait Exports extends ParamSpaceNav {
                         3
                       }
                     )
-                  val pos = ParamPos.pos(rs.spacePos, requiredIndexes)
                   val out = new StringWriter()
                   val p = new PrintWriter(out)
 
@@ -188,7 +186,7 @@ trait Exports extends ParamSpaceNav {
                     (edgeColor, rangeEData(edgeColor))
                   }
 
-                  p.println("%s %s {".format(graphToken, pos))
+                  p.println("%s %s {".format(graphToken, rs.posNumber))
                   p.println(
                     """  size="%s,%s!"; ratio="fill"; splines="true"; bgcolor="#99CCFF";
                       |  node [fixedsize=true, fontsize=%d, style=filled,
@@ -300,7 +298,7 @@ trait Exports extends ParamSpaceNav {
                   p.flush()
                   p.close()
 
-                  val fileName = "%s.dot".format(pos)
+                  val fileName = "%s.dot".format(rs.posNumber)
                   val filePath =
                     "export/graphviz_%s/%s".format(exportName, fileName)
 
@@ -363,7 +361,7 @@ trait Exports extends ParamSpaceNav {
               runStore =>
                 val storeValues = stores.map(
                   p =>
-                    expStore.get(p.name, runStore.spacePos)(p.mt).map {
+                    expStore.get(p.name, runStore.spacePos, runStore.posNumbers)(p.mt).map {
                       store =>
                         for (pos <- 0 until store.size()) yield {
                           StoreUtils.get(store, pos)
@@ -383,12 +381,11 @@ trait Exports extends ParamSpaceNav {
                   }
                 }
 
-                val posInt = ParamPos.pos(runStore.spacePos, requiredIndexes)
                 val rowHeader =
-                  Seq[String](String.valueOf(posInt)) ++
+                  Seq[String](String.valueOf(runStore.posNumber)) ++
                     axis.map(
                       p =>
-                        expStore.get(p.name, runStore.spacePos)(p.mt).map(
+                        expStore.get(p.name, runStore.spacePos, runStore.posNumbers)(p.mt).map(
                           String.valueOf
                         ).getOrElse("")
                     )

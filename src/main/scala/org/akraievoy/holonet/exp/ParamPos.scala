@@ -76,7 +76,8 @@ object ParamPos {
    */
   def pos(spacePos: Seq[ParamPos], requiredExpIndexes: BitSet): Int = {
     spacePos.filter {
-      pPos => requiredExpIndexes.contains(pPos.expIndex)
+      pPos =>
+        pPos.total > 1 && requiredExpIndexes.contains(pPos.expIndex)
     }.sorted.foldRight((0, 1)){
       case (paramPos, (expPrevPos, expPrevTotal)) =>
         combine(expPrevPos, expPrevTotal, paramPos.pos, paramPos.total)

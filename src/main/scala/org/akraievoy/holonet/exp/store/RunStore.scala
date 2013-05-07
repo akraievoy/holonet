@@ -24,18 +24,34 @@ case class RunStore(
   es: ExperimentStore,
   spacePos: Seq[ParamPos]
 ) {
-  def lens[T](
-    paramName: String
-  )(
-    implicit mt: Manifest[T]
-  ): StoreLens[T] = {
-    es.lens[T](paramName, spacePos, Map.empty)
-  }
+
+  val posNumbers =
+    RunStore.posNumbersForPos(es.withChain, spacePos)
+
+  val posNumber =
+    posNumbers(es.experiment.name)
 
   def lens[T](
     paramName: ParamName[T]
   ): StoreLens[T] = {
-    lens(paramName.name)(paramName.mt)
+    StoreLens[T](
+      es,
+      paramName.name,
+      spacePos,
+      posNumbers,
+      paramName.mt
+    )
   }
+
+}
+
+object RunStore {
+  def posNumbersForPos(chain: Seq[ExperimentStore], spacePos0: Seq[ParamPos]): Map[String, Long] = {
+    chain.foldLeft(Map.empty[String, Long]) {
+      (map, es0) =>
+        map.updated(es0.experiment.name, ParamPos.pos(spacePos0, es0.requiredIndexes))
+    }
+  }
+
 
 }

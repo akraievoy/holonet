@@ -59,12 +59,12 @@ object DlaGenImages {
         )
 
         val genSubExp = new ExperimentTiming(locationGenerator)
-        genSubExp.setDurationRef(rs.lens[JLong]("location_time_millis"))
-        genSubExp.setDurationTextRef(rs.lens[String]("location_time_text"))
+        genSubExp.setDurationRef(rs.lens(ParamName[JLong]("location_time_millis")))
+        genSubExp.setDurationTextRef(rs.lens(ParamName[String]("location_time_text")))
 
         val imgSubExp = new ExperimentTiming(images)
-        imgSubExp.setDurationRef(rs.lens[JLong]("images_time_millis"))
-        imgSubExp.setDurationTextRef(rs.lens[String]("images_time_text"))
+        imgSubExp.setDurationRef(rs.lens(ParamName[JLong]("images_time_millis")))
+        imgSubExp.setDurationTextRef(rs.lens(ParamName[String]("images_time_text")))
 
         genSubExp.run()
         imgSubExp.run()

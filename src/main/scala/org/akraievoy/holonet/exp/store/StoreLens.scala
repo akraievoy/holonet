@@ -26,18 +26,16 @@ case class StoreLens[T](
   expStore: ExperimentStore,
   paramName: String,
   spacePos: Seq[ParamPos],
-  offsets: Map[String, Int] = Map.empty,
+  posNumbers: Map[String, Long],
   mt: Manifest[T]
 ) extends Ref[T] {
 
   def get = {
-    val spacePosOffs = applyOffset(spacePos, offsets)
-    expStore.get(paramName, spacePosOffs)(mt)
+    expStore.get(paramName, spacePos, posNumbers)(mt)
   }
 
   def set(t: T) {
-    val spacePosOffs = applyOffset(spacePos, offsets)
-    expStore.set(paramName, t, spacePosOffs)(mt)
+    expStore.set(paramName, t, spacePos, posNumbers(expStore.experiment.name))(mt)
   }
 
   def getValue = {
@@ -58,12 +56,15 @@ case class StoreLens[T](
     )
 
   def offset(paramName: String, posDelta: Int) =
-    copy[T](
-      offsets = offsets.updated(
-        paramName,
-        offsets.getOrElse(paramName, 0) + posDelta
+    {
+      val spacePos1 = applyOffset(spacePos, Map(paramName -> posDelta))
+      val posNumbers1 = RunStore.posNumbersForPos(expStore.withChain, spacePos1)
+
+      copy[T](
+        spacePos = spacePos1,
+        posNumbers = posNumbers1
       )
-    )
+    }
 
   def offsetAxis(posDelta: Int) =
     offset(paramName, posDelta)
@@ -73,7 +74,7 @@ case class StoreLens[T](
 
   def axis: IndexedSeq[StoreLens[T]] = {
     val paramPos = spacePos.find(pPos => pPos.name == paramName).get
-    val range = -paramPos.pos until paramPos.total
+    val range = -paramPos.pos until (paramPos.total - paramPos.pos)
     range.map(offs => offset(paramName, offs))
   }
 

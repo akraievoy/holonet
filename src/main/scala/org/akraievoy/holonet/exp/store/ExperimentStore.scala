@@ -57,10 +57,13 @@ class ExperimentStore(
       }
   }
 
+  def withChain = chain :+ this
+
   def set[T](
     paramName: String,
     value: T,
-    spacePos: Seq[ParamPos]
+    spacePos: Seq[ParamPos],
+    posNum: Long
   )(
     implicit mt: Manifest[T]
   ) {
@@ -100,11 +103,10 @@ class ExperimentStore(
       )
     }
 
-    val pos = ParamPos.pos(spacePos, requiredIndexes)
-    val posStr = java.lang.Long.toString(pos, 16)
+    val posStr = java.lang.Long.toString(posNum, 16)
     val paramFName = paramKey(paramName, mt, true).get
-    if (ExperimentStore.primitiveSerializers.contains(mt)) {
-        val lens = ExperimentStore.primitiveSerializers(mt).lens
+    if (ExperimentStore.primitiveSerializers.contains(mt.erasure.getName)) {
+        val lens = ExperimentStore.primitiveSerializers(mt.erasure.getName).lens
         val serialized = lens.asInstanceOf[Lens[String, T]].set("", value)
         openStreamsMonitor.synchronized {
           fs.appendCSV(
@@ -130,7 +132,7 @@ class ExperimentStore(
             )
           }
         }
-    } else if (ExperimentStore.streamableSerializers.contains(mt.asInstanceOf[Manifest[_ <: Streamable]])) {
+    } else if (ExperimentStore.streamableSerializers.contains(mt.erasure.getName)) {
       val binaryParamFName = "%s/%s".format(paramFName, posStr)
       openStreamsMonitor.synchronized {
         fs.appendBinary(
@@ -152,7 +154,8 @@ class ExperimentStore(
 
   def get[T](
     paramName: String,
-    spacePos: Seq[ParamPos]
+    spacePos: Seq[ParamPos],
+    posNumbers: Map[String, Long]
   )(
     implicit mt: Manifest[T]
   ): Option[T] = {
@@ -160,26 +163,27 @@ class ExperimentStore(
       paramPos => paramPos.name == paramName
     }.map {
       paramPos =>
-        val lens = ExperimentStore.paramSerializers(paramPos.mt).lens
+        val lens = ExperimentStore.paramSerializers(paramPos.mt.erasure.getName).lens
         lens.get(paramPos.value).asInstanceOf[T]
     }.orElse {
-      chain.find {
+      val directStore = chain.find {
         prevExp =>
           prevExp.schema.contains(paramName)
       }.getOrElse {
         this
-      }.getDirect[T](paramName, spacePos)
+      }
+      directStore.getDirect[T](paramName, spacePos, posNumbers(directStore.experiment.name))
     }
   }
 
-  def getDirect[T](
+  private def getDirect[T](
     paramName: String,
-    spacePos: Seq[ParamPos]
+    spacePos: Seq[ParamPos],
+    posNum: Long
   )(
     implicit mt: Manifest[T]
   ): Option[T] = {
-    val pos = ParamPos.pos(spacePos, requiredIndexes)
-    val posStr = java.lang.Long.toString(pos, 16)
+    val posStr = java.lang.Long.toString(posNum, 16)
 /*
     if (paramName == "ovlGenOpt.genome.best.0") {
       println("query for overlay: posStr %s pos:\n%s\n".format(
@@ -190,7 +194,7 @@ class ExperimentStore(
 */
     paramKey(paramName, mt, false).flatMap {
       paramFName =>
-        if (ExperimentStore.primitiveSerializers.contains(mt)) {
+        if (ExperimentStore.primitiveSerializers.contains(mt.erasure.getName)) {
           cachedCSVMoninor.synchronized {
             cachedCSV.get(paramFName).orElse {
               fs.readCSV(uid, paramFName).map {
@@ -208,16 +212,16 @@ class ExperimentStore(
             _.get(posStr)
           }.map {
             str =>
-              val lens = ExperimentStore.primitiveSerializers(mt).lens
+              val lens = ExperimentStore.primitiveSerializers(mt.erasure.getName).lens
               lens.get(str).asInstanceOf[T]
           }
         } else if (classOf[Streamable].isAssignableFrom(mt.erasure)) {
           val serializer =
             ExperimentStore.streamableSerializers(
-              mt.asInstanceOf[Manifest[T with Streamable]]
+              mt.erasure.getName
             )
 
-          val binaryFName = "%s/%s".format(paramFName, posStr)
+          val binaryFName = "" + paramFName + "/" + posStr
           val fetchOp: (String) => Option[T] = {
             binaryFName1 =>
               try {
@@ -283,8 +287,8 @@ class ExperimentStore(
     extendSchema: Boolean
   ): Option[String] = {
     val serializer =
-      ExperimentStore.primitiveSerializers.get(mt).map(_.asInstanceOf[Serializer[_ <: Any]]).orElse(
-        ExperimentStore.streamableSerializers.get(mt.asInstanceOf[Manifest[_ <: Streamable]])
+      ExperimentStore.primitiveSerializers.get(mt.erasure.getName).map(_.asInstanceOf[Serializer[_ <: Any]]).orElse(
+        ExperimentStore.streamableSerializers.get(mt.erasure.getName)
       ).getOrElse {
         typeNotSupported(mt)
       }
@@ -313,25 +317,9 @@ class ExperimentStore(
           }
           schema = schema.updated(paramName, alias)
         }
-        Some("raw/%s--%s".format(paramName, alias))
+        Some("raw/" + paramName + "--" + alias)
       }
     }
-  }
-
-  def lens[T](
-    paramName: String,
-    spacePos: Seq[ParamPos],
-    lensOffsets: Map[String, Int] = Map.empty
-  )(
-    implicit mt: Manifest[T]
-  ) = {
-    StoreLens[T](
-      this,
-      paramName,
-      spacePos,
-      lensOffsets,
-      mt
-    )
   }
 
   def readShutdown() {
@@ -401,7 +389,7 @@ object ExperimentStore {
     Float => JFloat, Double => JDouble
   }
 
-  protected lazy val primitiveSerializers: Map[Manifest[_], ValueSerializer[String, _]] =
+  protected lazy val primitiveSerializers: Map[String, ValueSerializer[String, _]] =
     Seq[ValueSerializer[String, _]](
       ValueSerializer(
         "String",
@@ -480,7 +468,7 @@ object ExperimentStore {
           (s, d) => JLong.toString(JDouble.doubleToRawLongBits(d), 16)
         )
       )
-    ).groupBy(_.mt.asInstanceOf[Manifest[_]]).mapValues {
+    ).groupBy(_.mt.erasure.getName).mapValues {
       serSeq => if (serSeq.size > 1) {
         throw new IllegalArgumentException(
           "multiple serializers for %s".format(serSeq.head.mt.erasure.getName)
@@ -507,7 +495,7 @@ object ExperimentStore {
         )
     }.toMap[String, ValueSerializer[String, _]]
 
-  protected lazy val paramSerializers: Map[Manifest[_], ValueSerializer[String, _]] =
+  protected lazy val paramSerializers: Map[String, ValueSerializer[String, _]] =
     Seq[ValueSerializer[String, _]](
       ValueSerializer(
         "String",
@@ -586,7 +574,7 @@ object ExperimentStore {
           (s, d) => JDouble.toHexString(d)
         )
       )
-    ).groupBy(_.mt.asInstanceOf[Manifest[_]]).mapValues {
+    ).groupBy(_.mt.erasure.getName).mapValues {
       serSeq => if (serSeq.size > 1) {
         throw new IllegalArgumentException(
           "multiple serializers for %s".format(serSeq.head.mt.erasure.getName)
@@ -595,7 +583,7 @@ object ExperimentStore {
       serSeq.head
     }
 
-  protected lazy val streamableSerializers: Map[Manifest[_ <: Streamable], StreamSerializer[_ <: Streamable]] =
+  protected lazy val streamableSerializers: Map[String, StreamSerializer[_ <: Streamable]] =
     Seq[StreamSerializer[_ <: Streamable]](
       StreamSerializer[VertexData](
         "VertexData",
@@ -647,7 +635,7 @@ object ExperimentStore {
         input => new StoreDouble().fromStream(input),
         (store: StoreDouble) => store.createStream()
       )
-    ).groupBy(_.mt.asInstanceOf[Manifest[_ <: Streamable]]).mapValues {
+    ).groupBy(_.mt.erasure.getName).mapValues {
       serSeq => if (serSeq.size > 1) {
         throw new IllegalArgumentException(
           "multiple serializers for %s".format(serSeq.head.mt.erasure.getName)
@@ -656,7 +644,7 @@ object ExperimentStore {
       serSeq.head
     }
 
-  protected lazy val allSerializers: Map[Manifest[_ <: Any], Serializer[Any]] = {
+  protected lazy val allSerializers: Map[String, Serializer[Any]] = {
     primitiveSerializers.withDefault(streamableSerializers.map{
       case (m, s) =>
         (
