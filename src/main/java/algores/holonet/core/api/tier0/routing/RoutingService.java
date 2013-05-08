@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
+import static algores.holonet.core.api.tier0.routing.Routing.*;
 
 /**
  * @author Anton Kraievoy
@@ -42,7 +42,7 @@ public interface RoutingService extends RoutingState<RoutingEntry, Key> {
 
   void update(Map<Event, Iterable<RoutingEntry>> eventToRoutes);
 
-  RoutingPackage.RoutingEntry ownRoute() throws CommunicationException;
+  Routing.RoutingEntry ownRoute() throws CommunicationException;
 
   /**
    * Provides information about ranges of keys for which the node <code>handle</code> is currently a <i>r</i>-root.

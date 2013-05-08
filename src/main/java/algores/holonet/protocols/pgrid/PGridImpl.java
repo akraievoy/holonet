@@ -30,7 +30,7 @@ import com.google.common.base.Optional;
 
 import java.util.*;
 
-import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
+import static algores.holonet.core.api.tier0.routing.Routing.*;
 
 public class PGridImpl extends OverlayServiceBase implements PGrid {
   protected static final boolean TRACE_OPERATIONS = false;

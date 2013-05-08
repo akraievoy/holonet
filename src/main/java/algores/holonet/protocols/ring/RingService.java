@@ -33,7 +33,7 @@ import com.google.common.base.Throwables;
 
 import java.util.Map;
 
-import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
+import static algores.holonet.core.api.tier0.routing.Routing.*;
 
 /**
  * Default implementation of generic DhtProtocol operations - actually is a Ring implementation.

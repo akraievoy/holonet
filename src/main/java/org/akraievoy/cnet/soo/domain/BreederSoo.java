@@ -24,7 +24,6 @@ import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.WeightedEventModel;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelRenorm;
 import org.akraievoy.cnet.net.vo.EdgeData;
-import org.akraievoy.cnet.net.vo.IndexCodec;
 import org.akraievoy.cnet.opt.api.Breeder;
 import org.akraievoy.cnet.opt.api.GeneticState;
 import org.akraievoy.cnet.opt.api.GeneticStrategy;
@@ -32,14 +31,14 @@ import org.akraievoy.cnet.opt.api.Genome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.akraievoy.cnet.net.Net.*;
+
 public abstract class BreederSoo implements Breeder {
   private static final Logger log = LoggerFactory.getLogger(BreederSoo.class);
 
-  protected final IndexCodec codec;
   protected WeightedEventModelRenorm unwireModel;
 
   public BreederSoo() {
-    codec = new IndexCodec(false);
 
     unwireModel =
         new WeightedEventModelRenorm(
@@ -84,7 +83,7 @@ public abstract class BreederSoo implements Breeder {
     }
     final double linksToUnwireFromA = (1 - state.getCrossoverRatio()) * linksToUnwire;
 
-    child.getSolution().visitNonDef(new EdgeSubsetVisitor(unwireModel, linkFitness, genomeA, genomeB, codec));
+    child.getSolution().visitNonDef(new EdgeSubsetVisitor(unwireModel, linkFitness, genomeA, genomeB));
     if (unwireModel.getSize() == 0) {
       log.warn("first unwire yields no links");
     }
@@ -92,7 +91,7 @@ public abstract class BreederSoo implements Breeder {
     remove(strategy, child, eSource, linksToUnwireFromA, removedRef);
 
     unwireModel.clear();
-    child.getSolution().visitNonDef(new EdgeSubsetVisitor(unwireModel, linkFitness, genomeB, null, codec));
+    child.getSolution().visitNonDef(new EdgeSubsetVisitor(unwireModel, linkFitness, genomeB, null));
     if (unwireModel.getSize() == 0) {
       log.warn("second unwire yields no links");
     }
@@ -134,8 +133,8 @@ public abstract class BreederSoo implements Breeder {
     for (; Soft.MILLI.less(removedRef[0], unwireLimit)  && unwireModel.getSize() > 0; removedRef[0] += step) {
       final int unwireId = unwireModel.generate(eSource, false, indexRef);
 
-      final int unwireFrom = codec.id2leading(unwireId);
-      final int unwireInto = codec.id2trailing(unwireId);
+      final int unwireFrom = toFrom(unwireId);
+      final int unwireInto = toInto(unwireId);
 
       final double newVal = child.getSolution().get(unwireFrom, unwireInto) - step;
       final double newValStrict = Soft.MILLI.positive(newVal) ? newVal : 0;
@@ -174,14 +173,12 @@ public abstract class BreederSoo implements Breeder {
   }
 
   protected static class EdgeSubsetVisitor implements EdgeData.EdgeVisitor {
-    protected final IndexCodec codec;
     protected final WeightedEventModel unwireModel;
     protected final GenomeSoo included;
     protected final GenomeSoo excluded;
     protected final EdgeData linkFitness;
 
-    public EdgeSubsetVisitor(WeightedEventModel unwireModel, EdgeData linkFitness, GenomeSoo included, GenomeSoo excluded, IndexCodec codec) {
-      this.codec = codec;
+    public EdgeSubsetVisitor(WeightedEventModel unwireModel, EdgeData linkFitness, GenomeSoo included, GenomeSoo excluded) {
       this.unwireModel = unwireModel;
       this.included = included;
       this.excluded = excluded;
@@ -199,7 +196,7 @@ public abstract class BreederSoo implements Breeder {
         final boolean skipped = excluded != null && Soft.MILLI.positive(excluded.getSolution().get(from, into));
 
         if (!skipped) {
-          unwireModel.add(codec.fi2id(from, into), linkFitness.get(from, into));
+          unwireModel.add(toId(from, into), linkFitness.get(from, into));
         }
       }
     }

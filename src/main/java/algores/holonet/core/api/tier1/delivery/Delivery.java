@@ -23,10 +23,10 @@ import com.google.common.base.Optional;
 
 import java.util.*;
 
-import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
+import static algores.holonet.core.api.tier0.routing.Routing.*;
 
-public final class DeliveryPackage {
-  private DeliveryPackage() { /* sealed */ }
+public final class Delivery {
+  private Delivery() { /* sealed */ }
 
   public static Iterable<RoutingEntry> mapToRoutes(Iterable<Traversal> traversals) {
     final List<RoutingEntry> res = new ArrayList<RoutingEntry>();

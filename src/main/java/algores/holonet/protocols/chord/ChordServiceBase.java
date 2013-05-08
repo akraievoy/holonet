@@ -31,7 +31,7 @@ import algores.holonet.protocols.ring.RingRoutingServiceImpl;
 import algores.holonet.protocols.ring.RingService;
 import com.google.common.base.Optional;
 
-import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
+import static algores.holonet.core.api.tier0.routing.Routing.*;
 
 public class ChordServiceBase extends RingService implements ChordService {
   public ChordServiceBase copy() {

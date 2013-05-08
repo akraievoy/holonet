@@ -22,10 +22,9 @@ import algores.holonet.core.Node;
 import algores.holonet.core.api.Range;
 import algores.holonet.core.api.RangeBase;
 import algores.holonet.core.api.tier0.routing.RoutingDistance;
-import algores.holonet.core.api.tier0.routing.RoutingPackage;
 import algores.holonet.core.api.tier0.routing.RoutingServiceBase;
 
-import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
+import static algores.holonet.core.api.tier0.routing.Routing.*;
 
 class PGridRouting extends RoutingServiceBase {
   public static final Flavor FLAVOR_REPLICA_SPEC = new Flavor("replica-specialized");

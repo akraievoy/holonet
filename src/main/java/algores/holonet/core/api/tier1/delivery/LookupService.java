@@ -23,7 +23,7 @@ import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import com.google.common.base.Optional;
 
-import static algores.holonet.core.api.tier1.delivery.DeliveryPackage.*;
+import static algores.holonet.core.api.tier1.delivery.Delivery.*;
 
 /**
  * Delivery service spec.

@@ -23,24 +23,23 @@ import gnu.trove.TIntArrayList;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelRenorm;
 import org.akraievoy.cnet.net.vo.EdgeData;
-import org.akraievoy.cnet.net.vo.IndexCodec;
 import org.akraievoy.cnet.opt.api.GeneticState;
 import org.akraievoy.cnet.opt.api.GeneticStrategy;
 import org.akraievoy.cnet.opt.api.Mutator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.akraievoy.cnet.net.Net.*;
+
 public abstract class MutatorSooRewire implements Mutator<GenomeSoo> {
   private static final Logger log = LoggerFactory.getLogger(MutatorSooRewire.class);
 
-  protected final IndexCodec codec;
   protected WeightedEventModelRenorm oldModel;
   protected WeightedEventModelRenorm newModel;
 
   protected boolean symmetric = true;
 
   protected MutatorSooRewire() {
-    codec = new IndexCodec(false);
     oldModel = new WeightedEventModelRenorm(
         !isFavoringMinimal(),
         0,
@@ -93,7 +92,7 @@ public abstract class MutatorSooRewire implements Mutator<GenomeSoo> {
             if (from > into) {
               return;
             }
-            oldModel.add(codec.fi2id(from, into), linkFitness.get(from, into));
+            oldModel.add(toId(from, into), linkFitness.get(from, into));
           }
         }
     );
@@ -117,7 +116,7 @@ public abstract class MutatorSooRewire implements Mutator<GenomeSoo> {
           continue;
         }
 
-        newModel.add(codec.fi2id(from, into), linkFitness.get(from, into));
+        newModel.add(toId(from, into), linkFitness.get(from, into));
       }
     }
 
@@ -132,14 +131,14 @@ public abstract class MutatorSooRewire implements Mutator<GenomeSoo> {
 
   protected void rewire(GeneticStrategySoo strategySoo, GenomeSoo genome, int oldWireId, int newWireId) {
     final double step = 1.0 / strategySoo.getSteps();
-    final int oldWireFrom = codec.id2leading(oldWireId);
-    final int oldWireInto = codec.id2trailing(oldWireId);
+    final int oldWireFrom = toFrom(oldWireId);
+    final int oldWireInto = toInto(oldWireId);
 
     final EdgeData solution = genome.getSolution();
     solution.set(oldWireFrom, oldWireInto, solution.get(oldWireFrom, oldWireInto) - step);
 
-    final int newWireFrom = codec.id2leading(newWireId);
-    final int newWireInto = codec.id2trailing(newWireId);
+    final int newWireFrom = toFrom(newWireId);
+    final int newWireInto = toInto(newWireId);
 
     solution.set(newWireFrom, newWireInto, solution.get(newWireFrom, newWireInto) + step);
   }

@@ -30,7 +30,7 @@ import algores.holonet.core.api.tier0.rpc.RpcService;
 import com.google.common.base.Optional;
 import org.akraievoy.base.Die;
 
-import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
+import static algores.holonet.core.api.tier0.routing.Routing.*;
 
 /**
  * Default implementation.

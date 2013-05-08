@@ -34,8 +34,8 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
-import static algores.holonet.core.api.tier1.delivery.DeliveryPackage.*;
+import static algores.holonet.core.api.tier0.routing.Routing.*;
+import static algores.holonet.core.api.tier1.delivery.Delivery.*;
 
 public class Network {
 

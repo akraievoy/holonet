@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
+import static algores.holonet.core.api.tier0.routing.Routing.*;
 
 /**
  * Implementation of basic methods.

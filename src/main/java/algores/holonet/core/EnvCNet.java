@@ -23,7 +23,6 @@ import algores.holonet.core.api.Address;
 import algores.holonet.core.api.Key;
 import algores.holonet.core.api.Range;
 import com.google.common.base.Optional;
-import gnu.trove.TIntArrayList;
 import org.akraievoy.base.ref.Ref;
 import org.akraievoy.cnet.metrics.api.Metric;
 import org.akraievoy.cnet.metrics.domain.MetricVDataCycleOrdering;
@@ -34,7 +33,6 @@ import org.akraievoy.cnet.gen.vo.WeightedEventModelBase;
 import org.akraievoy.cnet.metrics.domain.MetricEDataRouteLen;
 import org.akraievoy.cnet.metrics.domain.MetricRoutesFloydWarshall;
 import org.akraievoy.cnet.net.vo.EdgeData;
-import org.akraievoy.cnet.net.vo.IndexCodec;
 import org.akraievoy.cnet.net.vo.VertexData;
 import org.akraievoy.util.Interpolate;
 import org.slf4j.Logger;
@@ -44,6 +42,8 @@ import java.math.BigInteger;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.*;
+
+import static org.akraievoy.cnet.net.Net.*;
 
 public class EnvCNet implements Env {
   private static final Logger log = LoggerFactory.getLogger(EnvCNet.class);
@@ -60,7 +60,6 @@ public class EnvCNet implements Env {
 
   protected WeightedEventModel nodeModel = new WeightedEventModelBase(Optional.of("nodes"));
   protected WeightedEventModel requestModel = new WeightedEventModelBase(Optional.of("requests"));
-  protected IndexCodec requestCodec = new IndexCodec(false);
 
   protected HashMap<Integer, Node> addressIdxToNode = new HashMap<Integer, Node>(256, 0.25f);
   protected final EnvMappings mappings = new EnvMappings();
@@ -152,7 +151,7 @@ public class EnvCNet implements Env {
     req.getValue().visitNonDef(new EdgeData.EdgeVisitor() {
       public void visit(int from, int into, double e) {
         if (addressIdxToNode.containsKey(from) && addressIdxToNode.containsKey(into)) {
-          requestModel.add(requestCodec.fi2id(from, into), e);
+          requestModel.add(toId(from, into), e);
         }
       }
     });
@@ -315,8 +314,8 @@ public class EnvCNet implements Env {
 
     final int pairId = requestModel.generate(entropy, false, null);
 
-    final int clientId = requestCodec.id2leading(pairId);
-    final int serverId = requestCodec.id2trailing(pairId);
+    final int clientId = toFrom(pairId);
+    final int serverId = toInto(pairId);
 
     return Optional.of(
         new RequestPair(

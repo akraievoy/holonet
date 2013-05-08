@@ -25,9 +25,9 @@ import org.akraievoy.base.Die;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-public final class RoutingPackage {
+public final class Routing {
 
-  private RoutingPackage() { /* sealed */ }
+  private Routing() { /* sealed */ }
 
   public static Map<Event, Iterable<RoutingEntry>> eventToRoute(
       final Event event,

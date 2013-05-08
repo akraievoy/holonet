@@ -22,11 +22,10 @@ import algores.holonet.core.api.Key;
 import algores.holonet.core.api.KeySpace;
 import algores.holonet.protocols.ring.RingRoutingServiceImpl;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import static algores.holonet.core.api.tier0.routing.RoutingPackage.*;
+import static algores.holonet.core.api.tier0.routing.Routing.*;
 
 /**
  * Default implementation.
