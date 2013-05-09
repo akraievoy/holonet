@@ -90,7 +90,7 @@ public class MutatorSooClusterize implements Mutator<GenomeSoo> {
             }
             continue;
           }
-          if (!solution.conn(nodeFrom, nodeInto)) {
+          if (!solution.conn(nodeFrom, nodeInto)) { //  FIXME hotspot of about 15%
             continue;
           }
           interclusterLinkCount[nodeFrom] += solution.get(nodeFrom, nodeInto);

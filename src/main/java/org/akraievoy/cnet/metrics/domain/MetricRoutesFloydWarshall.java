@@ -26,6 +26,7 @@ import org.akraievoy.cnet.net.vo.Routes;
 
 import java.util.Arrays;
 
+//  FIXME hotspot of about 15%
 public class MetricRoutesFloydWarshall extends MetricRoutes {
   protected RefRO<? extends EdgeData> distSource = new RefObject<EdgeData>();
   protected RefRO<? extends EdgeData> source = new RefObject<EdgeData>();
