@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.BitSet
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConversions.asScalaConcurrentMap
+import com.google.common.cache.CacheBuilder
 
 class ExperimentStore(
   val fs: FileSystem,
@@ -35,7 +36,7 @@ class ExperimentStore(
   val config: Config,
   val chain: Seq[ExperimentStore],
   val requiredIndexes: BitSet
-) {
+) extends CachePimps {
 
   private val schema: scala.collection.mutable.ConcurrentMap[String, String] =
     new ConcurrentHashMap[String, String](
@@ -50,8 +51,13 @@ class ExperimentStore(
   private val cachedCSVMoninor = new Object()
   private var cachedCSV: Map[String, Map[Long, String]] = Map.empty
 
-  private val cachedBinariesMoninor = new Object()
-  private var cachedBinaries: Map[String, Streamable] = Map.empty
+  private val cachedBinaries =
+    (
+      CacheBuilder.newBuilder()
+          .concurrencyLevel(Runtime.getRuntime.availableProcessors())
+          .maximumSize(512)
+          .build[String, Option[Streamable]]()
+    )
 
   private val writeLocked = new AtomicBoolean(false)
 
@@ -223,14 +229,14 @@ class ExperimentStore(
             )
 
           val binaryFName = "" + paramFName + "/" + posNumStr(posNum)
-          val fetchOp: (String) => Option[T] = {
+          val fetchOp: (String) => Option[T with Streamable] = {
             binaryFName1 =>
               try {
                 fs.readBinary(
                   uid,
                   binaryFName1,
                   serializer.readOp
-                ).asInstanceOf[Option[T]]
+                ).asInstanceOf[Option[T with Streamable]]
               } catch {
                 case e: Exception =>
                   throw new RuntimeException(
@@ -241,18 +247,7 @@ class ExperimentStore(
           }
 
           if (writeLocked.get) {
-            cachedBinariesMoninor.synchronized {
-              cachedBinaries.get(binaryFName).asInstanceOf[Option[T]].orElse {
-                fetchOp(binaryFName).map {
-                  readRes =>
-                    cachedBinaries = cachedBinaries.updated(
-                      binaryFName,
-                      readRes.asInstanceOf[Streamable]
-                    )
-                    readRes
-                }
-              }
-            }
+            cachedBinaries.getOrLoad(binaryFName)(fetchOp).asInstanceOf[Option[T]]
           } else {
             fetchOp(binaryFName)
           }
