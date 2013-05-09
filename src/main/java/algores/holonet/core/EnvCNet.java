@@ -112,6 +112,14 @@ public class EnvCNet implements Env {
       );
       fallback = new EnvSimple();
       return;
+    } else {
+      //  cache eagerly to avoid lock contention while querying ExperimentStore
+      locX = new RefObject<VertexData>(locX.getValue());
+      locY = new RefObject<VertexData>(locY.getValue());
+      density = new RefObject<VertexData>(density.getValue());
+      dist = new RefObject<EdgeData>(dist.getValue());
+      req = new RefObject<EdgeData>(req.getValue());
+      overlay = new RefObject<EdgeData>(overlay.getValue());
     }
 
     final MetricVDataCycleOrdering metricCycleOrdering = new MetricVDataCycleOrdering();
