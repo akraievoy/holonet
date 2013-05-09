@@ -103,7 +103,7 @@ class ExperimentStore(
       )
     }
 
-    val posStr = java.lang.Long.toString(posNum, 16)
+    val posStr = posNumStr(posNum)
     val paramFName = paramKey(paramName, mt, true).get
     if (ExperimentStore.primitiveSerializers.contains(mt.erasure.getName)) {
         val lens = ExperimentStore.primitiveSerializers(mt.erasure.getName).lens
@@ -152,6 +152,10 @@ class ExperimentStore(
     }
   }
 
+  private def posNumStr[T](posNum: Long): String = {
+    java.lang.Long.toString(posNum, 16).intern
+  }
+
   def get[T](
     paramName: String,
     spacePos: Seq[ParamPos],
@@ -183,15 +187,7 @@ class ExperimentStore(
   )(
     implicit mt: Manifest[T]
   ): Option[T] = {
-    val posStr = java.lang.Long.toString(posNum, 16)
-/*
-    if (paramName == "ovlGenOpt.genome.best.0") {
-      println("query for overlay: posStr %s pos:\n%s\n".format(
-        posStr,
-        ParamPos.seqToString(spacePos, requiredIndexes)
-      ))
-    }
-*/
+    val posStr = posNumStr(posNum)
     paramKey(paramName, mt, false).flatMap {
       paramFName =>
         if (ExperimentStore.primitiveSerializers.contains(mt.erasure.getName)) {
@@ -200,7 +196,7 @@ class ExperimentStore(
               fs.readCSV(uid, paramFName).map {
                 lineSeq =>
                   val groupedLines = lineSeq.groupBy {
-                    _.head
+                    _.head.intern
                   }.mapValues {
                     _.last.last
                   }
