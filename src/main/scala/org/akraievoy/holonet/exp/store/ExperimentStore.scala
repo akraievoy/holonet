@@ -242,9 +242,7 @@ class ExperimentStore(
 
           if (writeLocked.get) {
             cachedBinariesMoninor.synchronized {
-              cachedBinaries.get(binaryFName).map {
-                _.asInstanceOf[T]
-              }.orElse {
+              cachedBinaries.get(binaryFName).asInstanceOf[Option[T]].orElse {
                 fetchOp(binaryFName).map {
                   readRes =>
                     cachedBinaries = cachedBinaries.updated(
