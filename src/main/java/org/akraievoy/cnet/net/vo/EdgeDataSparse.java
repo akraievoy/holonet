@@ -290,15 +290,19 @@ public class EdgeDataSparse implements EdgeData {
     //    keep reads and queries efficient
     if (symmetric && from != into) {
       set0(into, from, elem, true);
+/*
       if (defElem == 0.0 && Math.IEEEremainder(elem, 1.0) == 0.0 && total() != nonDefElems) {
-        log.warn("non-def elems skewed");
+        throw new IllegalStateException("non-def elems skewed: " + from + " -> " + into + " := " + elem);
       }
+*/
     }
 
     final double origVal = set0(from, into, elem, true);
+/*
     if (defElem == 0.0 && Math.IEEEremainder(elem, 1.0) == 0.0 && total() != nonDefElems) {
-      log.warn("non-def elems skewed");
+      throw new IllegalStateException("non-def elems skewed: " + from + " -> " + into + " := " + elem);
     }
+*/
     return origVal;
   }
 

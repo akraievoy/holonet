@@ -19,7 +19,7 @@
 package org.akraievoy.cnet.soo.domain;
 
 import com.google.common.base.Optional;
-import gnu.trove.TIntArrayList;
+import gnu.trove.TIntHashSet;
 import org.akraievoy.cnet.gen.vo.EntropySource;
 import org.akraievoy.cnet.gen.vo.WeightedEventModelRenorm;
 import org.akraievoy.cnet.net.vo.EdgeData;
@@ -34,22 +34,29 @@ import static org.akraievoy.cnet.net.Net.*;
 public abstract class MutatorSooRewire implements Mutator<GenomeSoo> {
   private static final Logger log = LoggerFactory.getLogger(MutatorSooRewire.class);
 
-  protected WeightedEventModelRenorm oldModel;
-  protected WeightedEventModelRenorm newModel;
+  private static final int REWIRE_TRY_LIMIT = 3;
+  private static final int CONNECT_TRY_LIMIT = 8;
+  private static final int CONNECT_TRY_CHOICES = 3;
 
-  protected boolean symmetric = true;
+  protected WeightedEventModelRenorm disconnectModel;
+  protected WeightedEventModelRenorm connectModel;
+  protected TIntHashSet connectIds;
+
+  protected boolean symmetric;
 
   protected MutatorSooRewire() {
-    oldModel = new WeightedEventModelRenorm(
+    disconnectModel = new WeightedEventModelRenorm(
         !isFavoringMinimal(),
         0,
-        Optional.of(getClass().getSimpleName() + "-oldWires")
+        Optional.of(getClass().getSimpleName() + "-disconnect")
     );
-    newModel = new WeightedEventModelRenorm(
+    connectModel = new WeightedEventModelRenorm(
         isFavoringMinimal(),
         0,
-        Optional.of(getClass().getSimpleName() + "-newWires")
+        Optional.of(getClass().getSimpleName() + "-connect")
     );
+    connectIds = new TIntHashSet(256, 0.125f);
+    symmetric = true;
   }
 
   public void setSymmetric(boolean symmetric) {
@@ -57,21 +64,65 @@ public abstract class MutatorSooRewire implements Mutator<GenomeSoo> {
   }
 
   public void mutate(GeneticStrategy strategy, GenomeSoo genome, GeneticState state, EntropySource eSource) {
+    disconnectModel.clear();
+    disconnectModel.setMinWeight(state.getMinElemFitness());
+    disconnectModel.setAmp(state.getElemFitPow());
+
+    connectIds.clear();
+    connectModel.clear();
+    connectModel.setMinWeight(state.getMinElemFitness());
+    connectModel.setAmp(state.getElemFitPow());
+
     final GeneticStrategySoo strategySoo = (GeneticStrategySoo) strategy;
-
     final EdgeData linkFitness = buildLinkFitness(strategySoo, genome);
-
-    final int size = strategySoo.getDistSource().getValue().getSize();
+    final EdgeData solution = genome.getSolution();
+    final double step = 1.0 / strategySoo.getSteps();
 
     final int linkNum = (int) Math.ceil(strategySoo.getTotalLinkUpperLimit() * state.getMutateRatio());
+    final int[] disconnectIndexRef = new int[1];
+    final int[] connectIndexRef = new int[1];
 
-    //	TODO join three loops into one: avoid buffering indices into arraylists
-    //	TODO renorm relatively to steps
-    final TIntArrayList newWireId = chooseNewWire(linkFitness, linkNum, eSource, state, genome, size);
-    final TIntArrayList oldWireId = chooseOldWire(linkFitness, linkNum, eSource, state, genome);
+    double totalRewired = 0;
+    int tryCount = linkNum * REWIRE_TRY_LIMIT;
+    while (tryCount > 0 && totalRewired < linkNum) {
+      tryCount -= 1;
+      if (connectModel.getSize() == 0) {
+        configureConnectModel(linkFitness, genome, linkNum, eSource);
+        if (connectModel.getSize() == 0) {
+          log.warn("failed to populate connect model");
+          break;
+        }
+      }
 
-    for (int i = 0, links = Math.min(newWireId.size(), oldWireId.size()); i < links; i++) {
-      rewire(strategySoo, genome, oldWireId.get(i), newWireId.get(i));
+      if (disconnectModel.getSize() == 0) {
+        configureDisconnectModel(linkFitness, genome);
+        if (disconnectModel.getSize() == 0) {
+          log.warn("failed to populate disconnect model");
+          break;
+        }
+      }
+
+      final int disconnectId = disconnectModel.generate(eSource, false, disconnectIndexRef);
+      final int disconnectFrom = toFrom(disconnectId);
+      final int disconnectInto = toInto(disconnectId);
+
+      final double disconnectVal = solution.get(disconnectFrom, disconnectInto) - step;
+      solution.set(disconnectFrom, disconnectInto, disconnectVal);
+
+      final int connectId = connectModel.generate(eSource, false, connectIndexRef);
+      final int connectFrom = toFrom(connectId);
+      final int connectInto = toInto(connectId);
+
+      final double connectVal = solution.get(connectFrom, connectInto) + step;
+      solution.set(connectFrom, connectInto, connectVal);
+
+      if (disconnectVal < 1e-9) {
+        disconnectModel.removeByIndex(disconnectIndexRef[0]);
+      }
+      if (connectVal > 1 - 1e-9) {
+        connectModel.removeByIndex(connectIndexRef[0]);
+        connectIds.remove(connectId);
+      }
     }
 
     if (genome.getSolution().total() > strategySoo.getTotalLinkUpperLimit() * 2) {
@@ -81,66 +132,63 @@ public abstract class MutatorSooRewire implements Mutator<GenomeSoo> {
     genome.resetFitness();
   }
 
-  protected TIntArrayList chooseOldWire(final EdgeData linkFitness, int linkNum, EntropySource eSource, GeneticState state, GenomeSoo genome) {
-    oldModel.clear();
-    oldModel.setMinWeight(state.getMinElemFitness());
-    oldModel.setAmp(state.getElemFitPow());
-
+  protected void configureDisconnectModel(
+      final EdgeData linkFitness,
+      final GenomeSoo genome
+  ) {
+    disconnectModel.clear();
     genome.getSolution().visitNonDef(
         new EdgeData.EdgeVisitor() {
           public void visit(int from, int into, double value) {
-            if (from > into) {
+            if (symmetric && from > into) {
               return;
             }
-            oldModel.add(toId(from, into), linkFitness.get(from, into));
+            if (value < 1e-9) {
+              return;
+            }
+            disconnectModel.add(toId(from, into), linkFitness.get(from, into));
           }
         }
     );
-
-    final TIntArrayList result = new TIntArrayList();
-    while (oldModel.getSize() > 0 && result.size() < linkNum) {
-      result.add(oldModel.generate(eSource, true, null));
-    }
-
-    return result;
   }
 
-  protected TIntArrayList chooseNewWire(EdgeData linkFitness, int linkNum, EntropySource eSource, GeneticState state, GenomeSoo genome, int size) {
-    newModel.clear();
-    newModel.setMinWeight(state.getMinElemFitness());
-    newModel.setAmp(state.getElemFitPow());
+  protected void configureConnectModel(
+      final EdgeData linkFitness,
+      final GenomeSoo genome,
+      final int linkNum,
+      final EntropySource eSource
+  ) {
+    connectIds.clear();
+    connectModel.clear();
 
-    for (int from = 0; from < size; from++) {
-      for (int into = 0, maxInto = symmetric ? from : size; into < maxInto; into++) {
-        if (from == into || genome.getSolution().get(from, into) >= 1) {  //	TODO performance
-          continue;
-        }
+    int tryCount = linkNum * CONNECT_TRY_LIMIT;
+    while (tryCount > 0 && connectModel.getSize() < linkNum * CONNECT_TRY_CHOICES) {
+      tryCount -= 1;
 
-        newModel.add(toId(from, into), linkFitness.get(from, into));
+      int from = eSource.nextInt(linkFitness.getSize());
+      int into = symmetric && from == 0 ? 0 : eSource.nextInt(symmetric ? from : linkFitness.getSize());
+
+
+      if (from == into || genome.getSolution().get(from, into) >= 1) {
+        continue;
       }
+
+      final int connectId = toId(from, into);
+      if (connectIds.contains(connectId)) {
+        continue;
+      }
+
+      connectIds.add(connectId);
+      connectModel.add(connectId, linkFitness.get(from, into));
     }
 
-    final TIntArrayList result = new TIntArrayList();
-
-    while (newModel.getSize() > 0 && result.size() < linkNum) {
-      result.add(newModel.generate(eSource, true, null));
+    if (tryCount == 0 && connectModel.getSize() < linkNum * CONNECT_TRY_CHOICES) {
+      log.warn(
+          "configureConnectModel() exiting with {} links instead of {}",
+          connectModel.getSize(),
+          linkNum * CONNECT_TRY_CHOICES
+      );
     }
-
-    return result;
-  }
-
-  protected void rewire(GeneticStrategySoo strategySoo, GenomeSoo genome, int oldWireId, int newWireId) {
-    final double step = 1.0 / strategySoo.getSteps();
-    final int oldWireFrom = toFrom(oldWireId);
-    final int oldWireInto = toInto(oldWireId);
-
-    final EdgeData solution = genome.getSolution();
-    solution.set(oldWireFrom, oldWireInto, solution.get(oldWireFrom, oldWireInto) - step);
-
-    final int newWireFrom = toFrom(newWireId);
-    final int newWireInto = toInto(newWireId);
-
-    solution.set(newWireFrom, newWireInto, solution.get(newWireFrom, newWireInto) + step);
   }
 
   protected abstract EdgeData buildLinkFitness(GeneticStrategySoo strategySoo, GenomeSoo genome);
