@@ -25,6 +25,8 @@ import org.akraievoy.cnet.net.vo.EdgeDataFactory.EdgeDataConstant
 import org.akraievoy.holonet.exp.{ParamName, Experiment, Config, ParamPos}
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.BitSet
+import java.util.concurrent.ConcurrentHashMap
+import scala.collection.JavaConversions.asScalaConcurrentMap
 
 class ExperimentStore(
   val fs: FileSystem,
@@ -35,14 +37,18 @@ class ExperimentStore(
   val requiredIndexes: BitSet
 ) {
 
-  private val schemaMonitor = new Object()
-  private var schema: Map[String, String] = Map.empty
+  private val schema: scala.collection.mutable.ConcurrentMap[String, String] =
+    new ConcurrentHashMap[String, String](
+      64,
+      0.125f,
+      Runtime.getRuntime.availableProcessors()
+    )
 
   private val openStreamsMonitor = new Object()
   private var openStreams: Map[File, Closeable] = Map.empty
 
   private val cachedCSVMoninor = new Object()
-  private var cachedCSV: Map[String, Map[String, String]] = Map.empty
+  private var cachedCSV: Map[String, Map[Long, String]] = Map.empty
 
   private val cachedBinariesMoninor = new Object()
   private var cachedBinaries: Map[String, Streamable] = Map.empty
@@ -53,7 +59,7 @@ class ExperimentStore(
     lineSeq =>
       lineSeq.foreach {
         line =>
-          schema = schema.updated(line(0), line(1))
+          schema.putIfAbsent(line(0), line(1))
       }
   }
 
@@ -104,7 +110,7 @@ class ExperimentStore(
     }
 
     val posStr = posNumStr(posNum)
-    val paramFName = paramKey(paramName, mt, true).get
+    val paramFName = paramKey(paramName, mt, extendSchema = true).get
     if (ExperimentStore.primitiveSerializers.contains(mt.erasure.getName)) {
         val lens = ExperimentStore.primitiveSerializers(mt.erasure.getName).lens
         val serialized = lens.asInstanceOf[Lens[String, T]].set("", value)
@@ -126,7 +132,7 @@ class ExperimentStore(
             cachedCSV = cachedCSV.updated(
               paramFName,
               cachedParamData.updated(
-                posStr,
+                posNum,
                 serialized
               )
             )
@@ -153,7 +159,7 @@ class ExperimentStore(
   }
 
   private def posNumStr[T](posNum: Long): String = {
-    java.lang.Long.toString(posNum, 16).intern
+    java.lang.Long.toString(posNum, 16)
   }
 
   def get[T](
@@ -187,8 +193,7 @@ class ExperimentStore(
   )(
     implicit mt: Manifest[T]
   ): Option[T] = {
-    val posStr = posNumStr(posNum)
-    paramKey(paramName, mt, false).flatMap {
+    paramKey(paramName, mt, extendSchema = false).flatMap {
       paramFName =>
         if (ExperimentStore.primitiveSerializers.contains(mt.erasure.getName)) {
           cachedCSVMoninor.synchronized {
@@ -196,7 +201,7 @@ class ExperimentStore(
               fs.readCSV(uid, paramFName).map {
                 lineSeq =>
                   val groupedLines = lineSeq.groupBy {
-                    _.head.intern
+                    columnSeq => java.lang.Long.parseLong(columnSeq.head, 16)
                   }.mapValues {
                     _.last.last
                   }
@@ -205,7 +210,7 @@ class ExperimentStore(
               }
             }
           }.flatMap {
-            _.get(posStr)
+            _.get(posNum)
           }.map {
             str =>
               val lens = ExperimentStore.primitiveSerializers(mt.erasure.getName).lens
@@ -217,7 +222,7 @@ class ExperimentStore(
               mt.erasure.getName
             )
 
-          val binaryFName = "" + paramFName + "/" + posStr
+          val binaryFName = "" + paramFName + "/" + posNumStr(posNum)
           val fetchOp: (String) => Option[T] = {
             binaryFName1 =>
               try {
@@ -229,7 +234,7 @@ class ExperimentStore(
               } catch {
                 case e: Exception =>
                   throw new RuntimeException(
-                    "failed on read of %s.%s.%s@%s".format(experiment.name, config.name, paramName, posStr),
+                    "failed on read of %s.%s.%s@%s".format(experiment.name, config.name, paramName, posNumStr(posNum)),
                     e
                   )
               }
@@ -260,15 +265,14 @@ class ExperimentStore(
   }
 
   def listParams: Map[String, Class[_]] = {
-    schemaMonitor.synchronized{
-      schema
-    }.mapValues {
+    val values = schema.toMap.mapValues {
       typeAlias =>
         ExperimentStore.allSerializers.find {
           case (tManifest, serializer) =>
             serializer.alias == typeAlias
         }.get._2.mt.erasure
     }
+    values
   }
 
   private def typeNotSupported[T](mt: Manifest[T]): Nothing = {
@@ -283,38 +287,42 @@ class ExperimentStore(
     extendSchema: Boolean
   ): Option[String] = {
     val serializer =
-      ExperimentStore.primitiveSerializers.get(mt.erasure.getName).map(_.asInstanceOf[Serializer[_ <: Any]]).orElse(
+      ExperimentStore.primitiveSerializers.get(mt.erasure.getName).map(
+        _.asInstanceOf[Serializer[_ <: Any]]
+      ).orElse(
         ExperimentStore.streamableSerializers.get(mt.erasure.getName)
       ).getOrElse {
         typeNotSupported(mt)
       }
+
     val alias = serializer.alias
 
-    schemaMonitor.synchronized {
-      val aliasStored = schema.get(paramName).map {
-        aliasPrev =>
-          if (aliasPrev != alias) {
-            throw new IllegalStateException(
-              "%s was accessed as %s and now is accessed as %s".format(
-                paramName,
-                aliasPrev,
-                alias
-              )
-            )
-          }
-      }.isDefined
-
-      if (!aliasStored && !extendSchema) {
-        None
-      } else {
-        if (!aliasStored && extendSchema) {
-          if (writeLocked.get) {
-            throw new IllegalStateException("attempting to add param %s after write shutdown".format(paramName))
-          }
-          schema = schema.updated(paramName, alias)
+    val aliasStored = (
+      if (extendSchema) {
+        if (writeLocked.get) {
+          throw new IllegalStateException("attempting to add param %s after write shutdown".format(paramName))
         }
-        Some("raw/" + paramName + "--" + alias)
+        schema.putIfAbsent(paramName, alias)
+      } else {
+        schema.get(paramName)
       }
+    ).map {
+      aliasPrev =>
+        if (aliasPrev != alias) {
+          throw new IllegalStateException(
+            "%s was accessed as %s and now is accessed as %s".format(
+              paramName,
+              aliasPrev,
+              alias
+            )
+          )
+        }
+    }.isDefined
+
+    if (aliasStored || extendSchema) {
+      Some("raw/" + paramName + "--" + alias)
+    } else {
+      None
     }
   }
 
@@ -333,14 +341,12 @@ class ExperimentStore(
       )
     )
 
-    schemaMonitor.synchronized{
-      fs.dumpCSV(uid, "schema.csv", Map.empty)(
-        schema.map {
-          case (pName, pAlias) =>
-            Seq(pName, pAlias)
-        }.toStream
-      )
-    }
+    fs.dumpCSV(uid, "schema.csv", Map.empty)(
+      schema.map {
+        case (pName, pAlias) =>
+          Seq(pName, pAlias)
+      }.toStream
+    )
 
     openStreamsMonitor.synchronized {
       openStreams.values.foreach {
@@ -364,9 +370,7 @@ class ExperimentStore(
   }
 
   def primitives: Seq[ParamName[_]] = {
-    schemaMonitor.synchronized {
-      schema
-    }.filter {
+    schema.filter {
       case (name, alias) =>
         ExperimentStore.primitiveAliases.contains(alias)
     }.toSeq.map{
