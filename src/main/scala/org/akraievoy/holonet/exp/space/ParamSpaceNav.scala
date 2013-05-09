@@ -23,6 +23,7 @@ import org.akraievoy.holonet.exp.store.{RunStore, ExperimentStore}
 import org.slf4j.LoggerFactory
 import java.util.Date
 import scala.collection.BitSet
+import java.util.concurrent.atomic.AtomicLong
 
 trait ParamSpaceNav {
   private val log = LoggerFactory.getLogger(classOf[ParamSpaceNav])
@@ -102,7 +103,7 @@ trait ParamSpaceNav {
     val posCount = spacePosCount(subchain, requiredIndexes)
     val posStreams = spacePosStreams(subchain, requiredIndexes)
     val mapStart = System.currentTimeMillis
-    var posMapped = 0L
+    val posMapped = new AtomicLong(0)
     posStreams.getOrElse(
       false,
       SPACE_EMPTY
@@ -113,9 +114,9 @@ trait ParamSpaceNav {
           try {
             visitFun(RunStore(expStore, sequentialPos ++ parallelPos))
           } finally {
-            posMapped += 1
+            val posMappedLocal: Long = posMapped.incrementAndGet()
             val mapNow = System.currentTimeMillis
-            val progress = (0.0 + posMapped) / posCount
+            val progress = (0.0 + posMappedLocal) / posCount
             val spent = mapNow - mapStart
             val left = math.ceil(spent / progress).toLong
             if (math.max(spent, left) > 30 * 1000) {
