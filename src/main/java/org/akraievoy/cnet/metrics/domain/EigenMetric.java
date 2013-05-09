@@ -99,15 +99,12 @@ public class EigenMetric {
     final intW lapackStatus = new intW(0);
     final intW foundCount = new intW(0);
 
-    //  unable to use this from multiple threads
-    synchronized (EigenMetric.class) {
-      LAPACK.getInstance().dsyevx(
-          mode, "I", "U", nodes, laplacian, nodes,
-          0.0, 0.0, 1, 2, 2 * LAPACK.getInstance().dlamch("S"),
-          foundCount, result, evResult, nodes,
-          work, 8 * nodes, evWork, evStatus, lapackStatus
-      );
-    }
+    LAPACK.getInstance().dsyevx(
+        mode, "I", "U", nodes, laplacian, nodes,
+        0.0, 0.0, 1, 2, 2 * LAPACK.getInstance().dlamch("S"),
+        foundCount, result, evResult, nodes,
+        work, 8 * nodes, evWork, evStatus, lapackStatus
+    );
 
     if (lapackStatus.val != 0) {
       log.warn(

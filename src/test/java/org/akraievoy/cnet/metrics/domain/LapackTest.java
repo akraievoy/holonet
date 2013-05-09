@@ -39,12 +39,10 @@ public class LapackTest extends TestCase {
     final double[] work = new double[3 * N];
     intW status = new intW(0);
 
-    synchronized (EigenMetric.class) {
-      lapackInstance.dsyev(
-          "N", "U", N, matrix, N,
-          result, work, 3 * N, status
-      );
-    }
+    lapackInstance.dsyev(
+        "N", "U", N, matrix, N,
+        result, work, 3 * N, status
+    );
 
     return result;
   }

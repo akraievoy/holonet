@@ -30,7 +30,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 
 public class MetricVDataCycleOrdering extends MetricVData {
-  private static final Logger log = LoggerFactory.getLogger(EigenMetric.class);
+  private static final Logger log = LoggerFactory.getLogger(MetricVDataCycleOrdering.class);
+
   protected RefRO<? extends EdgeData> source = new RefObject<EdgeData>();
 
   public MetricVDataCycleOrdering() {

@@ -16,7 +16,7 @@ libraryDependencies += "org.akraievoy" % "base" % "1.3.1"
 
 libraryDependencies += "net.sf.trove4j" % "trove4j" % "2.0.2"
 
-libraryDependencies += "org.netlib" % "netlib-java" % "0.9.1"
+libraryDependencies += "com.googlecode.netlib-java" % "netlib-java" % "0.9.3"
 
 libraryDependencies += "org.netlib" % "arpack-combo" % "0.1"
 
