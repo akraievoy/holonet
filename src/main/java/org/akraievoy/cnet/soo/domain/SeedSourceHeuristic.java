@@ -18,8 +18,10 @@
 
 package org.akraievoy.cnet.soo.domain;
 
-import org.akraievoy.base.Die;
+import algores.holonet.core.ProgressSimple;
 import org.akraievoy.cnet.metrics.api.Metric;
+import org.akraievoy.cnet.metrics.domain.MetricEDataRouteLen;
+import org.akraievoy.cnet.metrics.domain.MetricRoutesFloydWarshall;
 import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.metrics.domain.MetricScalarEigenGap;
 import org.akraievoy.cnet.net.vo.EdgeData;
@@ -30,44 +32,97 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * This generates a clique of stars  and presumes your distance matrix is symmetric and conforming to triangle rule.
- */
+import static org.akraievoy.cnet.net.Net.*;
+import static org.akraievoy.util.Cruft.*;
+
 public class SeedSourceHeuristic implements SeedSource<GenomeSoo> {
   private static final Logger log = LoggerFactory.getLogger(SeedSourceHeuristic.class);
+
+  protected final MetricEDataRouteLen metricRouteLen = new MetricEDataRouteLen(new MetricRoutesFloydWarshall());
   protected final MutatorSooClusterize clusterize = new MutatorSooClusterize();
 
   public List<GenomeSoo> getSeeds(GeneticStrategy strategy) {
     final GeneticStrategySoo strategySoo = (GeneticStrategySoo) strategy;
-
-    final EdgeData dist = strategySoo.getDistSource().getValue();
-    final EdgeData req = strategySoo.getRequestSource().getValue();
-    final int size = dist.getSize();
-    final int links = (int) Math.floor(strategySoo.getTotalLinkUpperLimit());
-
-    final Map<Integer, GenomeSoo> range = generateSeed(links, size, dist, req);
+    final Map<Integer, GenomeSoo> range = generateSeedRange(strategySoo);
 
     return new ArrayList<GenomeSoo>(range.values());
   }
 
-  protected Map<Integer, GenomeSoo> generateSeed(
-      int limit, int size, EdgeData dist, EdgeData req
+  protected Map<Integer, GenomeSoo> generateSeedRange(
+      final GeneticStrategySoo strategy
   ) {
-    final BitSet starRoots = new BitSet();
+    final EdgeData dist = strategy.getDistSource().getValue();
+    final EdgeData reqSum = eSparseSymSum(strategy.getRequestSource().getValue());
+    final double[] reqMinMax = eMinMax(reqSum);
+
+    final int size = dist.getSize();
+    final int nodeLinkLowerLimit = strategy.getNodeLinkLowerLimit();
+    final int nodeLinkUpperLimit = strategy.getNodeLinkUpperLimit();
+    final int totalLinkUpperLimit = (int) Math.floor(strategy.getTotalLinkUpperLimit());
+
     final EdgeData solution = EdgeDataFactory.sparse(true, 0.0, size);
-    final EdgeData minDist = EdgeDataFactory.dense(true, Double.POSITIVE_INFINITY, size);
+    metricRouteLen.getRoutes().setDistSource(strategy.getDistSource());
+    metricRouteLen.getRoutes().setSource(new RefObject<EdgeData>(solution));
 
-    AtomicInteger linksToAdd = new AtomicInteger(limit);
-    while (linksToAdd.get() > 0 && starRoots.cardinality() < size) {
-      int starRoot = selectStarRoot(dist, req, solution, minDist, size, starRoots);
+    final List<LinkCandidate> links = new ArrayList<LinkCandidate>(size * (size - 1));
+    final int[] nodePowers = new int[size];
+    int linksToAdd = totalLinkUpperLimit;
+    final ProgressSimple progress = new ProgressSimple(totalLinkUpperLimit).start();
+    while (linksToAdd > 0) {
+      final int[] minNodePowers = min2(nodePowers);
+      final int bestPowerSum = minNodePowers[0] + minNodePowers[1];
+      final EdgeData routeLen = Metric.fetch(metricRouteLen);
 
-      addStar(solution, dist, minDist, size, linksToAdd, starRoot);
-      starRoots.set(starRoot, true);
-      log.debug(
-          "added {} star roots, or {} of {} links",
-          new Object[]{starRoots.cardinality(), limit - linksToAdd.get(), limit}
+      links.clear();
+      final Fun1<Integer, Boolean> linkable =
+          powerToLinkable(nodeLinkLowerLimit, nodeLinkUpperLimit, minNodePowers[0]);
+
+      for (int from = 1; from < size; from++) {
+        final int fromPower = nodePowers[from];
+        if (!linkable.apply(fromPower)) {
+          continue;
+        }
+
+        for (int into = 0; into < from; into++) {
+          final int intoPower = nodePowers[into];
+          final int powerSum = fromPower + intoPower;
+          if (bestPowerSum < powerSum) {
+            continue;
+          }
+
+          if (!linkable.apply(intoPower) || solution.conn(from, into)) {  //  TODO performance (pre-load connected intos for current from)
+            continue;
+          }
+
+          final double effDelta = effChangeForLink(reqSum, routeLen, reqMinMax, from, into, dist.get(from, into));
+          final double bestEffDelta = links.isEmpty() ? 0.0 : links.get(0).effDelta;
+          if (effDelta > bestEffDelta) {
+            links.clear();
+          }
+          if (bestEffDelta <= effDelta) {
+            links.add(
+                new LinkCandidate(from, into, effDelta, powerSum)
+            );
+          }
+        }
+      }
+
+      if (links.isEmpty()) {
+        throw new IllegalStateException("no valid link candidates: " + linksToAdd + " links pending, powers: " + Arrays.toString(nodePowers));
+      }
+      Collections.sort(links);
+
+      final LinkCandidate link = links.get(links.size() - 1);
+      solution.set(link.from, link.into, 1);
+      nodePowers[link.from] += 1;
+      nodePowers[link.into] += 1;
+      linksToAdd -= 1;
+
+      final int linksAdded = totalLinkUpperLimit - linksToAdd;
+      log.info(
+          "effDelta {} with {} choices --- {}",
+          new Object[]{link.effDelta, links.size(), progress.iter(linksAdded)}
       );
     }
 
@@ -95,6 +150,21 @@ public class SeedSourceHeuristic implements SeedSource<GenomeSoo> {
     return seedRange;
   }
 
+  private Fun1<Integer, Boolean> powerToLinkable(
+      final int nodeLinkLowerLimit,
+      final int nodeLinkUpperLimit,
+      final int minNodePower
+  ) {
+    return new Fun1<Integer, Boolean>() {
+      @Override
+      public Boolean apply(final Integer power) {
+        return
+            power < nodeLinkLowerLimit ||
+            power < nodeLinkUpperLimit && minNodePower >= nodeLinkLowerLimit;
+      }
+    };
+  }
+
   protected static boolean storeSeed(
       final Map<Integer, GenomeSoo> seedRange,
       final EdgeData solution,
@@ -111,126 +181,90 @@ public class SeedSourceHeuristic implements SeedSource<GenomeSoo> {
     if (seedRange.containsKey(rangePos)) {
       return false;
     } else {
-      seedRange.put(rangePos, new GenomeSoo(cloneSolution(solution)));
+      seedRange.put(rangePos, new GenomeSoo(eClone(solution)));
       return true;
     }
   }
 
-  protected static EdgeData cloneSolution(EdgeData solution) {
-    final EdgeData solutionClone = solution.proto(solution.getSize());
-    solution.visitNonDef(
-        new EdgeData.EdgeVisitor() {
-          @Override
-          public void visit(int from, int into, double e) {
-            solutionClone.set(from, into, e);
-          }
-        }
-    );
-    return solutionClone;
-  }
+  protected static double effChangeForLink(
+      final EdgeData reqSum, final EdgeData routeLen, final double[] reqMinMax,
+      final int n2, final int n3, final double newLen23
+  ) {
+    final double oldLen23 = routeLen.get(n2, n3);
+    if (oldLen23 <= newLen23) {
+      return 0;
+    }
 
-  protected static void addStar(EdgeData solution, EdgeData dist, EdgeData minDist, int size, AtomicInteger linksToAdd, int starRoot) {
-    for (int perifI = 0; perifI < size - 1 && linksToAdd.get() > 0; perifI++) {
-      if (perifI == starRoot) {
-        continue;
-      }
+    final double fakeDirectRequest = reqMinMax[0] / reqMinMax[1];
+    final double[] effDeltaTotal = { effDelta(oldLen23, newLen23) * fakeDirectRequest};
 
-      double toRootMinDist = dist.get(perifI, starRoot);
-      boolean toRootAdded = addLink(solution, linksToAdd, perifI, starRoot);
-      if (toRootAdded) {
-        toRootMinDist = updateMinDist(dist, minDist, starRoot, perifI, toRootMinDist);
-      }
-
-      for (int perifJ = perifI + 1; perifJ < size && linksToAdd.get() > 0; perifJ++) {
-        if (perifJ == starRoot || solution.conn(perifI, perifJ)) {
-          continue;
+    reqSum.visitNonDef(new EdgeData.EdgeVisitor() {
+      @Override
+      public void visit(final int n1, final int n4, final double reqSum) {
+        final double prevLen14 = routeLen.get(n1, n4);
+        if (newLen23 >= prevLen14) {
+          return;
         }
 
-        final boolean fromRootAdded = addLink(solution, linksToAdd, starRoot, perifJ);
-        if (toRootAdded || fromRootAdded) {
-          final double routeLen = toRootMinDist + dist.get(starRoot, perifJ);
-          updateMinDist(dist, minDist, perifJ, perifI, routeLen);
-        }
-      }
-    }
-  }
-
-  protected static double updateMinDist(EdgeData dist, EdgeData minDist, int from, int into, double curRouteLen) {
-    final double curMinDist = dist.get(into, from);
-    final double newMinDist = Math.min(curMinDist, curRouteLen);
-
-    minDist.set(into, from, newMinDist);
-
-    return newMinDist;
-  }
-
-  protected static boolean addLink(EdgeData solution, AtomicInteger linksToAdd, int from, int into) {
-    //	this means that this set is an update
-    if (solution.set(into, from, 1.0) != 1.0) {
-      linksToAdd.decrementAndGet();
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  protected static int selectStarRoot(EdgeData dist, EdgeData req, EdgeData solution, EdgeData minDist, int size, BitSet starRoots) {
-    int starRoot = -1;
-    double starEff = 0;
-    for (int rootI = 0; rootI < size; rootI++) {
-      if (starRoots.get(rootI)) {
-        continue;
-      }
-
-      double eff = computeEffChange(dist, req, solution, minDist, size, rootI);
-
-      if (starRoot < 0 || (eff > starEff)) {
-        starRoot = rootI;
-        starEff = eff;
-      }
-    }
-
-    Die.ifTrue("starRoot < 0", starRoot < 0);
-    return starRoot;
-  }
-
-  protected static double computeEffChange(EdgeData dist, EdgeData req, EdgeData solution, EdgeData minDist, int size, int rootI) {
-    double eff = 0;
-
-    for (int perifI = 0; perifI < size - 1; perifI++) {
-      if (perifI == rootI) {
-        continue;
-      }
-
-      eff += computeEffChange(req, minDist, perifI, rootI, dist.get(perifI, rootI));
-
-      for (int perifJ = perifI + 1; perifJ < size; perifJ++) {
-        if (perifJ == rootI || solution.conn(perifI, perifJ)) {
-          continue;
+        final double len12 = routeLen.get(n1, n2);
+        final double len13 = routeLen.get(n1, n3);
+        if (len12 + newLen23 >= prevLen14 && len13 + newLen23 >= prevLen14) {
+          return;
         }
 
-        final double newRouteLen = dist.get(perifI, rootI) + dist.get(rootI, perifJ);
-        eff += computeEffChange(req, minDist, perifI, perifJ, newRouteLen);
-      }
-    }
+        final double len34 = routeLen.get(n3, n4);
+        final double len24 = routeLen.get(n2, n4);
+        final double newLen1234 = len12 + newLen23 + len34;
+        final double newLen1324 = len13 + newLen23 + len24;
+        final double newLen14 = newLen1234 < newLen1324 ? newLen1234 : newLen1324;
+        if (newLen14 >= prevLen14) {
+          return;
+        }
 
-    return eff;
+        effDeltaTotal[0] += effDelta(prevLen14, newLen14) * reqSum;
+      }
+    });
+
+    return effDeltaTotal[0];
   }
 
-  protected static double computeEffChange(EdgeData req, EdgeData minDist, int perifI, int perifJ, final double newRouteLen) {
-    final double prevMinDist = minDist.get(perifI, perifJ);
+  protected static double effDelta(final double oldLen, final double newLen) {
+    final double effDelta = Math.pow(newLen, -1) - Math.pow(oldLen, -1);
 
-    if (newRouteLen > prevMinDist) {
-      return 0.0;
+    if (effDelta < 0) {
+      throw new IllegalStateException(
+          "negative effDelta " + effDelta + " for newLen " + newLen + " and oldLen " + oldLen
+      );
     }
 
-    double diff = Math.pow(newRouteLen, -1) - Math.pow(prevMinDist, -1);
+    return effDelta;
+  }
+}
 
-    if (diff > 0) {
-      final double reqSum = req.get(perifI, perifJ) + req.get(perifJ, perifI);
-      return reqSum * diff;
+class LinkCandidate implements Comparable<LinkCandidate>{
+  final int from;
+  final int into;
+  final double effDelta;
+  final int powerSum;
+
+  LinkCandidate(final int from0, final int into0, final double effDelta0, final int powerSum0) {
+    effDelta = effDelta0;
+    from = from0;
+    into = into0;
+    powerSum = powerSum0;
+  }
+
+  @Override
+  public int compareTo(final LinkCandidate o) {
+    //  favor less connected nodes
+    final int powerSumCompare = intCompare(o.powerSum, powerSum);
+    if (powerSumCompare != 0) {
+      return powerSumCompare;
     }
 
-    return 0.0;
+    //  within ties by minimal power favor ones delivering most efficiency
+    final int deltaCompare = Double.compare(effDelta, o.effDelta);
+
+    return deltaCompare;
   }
 }

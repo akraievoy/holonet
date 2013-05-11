@@ -18,8 +18,6 @@
 
 package org.akraievoy.holonet.exp
 
-import org.apache.log4j.{PatternLayout, ConsoleAppender, BasicConfigurator}
-
 object Runner extends App {
   args match {
     case Array("curr-smoke") =>
@@ -28,7 +26,7 @@ object Runner extends App {
         Map(
           "overlayGO-1-physDataset" -> "phys-64",
           "overlayGO-2-ovlDataset" -> "nu25",
-          "overlayGO-3-genetics" -> "corrStudy-full",
+          "overlayGO-3-genetics" -> "corrStudy-smoke",
           "p2p-stage1-seed" -> "42x3",
           "p2p-stage2-paramSpace" -> "corrStudy-large-16",
           "p2p-stage3-attack-chained" -> "default"

@@ -18,7 +18,6 @@
 
 package org.akraievoy.cnet.net.vo;
 
-import com.google.common.io.Closeables;
 import gnu.trove.TIntArrayList;
 
 import java.io.IOException;
