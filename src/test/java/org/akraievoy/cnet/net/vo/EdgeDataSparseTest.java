@@ -212,9 +212,18 @@ public class EdgeDataSparseTest extends TestCase {
     assertEquals(Double.POSITIVE_INFINITY, res2.get(2, 0));
   }
 
-  public void testJsonSerializationRandom() throws IOException {
-    for (long seed = 0; seed < 100000; seed++) {
-      testJsonSerializationRandom(26, true, Double.POSITIVE_INFINITY, 1234567L + seed, 0.5, 8);
+  public void testJsonSerializationRandom() throws Throwable {
+    for (int size = 15; size < 17; size++) {
+      System.out.println("size = " + size);
+      try {
+        for (long seed = 17; seed < 18; seed++) {
+          System.out.println("seed = " + seed);
+          testJsonSerializationRandom(size, true, Double.POSITIVE_INFINITY, 1234567L + seed, 0.981, 1, 0);
+        }
+      } catch (Throwable t) {
+        System.err.println("HOUSTON: failed for size: " + size);
+        throw t;
+      }
     }
   }
 
@@ -224,7 +233,7 @@ public class EdgeDataSparseTest extends TestCase {
       final double defElem0,
       final long seed0,
       final double density0,
-      final int passes0) throws IOException {
+      final int passes0, final int fillElem0) throws IOException {
     final Random random = new Random(seed0);
 
     final EdgeData ori = EdgeDataFactory.sparse(symmetric0, defElem0, size0);
@@ -232,8 +241,10 @@ public class EdgeDataSparseTest extends TestCase {
     for (int pass = 0; pass < passes0; pass++) {
       for (int from = 0; from < size0; from++) {
         for (int into = 0; into < size0; into++) {
-          if (random.nextDouble() * passes0 < density0) {
-            ori.set(from, into, 0);
+          if (random.nextDouble() < density0) {
+            ori.set(from, into, fillElem0);
+          } else {
+            ori.set(from, into, defElem0);
           }
         }
       }
