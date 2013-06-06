@@ -20,12 +20,12 @@ package org.akraievoy.cnet.net.vo;
 
 import com.google.common.io.ByteStreams;
 import junit.framework.TestCase;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 public class EdgeDataSparseTest extends TestCase {
@@ -210,5 +210,80 @@ public class EdgeDataSparseTest extends TestCase {
     assertEquals(Double.POSITIVE_INFINITY, res2.get(3, 0));
     assertEquals(Double.POSITIVE_INFINITY, res2.get(0, 2));
     assertEquals(Double.POSITIVE_INFINITY, res2.get(2, 0));
+  }
+
+  public void testJsonSerializationRandom() throws IOException {
+    for (long seed = 0; seed < 100000; seed++) {
+      testJsonSerializationRandom(26, true, Double.POSITIVE_INFINITY, 1234567L + seed, 0.5, 8);
+    }
+  }
+
+  private void testJsonSerializationRandom(
+      final int size0,
+      final boolean symmetric0,
+      final double defElem0,
+      final long seed0,
+      final double density0,
+      final int passes0) throws IOException {
+    final Random random = new Random(seed0);
+
+    final EdgeData ori = EdgeDataFactory.sparse(symmetric0, defElem0, size0);
+
+    for (int pass = 0; pass < passes0; pass++) {
+      for (int from = 0; from < size0; from++) {
+        for (int into = 0; into < size0; into++) {
+          if (random.nextDouble() * passes0 < density0) {
+            ori.set(from, into, 0);
+          }
+        }
+      }
+    }
+
+    final byte[] bytes = ByteStreams.toByteArray(ori.createStream());
+
+    final EdgeData res = new EdgeDataSparse().fromStream(new ByteArrayInputStream(bytes));
+
+    final byte[] bytes2 = ByteStreams.toByteArray(res.createStream());
+
+    assertTrue(Arrays.equals(bytes, bytes2));
+
+    final EdgeData res2 = new EdgeDataSparse().fromStream(new ByteArrayInputStream(bytes2));
+
+    assertEquals(ori.getSize(), res2.getSize());
+    assertEquals(ori.isSymmetric(), res2.isSymmetric());
+    assertEquals(ori.hashCode(), res2.hashCode());
+    assertEquals(ori.getDefElem(), res2.getDefElem());
+
+    for (int from = 0; from < size0; from++) {
+      for (int into = 0; into < size0; into++) {
+        assertEquals(ori.get(from, into), res2.get(from, into));
+      }
+    }
+
+    for (int from = 0; from < size0; from++) {
+      for (int into = 0; into < size0; into++) {
+        assertEquals(ori.isDef(from, into), res2.isDef(from, into));
+      }
+    }
+
+    final List<Object[]> visitNonDefRes = new ArrayList<Object[]>();
+    ori.visitNonDef(new EdgeData.EdgeVisitor() {
+      @Override
+      public void visit(final int from, final int into, final double e) {
+        visitNonDefRes.add(new Object[]{ from, into, e });
+      }
+    });
+
+    final int[] resPos = { 0 };
+    res2.visitNonDef(new EdgeData.EdgeVisitor() {
+      @Override
+      public void visit(final int from, final int into, final double e) {
+        final Object[] expected = visitNonDefRes.get(resPos[0]);
+        assertEquals(((Number) expected[0]).intValue(), from);
+        assertEquals(((Number) expected[1]).intValue(), into);
+        assertEquals(((Number) expected[2]).doubleValue(), e);
+        resPos[0] += 1;
+      }
+    });
   }
 }
