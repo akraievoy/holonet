@@ -127,7 +127,7 @@ public class EdgeDataSparse implements EdgeData {
             if (sizePos == 0) {
               intBits(leads.length, sizeBits);
             }
-            final byte res = sizeBits[sizePos++];
+            final int res = escapeByte(sizeBits[sizePos++]);
             if (sizePos == sizeBits.length) {
               state = StreamState.DEF;
             }
@@ -137,7 +137,7 @@ public class EdgeDataSparse implements EdgeData {
             if (defPos == 0) {
               longBits(Double.doubleToLongBits(defElem), defBits);
             }
-            final byte res = defBits[defPos++];
+            final int res = escapeByte(defBits[defPos++]);
             if (defPos == defBits.length) {
               state = StreamState.NONDEF_ELEMS;
             }
@@ -147,7 +147,7 @@ public class EdgeDataSparse implements EdgeData {
             if (nonDefElemPos == 0) {
               intBits(nonDefElems, nonDefElemBits);
             }
-            final byte res = nonDefElemBits[nonDefElemPos++];
+            final int res = escapeByte(nonDefElemBits[nonDefElemPos++]);
             if (nonDefElemPos == nonDefElemBits.length) {
               state = StreamState.LEADS;
             }
@@ -157,7 +157,7 @@ public class EdgeDataSparse implements EdgeData {
             if (leadPos == 0) {
               intBits(leads[leadIdx / 2][leadIdx % 2], leadBits);
             }
-            final byte res = leadBits[leadPos++];
+            final int res = escapeByte(leadBits[leadPos++]);
             if (leadPos == leadBits.length) {
               leadIdx += 1;
               leadPos = 0;
@@ -165,7 +165,7 @@ public class EdgeDataSparse implements EdgeData {
                 state = StreamState.TRAILS;
               }
             }
-            return escapeByte(res);
+            return res;
           }
           case TRAILS: {
             if (trailsStoreIn == null) {
@@ -182,7 +182,7 @@ public class EdgeDataSparse implements EdgeData {
             }
           }
           case WIDTH:
-            throw new IllegalStateException("WIDTH state was be not reachable");
+            throw new IllegalStateException("WIDTH state was not reachable");
           case DATA: {
             if (dataStoreIn == null) {
               dataStoreIn = data.createStream();

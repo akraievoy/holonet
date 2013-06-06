@@ -212,13 +212,13 @@ public class EdgeDataSparseTest extends TestCase {
     assertEquals(Double.POSITIVE_INFINITY, res2.get(2, 0));
   }
 
-  public void testJsonSerializationRandom() throws Throwable {
-    for (int size = 15; size < 17; size++) {
+  public void testSerializationRandom() throws Throwable {
+    for (int size = 256; size < 257; size++) {
       System.out.println("size = " + size);
       try {
-        for (long seed = 17; seed < 18; seed++) {
+        for (long seed = 5; seed < 6; seed++) {
           System.out.println("seed = " + seed);
-          testJsonSerializationRandom(size, true, Double.POSITIVE_INFINITY, 1234567L + seed, 0.981, 1, 0);
+          testSerializationRandom(size, true, Double.POSITIVE_INFINITY, 1234567L + seed, 0.125, 3, 0);
         }
       } catch (Throwable t) {
         System.err.println("HOUSTON: failed for size: " + size);
@@ -227,7 +227,7 @@ public class EdgeDataSparseTest extends TestCase {
     }
   }
 
-  private void testJsonSerializationRandom(
+  private void testSerializationRandom(
       final int size0,
       final boolean symmetric0,
       final double defElem0,

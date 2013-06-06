@@ -183,20 +183,20 @@ public class EdgeDataFactory {
             if (sizePos == 0) {
               intBits(size, sizeBits);
             }
-            final byte res = sizeBits[sizePos++];
+            final int res = escapeByte(sizeBits[sizePos++]);
             if (sizePos == sizeBits.length) {
               state = StreamState.VALUE;
             }
-            return escapeByte(res);
+            return res;
           } else if (state == StreamState.VALUE) {
             if (valuePos == 0) {
               longBits(Double.doubleToLongBits(value), valueBits);
             }
-            final byte res = valueBits[sizePos++];
+            final int res = escapeByte(valueBits[sizePos++]);
             if (valuePos == valueBits.length) {
               state = StreamState.COMPLETE;
             }
-            return escapeByte(res);
+            return res;
           } else if (state == StreamState.COMPLETE) {
             return -1;
           } else {

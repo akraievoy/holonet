@@ -85,7 +85,7 @@ public class EdgeDataDense implements EdgeData {
             if (sizePos == 0) {
               intBits(size, sizeBits);
             }
-            final byte res = sizeBits[sizePos++];
+            final int res = escapeByte(sizeBits[sizePos++]);
             if (sizePos == sizeBits.length) {
               state = StreamState.DEF;
             }
@@ -95,7 +95,7 @@ public class EdgeDataDense implements EdgeData {
             if (defPos == 0) {
               longBits(Double.doubleToLongBits(defElem), defBits);
             }
-            final byte res = defBits[defPos++];
+            final int res = escapeByte(defBits[defPos++]);
             if (defPos == defBits.length) {
               state = StreamState.WIDTH;
             }

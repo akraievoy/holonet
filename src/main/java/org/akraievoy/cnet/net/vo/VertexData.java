@@ -71,7 +71,7 @@ public class VertexData implements Streamable {
             if (defPos == 0) {
               longBits(Double.doubleToLongBits(nullElement), defBits);
             }
-            final byte res = defBits[defPos++];
+            final int res = escapeByte(defBits[defPos++]);
             if (defPos == defBits.length) {
               state = StreamState.WIDTH;
             }
