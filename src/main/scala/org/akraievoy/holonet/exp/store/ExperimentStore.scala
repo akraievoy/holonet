@@ -55,7 +55,7 @@ class ExperimentStore(
     (
       CacheBuilder.newBuilder()
           .concurrencyLevel(Runtime.getRuntime.availableProcessors())
-          .maximumSize(512)
+          .maximumSize(128)
           .build[String, Option[Streamable]]()
     )
 
