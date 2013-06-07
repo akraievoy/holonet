@@ -40,8 +40,8 @@ public class ConditionSooFitnessCapping implements Condition<GenomeSoo> {
       double fcTarget = strategySoo.getFitnessCap();
       fitnessCap = Optional.of(
           Interpolate.norm(
-              0, strategySoo.generationNum * 0.85,
-              fcTarget * 3, fcTarget,
+              0, strategySoo.generationNum * 0.5,
+              fcTarget * 0.85, fcTarget,
               Interpolate.LINEAR
           ).apply(generationIndex)
       );
