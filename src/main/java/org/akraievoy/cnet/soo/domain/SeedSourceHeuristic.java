@@ -117,6 +117,7 @@ public class SeedSourceHeuristic implements SeedSource<GenomeSoo> {
       solution.set(link.from, link.into, 1);
       nodePowers[link.from] += 1;
       nodePowers[link.into] += 1;
+      reqSum.set(link.from, link.into, 0);  //  direct link is the most effective, so defuse local request
       linksToAdd -= 1;
 
       final int linksAdded = totalLinkUpperLimit - linksToAdd;
