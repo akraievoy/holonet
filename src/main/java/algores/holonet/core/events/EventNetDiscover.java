@@ -34,6 +34,7 @@ import java.util.List;
 public class EventNetDiscover extends Event<EventNetDiscover> {
   private LookupService.Mode mode = LookupService.Mode.GET;
   private float successRatio;
+  private boolean excludeOffgridNodes = false;
 
   public EventNetDiscover mode(LookupService.Mode newMode) {
     this.mode = newMode;
@@ -42,6 +43,11 @@ public class EventNetDiscover extends Event<EventNetDiscover> {
 
   public float successRatio() {
     return successRatio;
+  }
+
+  public EventNetDiscover excludeOffgridNodes(boolean excludeOffgridNodes0) {
+    this.excludeOffgridNodes = excludeOffgridNodes0;
+    return this;
   }
 
   public Result executeInternal(Network targetNetwork, final EntropySource eSource) {
@@ -54,6 +60,13 @@ public class EventNetDiscover extends Event<EventNetDiscover> {
       final Node nodeFrom =  allNodes.get(from);
       for (int into = 0; into < allNodes.size(); into++) {
         if (from == into) {
+          continue;
+        }
+        //  nodes which are on-line but have no links may be excluded from stats
+        if (
+            excludeOffgridNodes && mode == LookupService.Mode.GET &&
+            nodeFrom.getServices().getRouting().getStats().routeCount <= 1
+        ) {
           continue;
         }
 

@@ -190,7 +190,7 @@ object DhtSim {
             ),
             new EventNetStabilize(),
             new EventNetDiscover().mode(Mode.FIXFINGERS),
-            new EventNetDiscover().mode(Mode.GET)
+            new EventNetDiscover().excludeOffgridNodes(true).mode(Mode.GET)
           )
         )
 
