@@ -129,7 +129,7 @@ public final class Delivery {
         }
         called++;
       }
-      for (Traversal t : this.traversed.values()) {
+      for (Traversal t : this.failed.values()) {
         if (!t.called()) {
           throw new IllegalStateException("t.called == false");
         }
