@@ -20,6 +20,8 @@ package org.akraievoy.holonet.exp
 
 object Runner extends App {
   args match {
+    case Array("attack-mini") =>
+      AttackMini.main(args)
     case Array("curr-smoke") =>
       Registry.execute(
         "p2p-stage3-attack-chained",

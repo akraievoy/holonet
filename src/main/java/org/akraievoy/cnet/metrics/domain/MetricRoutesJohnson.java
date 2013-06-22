@@ -42,6 +42,15 @@ public class MetricRoutesJohnson extends MetricRoutes {
     return "Johnson Routes";
   }
 
+  public MetricRoutesJohnson configure(
+      RefRO<? extends EdgeData> source0,
+      RefRO<? extends EdgeData> distSource0
+  ) {
+    setSource(source0);
+    setDistSource(distSource0);
+    return this;
+  }
+
   public void setDistSource(RefRO<? extends EdgeData> distSource) {
     this.distSource = distSource;
   }

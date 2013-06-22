@@ -52,6 +52,10 @@ public class StoreUtils {
       final int fromIncl,
       final int uptoExcl
   ) {
+    if (storeSize == 0 && fromIncl == 0 && uptoExcl == 0) {
+      return;
+    }
+
     if (uptoExcl > storeSize) {
       throw new IllegalArgumentException(
           "uptoExcl(" + uptoExcl + ") > size(" + storeSize + ")"

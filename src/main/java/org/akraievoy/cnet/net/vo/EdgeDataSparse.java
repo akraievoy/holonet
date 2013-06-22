@@ -607,10 +607,11 @@ public class EdgeDataSparse implements EdgeData {
   }
 
   public void clear() {
+    nonDefElems = 0;
+    trails.del(0, trails.size());
+    data.del(0, data.size());
     for (int i = 0; i < leads.length; i++) {
       leads[i][0] = leads[i][1] = 0;
-      trails.del(0, trails.size());
-      data.del(0, data.size());
     }
   }
 

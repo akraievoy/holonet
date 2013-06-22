@@ -36,6 +36,15 @@ public class MetricScalarEffectiveness extends MetricScalar {
     return "Effectiveness";
   }
 
+  public MetricScalarEffectiveness configure(
+      RefRO<? extends EdgeData> source0,
+      RefRO<? extends EdgeData> weightSource0
+  ) {
+    setSource(source0);
+    setWeightSource(weightSource0);
+    return this;
+  }
+
   public void setMinThresh(double minThresh) {
     this.minThresh = minThresh;
   }
