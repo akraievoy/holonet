@@ -400,13 +400,15 @@ object DhtSim {
     new EventCompositeSequence(
       Seq(
         new EventNodeJoin().withCountRef(rs.lens(p5nodes)),
+        new EventNetDumpStructure(),
+        new EventNetStabilize(),
+        new EventNetDiscover(),
+        new EventNetReflavor(),
         new EventCompositeLoop(
           new EventNetPutEntry().withCountRef(rs.lens(p5Elems))
         ).withCountRef(rs.lens(p5nodes)),
-        new EventNetStabilize(),
-        new EventNetDiscover(),
-        new EventNetReflavor()
-      )
+        new EventNetDumpStructure()
+    )
     )
   }
 

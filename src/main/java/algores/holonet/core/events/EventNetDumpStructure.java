@@ -1,5 +1,5 @@
 /*
- Copyright 2011 Anton Kraievoy akraievoy@gmail.com
+ Copyright 2013 Anton Kraievoy akraievoy@gmail.com
  This file is part of Holonet.
 
  Holonet is free software: you can redistribute it and/or modify
@@ -18,7 +18,6 @@
 
 package algores.holonet.core.events;
 
-import algores.holonet.core.CommunicationException;
 import algores.holonet.core.Network;
 import algores.holonet.core.Node;
 import algores.holonet.core.api.Key;
@@ -29,38 +28,14 @@ import java.util.TreeMap;
 /**
  * Stabilizes all nodes in the network event.
  */
-public class EventNetStabilize extends Event<EventNetStabilize> {
+public class EventNetDumpStructure extends Event<EventNetDumpStructure> {
   public Result executeInternal(Network targetNetwork, final EntropySource eSource) {
-    Result result = Result.SUCCESS;
-
-    int stabilizeSucceeded = 0;
-    int stabilizeTotal = 0;
+    final TreeMap<Key, String> keyToNodeSummary = new TreeMap<Key, String>();
     for (Node node : targetNetwork.getAllNodes()) {
-      try {
-        stabilizeTotal += 1;
-        node.getServices().getOverlay().stabilize();
-        stabilizeSucceeded += 1;
-      } catch (CommunicationException e) {
-        result = handleEventFailure(e, null);
-        log.debug(
-            String.format(
-                "stabilize failed: %s",
-                e.getMessage()
-            ),
-            e
-        );
-      }
+      keyToNodeSummary.put(node.getKey(), node.toString());
     }
+    log.info("overlay structure = " + String.valueOf(keyToNodeSummary));
 
-    if (stabilizeSucceeded != stabilizeTotal) {
-      log.warn(
-          String.format(
-              "stabilize success ratio: %.6g",
-              (float) stabilizeSucceeded / stabilizeTotal
-          )
-      );
-    }
-
-    return result;
+    return Result.SUCCESS;
   }
 }

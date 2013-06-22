@@ -129,6 +129,7 @@ public class Testbench implements Runnable {
     try {
       network.getEnv().init();
 
+      startPeriod("init");
       this.initEntropySource.setSeed(initSeedRef.getValue());
       this.runEntropySource.setSeed(runSeedRef.getValue());
 
