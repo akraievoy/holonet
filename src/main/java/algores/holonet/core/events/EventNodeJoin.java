@@ -19,10 +19,16 @@
 package algores.holonet.core.events;
 
 import algores.holonet.core.Network;
+import algores.holonet.core.Node;
 import algores.holonet.core.SimulatorException;
+import algores.holonet.core.api.Key;
 import org.akraievoy.base.ref.Ref;
 import org.akraievoy.holonet.exp.store.RefObject;
 import org.akraievoy.cnet.gen.vo.EntropySource;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeMap;
 
 /**
  * Node join event.
@@ -46,6 +52,14 @@ public class EventNodeJoin extends Event<EventNodeJoin> {
   public Result executeInternal(Network network, final EntropySource eSource) {
     try {
       network.insertNodes(count.getValue().intValue(), null, eSource);
+
+      //  HOUSTON deactivate this debugging printout
+      final TreeMap<Key, Integer> keyToEntryCount = new TreeMap<Key, Integer>();
+      for (Node node : network.getAllNodes()) {
+        keyToEntryCount.put(node.getKey(), node.getServices().getStorage().getEntryCount());
+      }
+      log.info("keyToEntryCount = " + String.valueOf(keyToEntryCount));
+
       return Result.SUCCESS;
     } catch (SimulatorException e) {
       return handleEventFailure(e, null);
