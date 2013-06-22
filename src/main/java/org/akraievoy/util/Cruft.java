@@ -26,6 +26,13 @@ package org.akraievoy.util;
 public class Cruft {
   private Cruft() { /* sealed */ }
 
+  public static boolean nonNegative(int value, final String negativeMessage) {
+    if (value >= 0) {
+      return true;
+    }
+    throw new IllegalStateException(negativeMessage);
+  }
+
   public static int min(final int[] values) {
     if (values == null) {
       throw new IllegalArgumentException("values == null");

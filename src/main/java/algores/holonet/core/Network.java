@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static algores.holonet.core.api.tier0.routing.Routing.*;
 import static algores.holonet.core.api.tier1.delivery.Delivery.*;
+import static org.akraievoy.util.Cruft.*;
 
 public class Network {
 
@@ -304,14 +305,25 @@ public class Network {
     final Progress progress =
         progressMeta.progress("inserting data", n).start();
     for (int i = 0; i < n; i++) {
-      eSource.nextBytes(bytes);
-      final Key key = API.createKey(bytes);
+      int tries = 10;
+      while (nonNegative(tries--, "failed to find free key")) {
+        eSource.nextBytes(bytes);
+        final Key key = API.createKey(bytes);
 
-      final Address responsibleAddress =
-          getRandomNode(eSource).getServices().getLookup().lookup(
-              key, false, LookupService.Mode.PUT, Optional.<Address>absent());
-      final Node owner = env.getNode(responsibleAddress);
-      owner.getServices().getStorage().put(key, bytes.clone());
+        final Address responsibleAddress =
+            getRandomNode(eSource).getServices().getLookup().lookup(
+                key,
+                false,
+                LookupService.Mode.PUT,
+                Optional.<Address>absent()
+            );
+        final Node owner = env.getNode(responsibleAddress);
+        if (owner.getServices().getStorage().getKeys().contains(key)) {
+          continue;
+        }
+        owner.getServices().getStorage().put(key, bytes.clone());
+        break;
+      }
       progress.iter(i);
     }
     progress.stop();
