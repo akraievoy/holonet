@@ -21,7 +21,10 @@ package algores.holonet.core.events;
 import algores.holonet.core.CommunicationException;
 import algores.holonet.core.Network;
 import algores.holonet.core.Node;
+import algores.holonet.core.api.Key;
 import org.akraievoy.cnet.gen.vo.EntropySource;
+
+import java.util.TreeMap;
 
 /**
  * Stabilizes all nodes in the network event.
@@ -57,6 +60,13 @@ public class EventNetStabilize extends Event<EventNetStabilize> {
           )
       );
     }
+
+    //  HOUSTON deactivate this debugging printout
+    final TreeMap<Key, Integer> keyToEntryCount = new TreeMap<Key, Integer>();
+    for (Node node : targetNetwork.getAllNodes()) {
+      keyToEntryCount.put(node.getKey(), node.getServices().getStorage().getEntryCount());
+    }
+    log.info("keyToEntryCount = " + String.valueOf(keyToEntryCount));
 
     return result;
   }
