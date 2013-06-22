@@ -50,6 +50,11 @@ public class EntropySourceRandom implements EntropySource {
     consumed = 0;
   }
 
+  public EntropySourceRandom seed(long seed0) {
+    setSeed(seed0);
+    return this;
+  }
+
   public int nextInt(int maxExclusive) {
     consumed += 32;
     this.seed = null;

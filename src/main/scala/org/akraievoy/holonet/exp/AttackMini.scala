@@ -21,13 +21,13 @@ package org.akraievoy.holonet.exp
 import org.akraievoy.cnet.net.vo.{EdgeDataFactory, EdgeData}
 import java.util.Random
 import scala.math.{pow, sqrt}
-import org.akraievoy.cnet.gen.vo.WeightedEventModelBase
+import org.akraievoy.cnet.gen.vo.{EntropySourceRandom, WeightedEventModelBase}
 import com.google.common.base.Optional
 import org.akraievoy.cnet.net.Net.{toId, toFrom, toInto}
 
 class AttackMini extends App {
   val locRng: Random = new Random(123456L)
-  val linkRng: Random = new Random(234567L)
+  val linkRngSeed = 234567L
 
   val size: Int = 256
   val attackFraction: Double = .5
@@ -50,18 +50,29 @@ class AttackMini extends App {
 
   println("distExp;powExp;lambda;eff;conn")
   for (distExp <- distExpRange; powExp <- powExpRange) {
+    val linkESource = new EntropySourceRandom().seed(linkRngSeed)
     links.clear()
     linkModel.clear()
     val powers: Array[Int] = range.map(i => 0).toArray
 
-    for (f <- range; t <- range if f < t && powers(f) < linksPerNode && powers(t) < linksPerNode) {
-      linkModel.add(
-        toId(f,t),
-        pow(powers(f) + powers(t), powExp) + pow(dist.get(f, t), distExp)
-      )
-    }
+    do {
+      for (f <- range; t <- range if f < t && powers(f) < linksPerNode && powers(t) < linksPerNode) {
+        linkModel.add(
+          toId(f, t),
+          pow(powers(f) + powers(t), powExp) + pow(dist.get(f, t), distExp)
+        )
+      }
 
-    linkModel.generate()
+      if (linkModel.getSize > 0) {
+        val linkId = linkModel.generate(linkESource, false, null)
+        val linkF = toFrom(linkId)
+        val linkT = toInto(linkId)
+        links.set(linkF, linkT, 1)
+        powers(linkF) += 1
+        powers(linkT) += 1
+      }
+    } while (linkModel.getSize > 0)
+
 
   }
 }
