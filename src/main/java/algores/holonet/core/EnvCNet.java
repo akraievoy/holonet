@@ -372,7 +372,7 @@ public class EnvCNet implements Env {
 
     public synchronized Key getKey() {
       if (key == null) {
-        final int maxNodeNum = overlayDist.getValue().getSize();
+        final int maxNodeNum = overlayDist.getValue().getSize() - 1;
         int orderBits = 1;
         int orderVal = 1;
         while (orderVal < maxNodeNum) {
