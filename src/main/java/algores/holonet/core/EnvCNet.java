@@ -372,30 +372,11 @@ public class EnvCNet implements Env {
 
     public synchronized Key getKey() {
       if (key == null) {
-        final int maxNodeNum = overlayDist.getValue().getSize() - 1;
-        int orderBits = 1;
-        int orderVal = 1;
-        while (orderVal < maxNodeNum) {
-          orderBits += 1;
-          orderVal *= 2;
-        }
-
-        final BigInteger baseKey = API.createKey(this).toNumber();
-        final int order = (int) Math.round(
-            Interpolate.norm(
-                0, maxNodeNum - 1,
-                0, orderVal - 1,
-                Interpolate.LINEAR
-            ).apply(
-                cycleOrdering.get(nodeIdx)
-            )
+        key = generateKey(
+            overlayDist.getValue().getSize(),
+            cycleOrdering.get(nodeIdx),
+            API.createKey(this).toNumber()
         );
-        final int lowerBits = Key.BITNESS - orderBits;
-        final BigInteger higherOrdering =
-            BigInteger.valueOf(order).shiftLeft(lowerBits);
-        final BigInteger lowerKey =
-            BigInteger.ONE.shiftLeft(lowerBits).subtract(BigInteger.ONE);
-        key = API.createKey(baseKey.and(lowerKey).or(higherOrdering));
       }
       return key;
     }
@@ -418,14 +399,40 @@ public class EnvCNet implements Env {
 
       AddressCNet that = (AddressCNet) o;
 
-      if (nodeIdx != that.nodeIdx) return false;
-
-      return true;
+      return nodeIdx == that.nodeIdx;
     }
 
     @Override
     public int hashCode() {
       return nodeIdx;
     }
+  }
+
+  static Key generateKey(final int nodeNum, final double cycleOrder, final BigInteger baseKey) {
+    final int maxNodeIdx = nodeNum - 1;
+    int orderBits = 1;
+    int orderVal = 1;
+    while (orderVal < maxNodeIdx) {
+      orderBits += 1;
+      orderVal = (orderVal + 1) * 2 - 1;
+    }
+
+    final int order = (int) Math.round(
+        Interpolate.norm(
+            0, maxNodeIdx,
+            0, orderVal,
+            Interpolate.LINEAR
+        ).apply(
+            cycleOrder
+        )
+    );
+    final int lowerBits = Key.BITNESS - orderBits;
+
+    final BigInteger higherOrdering =
+        BigInteger.valueOf(order).shiftLeft(lowerBits);
+    final BigInteger lowerKey =
+        BigInteger.ONE.shiftLeft(lowerBits).subtract(BigInteger.ONE);
+
+    return API.createKey(baseKey.and(lowerKey).or(higherOrdering));
   }
 }
