@@ -155,9 +155,9 @@ object DhtSim {
     ),
     Config(
       "corrStudy-large-256",
-      "correlation study, more loops for 192 nodes",
+      "correlation study, more loops for 256 nodes",
       Param(p5nodes, "256"),
-      Param(p5attackProb, "0.50"),
+      Param(p5attackProb, "0.46875"),
       Param(p5Elems, "256"),
       Param(p5loops, "80"),
       Param(p5routingRedundancy, "1.0"),
