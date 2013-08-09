@@ -27,7 +27,6 @@ import org.akraievoy.cnet.net.Net.{toId, toFrom, toInto, eClone}
 import org.akraievoy.cnet.metrics.domain._
 import org.akraievoy.cnet.metrics.api.Metric
 import org.akraievoy.holonet.exp.store.RefObject
-import java.util
 import gnu.trove.TIntArrayList
 
 object AttackMini extends App {
@@ -47,31 +46,31 @@ object AttackMini extends App {
 
   val range: Range = 0 until size
 
-  val locX: Array[Double] = range.map(i => (i + .0) / size + locRng.nextDouble() / size).toArray
-  val locY: Array[Double] = range.map(i => locRng.nextDouble()).toArray
-
-  val dist: EdgeData = EdgeDataFactory.dense(true, 0, size)
-  val distRef: RefObject[EdgeData] = new RefObject(dist)
-  for (f <- range; t <- range if f < t) {
-    dist.set(f, t, sqrt(pow(locX(f) - locX(t), 2) + pow(locY(f) - locY(t), 2)))
-  }
-
-  val links: EdgeData = EdgeDataFactory.sparse(true, 0, size)
-  val linksRef: RefObject[EdgeData] = new RefObject(links)
-  val linkModel = new WeightedEventModelBase(Optional.of("linkModel"))
-
-  val lambdaMetric = new MetricScalarEigenGap()
-  val routeLenMetric: MetricEDataRouteLen = new MetricEDataRouteLen(
-    new MetricRoutesJohnson().configure(linksRef, distRef)
-  )
-  val effMetric = new MetricScalarEffectiveness()
-  val connMetric = new MetricScalarConnectedness()
-
   println("distExp;powExp;lambdaInit;effInit;connInit;attFrac;lambdaAtt;effAtt;connAtt")
   for (distExp <- distExpRange; powExp <- powExpRange) {
-    val linkESource = new EntropySourceRandom().seed(linkRngSeed)
-    for (linkStruct <- 0 until linkStructNum) {
-      initLinks(powExp, distExp, linkESource)
+    for (linkStruct <- (0 until linkStructNum).par) {
+      val locX: Array[Double] = range.map(i => (i + .0) / size + locRng.nextDouble() / size).toArray
+      val locY: Array[Double] = range.map(i => locRng.nextDouble()).toArray
+
+      val dist: EdgeData = EdgeDataFactory.dense(true, 0, size)
+      val distRef: RefObject[EdgeData] = new RefObject(dist)
+      for (f <- range; t <- range if f < t) {
+        dist.set(f, t, sqrt(pow(locX(f) - locX(t), 2) + pow(locY(f) - locY(t), 2)))
+      }
+
+      val links: EdgeData = EdgeDataFactory.sparse(true, 0, size)
+      val linksRef: RefObject[EdgeData] = new RefObject(links)
+      val linkModel = new WeightedEventModelBase(Optional.of("linkModel"))
+
+      val lambdaMetric = new MetricScalarEigenGap()
+      val routeLenMetric: MetricEDataRouteLen = new MetricEDataRouteLen(
+        new MetricRoutesJohnson().configure(linksRef, distRef)
+      )
+      val effMetric = new MetricScalarEffectiveness()
+      val connMetric = new MetricScalarConnectedness()
+
+      val linkESource = new EntropySourceRandom().seed(linkRngSeed + linkStruct)
+      initLinks(powExp, distExp, linkESource, dist, links, linkModel)
 
       val lambdaInit = Metric.fetch(lambdaMetric.configure(linksRef))
       val routeLen = Metric.fetch(routeLenMetric)
@@ -150,7 +149,14 @@ object AttackMini extends App {
     }
   }
 
-  def initLinks(powExp: Double, distExp: Double, linkESource: EntropySourceRandom) {
+  def initLinks(
+      powExp: Double,
+      distExp: Double,
+      linkESource: EntropySourceRandom,
+      dist: EdgeData,
+      links: EdgeData,
+      linkModel: WeightedEventModelBase
+  ) {
     links.clear()
     val powers: Array[Int] = range.map(i => 0).toArray
     val connCache0 = new TIntArrayList()
